@@ -1,0 +1,25 @@
+#
+# About: Test image for development
+#
+
+# Pull base image.
+FROM ubuntu:18.04
+
+RUN \
+        apt-get update && \
+        apt-get -y upgrade && \
+        apt-get install -y build-essential && \
+        apt-get install -y net-tools iproute2 iputils-ping \
+        apt-transport-https ca-certificates curl stress iperf iperf3
+
+# Install Docker from Docker Inc. repositories.
+RUN curl -sSL https://get.docker.com/ | sh
+
+# Set environment variables.
+ENV HOME /root
+
+# Define working directory.
+WORKDIR /root
+
+# Define default command.
+CMD ["bash"]
