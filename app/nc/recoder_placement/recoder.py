@@ -3,6 +3,8 @@
 # vim:fenc=utf-8
 """
 About: Full vector NC recoder
+
+       Recoder only handles UDP segments
 """
 
 import argparse
@@ -14,7 +16,7 @@ import struct
 import time
 from multiprocessing import Process, active_children
 
-import rawsock_helpers
+import rawsock_helpers as rsh
 import common
 from common import (BUFFER_SIZE, IO_SLEEP, META_DATA_LEN, MTU,
                     FIELD, SYMBOLS, SYMBOL_SIZE)
@@ -38,6 +40,12 @@ def io_loop(sock, action, dst_mac):
     udp_cnt = 0
     generation = 0
 
+    if dst_mac:
+        logger.info(
+            "The destination MAC address of all frames are changed to %s" %
+            dst_mac
+        )
+
     if action == "recode":
         logger.info("Init kodo recoder...\n")
         decoder_factory = kodo.RLNCDecoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
@@ -52,15 +60,22 @@ def io_loop(sock, action, dst_mac):
     while True:
         time.sleep(IO_SLEEP)
 
-        ret = rawsock_helpers.rx_buf_udp(sock, rx_tx_buf, MTU)
+        ret = rsh.recv_ipv4(sock, rx_tx_buf, MTU)
         if not ret:
-            logger.debug("Recv a non-UDP frame, frame is dropped.")
+            logger.debug("Recv a non-IPv4 frame, frame is ignored.")
+            continue
+        frame_len, ip_hd_offset, ip_hd_len, proto = ret
+
+        if proto != rsh.IP_PROTO_UDP:
+            logger.debug("Recv a non-UDP segment, packet is ignored.")
             continue
         else:
             udp_cnt += 1
-            logger.info(
+            logger.debug(
                 "Recv a UDP segment! Total UDP count: {}".format(udp_cnt))
-        frame_len, ip_hd_offset, ip_hd_len, udp_pl_offset, udp_pl_len = ret
+
+        ret = rsh.parse_udp(rx_tx_buf, ip_hd_offset, ip_hd_len)
+        _, udp_pl_offset, udp_pl_len = ret
 
         # Handle OAM packet
         _type, cur_gen = common.pull_metadata(rx_tx_buf, udp_pl_offset)
@@ -76,6 +91,10 @@ def io_loop(sock, action, dst_mac):
             logger.debug("Update the destination MAC to: {}".format(dst_mac))
             dst_mac_b = binascii.unhexlify(dst_mac.replace(":", ""))
             rx_tx_buf[0:len(dst_mac_b)] = dst_mac_b
+
+        # Disable UDP checksum
+        udp_hd_offset = ip_hd_offset + ip_hd_len
+        struct.pack_into(">H", rx_tx_buf, udp_hd_offset+6, 0)
 
         if action == "recode":
             # recode and forward
@@ -100,8 +119,8 @@ def io_loop(sock, action, dst_mac):
                 recode_buf = recoder.write_payload()
                 rx_tx_buf[head:tail] = recode_buf[:udp_pl_len]
                 # Update IP/UDP checksum
-                rawsock_helpers.update_cksum_udp(rx_tx_buf, ip_hd_offset,
-                                                 ip_hd_len)
+                rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset,
+                                      ip_hd_len)
                 sock.send(rx_tx_buf[:frame_len])
 
         elif action == "forward":

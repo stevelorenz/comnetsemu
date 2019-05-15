@@ -10,13 +10,13 @@ import kodo
 import struct
 
 MTU = 1500
-BUFFER_SIZE = 2048
+BUFFER_SIZE = 4096
 IO_SLEEP = 0.001  # second
 
 # KODO parameters
 FIELD = kodo.field.binary8
-SYMBOLS = 8
-SYMBOL_SIZE = 1000
+SYMBOLS = 10
+SYMBOL_SIZE = 100
 
 
 """

@@ -13,11 +13,8 @@ import struct
 import sys
 
 from common import (BUFFER_SIZE, FIELD, IO_SLEEP, META_DATA_LEN, MTU,
-                    SYMBOL_SIZE, SYMBOLS)
+                    SYMBOL_SIZE, SYMBOLS, GENERATION)
 import common
-
-# Number of generations
-generation = 3
 
 
 def main():
@@ -39,12 +36,13 @@ def main():
 
     # Already decoded generation number
     packet_number = 0
-    for g in range(generation):
+    for g in range(GENERATION):
         # Cleanup decoder
         decoder = decoder_factory.build()
-        # Define the data_out bytearray where the symbols should be decoded
-        data_out = bytearray(decoder.block_size())
-        decoder.set_mutable_symbols(data_out)
+        # Define the decode_buf bytearray where the symbols should be decoded
+        decode_buf = bytearray(decoder.block_size())
+        decode_buf_otf = bytearray(decoder.block_size())
+        decoder.set_mutable_symbols(decode_buf)
 
         while not decoder.is_complete():
             payload_len = sock.recv_into(rx_tx_buf, 0)
@@ -53,9 +51,9 @@ def main():
                 packet_number += 1
                 # Drop redundant packets of already-decoded generation
                 continue
-            decoder.read_payload(rx_tx_buf[META_DATA_LEN:payload_len])
-            print("Packet {} is feed into decoder.".format(packet_number))
             print("Current generation number: {}".format(cur_gen))
+            print("Packet {} is feed into decoder.".format(packet_number))
+            decoder.read_payload(rx_tx_buf[META_DATA_LEN:payload_len])
             print("Decoder rank: {}/{}".format(
                 decoder.rank(), decoder.symbols()))
             packet_number += 1
