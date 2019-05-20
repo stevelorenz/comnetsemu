@@ -9,6 +9,7 @@ import argparse
 import kodo
 import socket
 import struct
+import binascii
 import time
 from multiprocessing import Process, active_children
 
@@ -75,7 +76,8 @@ def io_loop(sock):
             decoder = decoder_factory.build()
             decode_buf = bytearray(decoder.block_size())
             decoder.set_mutable_symbols(decode_buf)
-            not_decoded_indces = range(decoder.symbols())
+            not_decoded_indces = list(range(decoder.symbols()))
+            generation = cur_gen
 
         decoder.read_payload(
             rx_tx_buf[udp_pl_offset+META_DATA_LEN:frame_len])
@@ -96,6 +98,8 @@ def io_loop(sock):
 
                 udp_total_len = rsh.UDP_HDL + SYMBOL_SIZE
                 ip_total_len = udp_total_len + ip_hd_len
+                logger.debug("[HD LEN] UDP total len:%d, ip_total_len:%d",
+                             udp_total_len, ip_total_len)
                 rsh.update_ip_udp_len(rx_tx_buf, ip_hd_offset, udp_hd_offset,
                                       ip_total_len, udp_total_len)
                 # Disable UDP checksum

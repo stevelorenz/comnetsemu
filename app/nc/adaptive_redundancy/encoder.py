@@ -18,7 +18,7 @@ import log
 from common import (BUFFER_SIZE, FIELD, IO_SLEEP, META_DATA_LEN, MTU,
                     SYMBOL_SIZE, SYMBOLS)
 
-log.conf_logger("debug")
+log.conf_logger("info")
 logger = log.logger
 
 
@@ -42,10 +42,6 @@ def io_loop(sock):
     logger.info("Entering IO loop.")
 
     while True:
-
-        # IMPROVEMENT: Add here a timeout. Coded packets should be sent to fix
-        # potential losses of TCP SYN packets
-
         time.sleep(IO_SLEEP)
         rx_tx_buf = bytearray(BUFFER_SIZE)
         ret = rsh.recv_ipv4(sock, rx_tx_buf, MTU)
@@ -55,6 +51,7 @@ def io_loop(sock):
         frame_len, ip_hd_offset, ip_hd_len, proto = ret
 
         if proto == rsh.IP_PROTO_TCP:
+            logger.info("Recv a TCP segment")
             rsh.encap_tcp_udp(rx_tx_buf, ip_hd_offset, ip_hd_len)
             frame_len += rsh.UDP_HDL  # Encap UDP header
         elif proto == rsh.IP_PROTO_UDP:
@@ -71,7 +68,7 @@ def io_loop(sock):
         udp_hd_offset, udp_pl_offset, udp_pl_len = rsh.parse_udp(rx_tx_buf,
                                                                  ip_hd_offset,
                                                                  ip_hd_len)
-        logger.debug("UDP HD offset:%d, pl_offset:%d, pl_len:%d", udp_hd_offset,
+        logger.debug("UDP header offset:%d, pl_offset:%d, pl_len:%d", udp_hd_offset,
                      udp_pl_offset, udp_pl_len)
 
         rank = encoder.rank()
@@ -79,8 +76,10 @@ def io_loop(sock):
         encode_buf[rank*SYMBOL_SIZE:(rank+1)*SYMBOL_SIZE] = rx_tx_buf[
             udp_pl_offset:udp_pl_offset+udp_pl_len]
 
-        encoder.set_const_symbol(
-            rank, encode_buf[rank*SYMBOL_SIZE:(rank+1)*SYMBOL_SIZE])
+        # WARN: The set_const_symbol REQUIRES a COPY of the mutable bytearray
+        # Feed a slice of the mutable rx_tx_buf leads to WRONG encoder output
+        tmp_copy = encode_buf[rank*SYMBOL_SIZE:(rank+1)*SYMBOL_SIZE]
+        encoder.set_const_symbol(rank, tmp_copy)
 
         # Update rank of the encoder
         rank = encoder.rank()
@@ -97,7 +96,6 @@ def io_loop(sock):
                      generation, rank, send_num)
 
         for _ in range(send_num):
-            # Send one systematic packet
             enc_out = encoder.write_payload()
             # Reserve space for metadata
             rx_tx_buf[udp_pl_offset+META_DATA_LEN:] = enc_out[:]

@@ -8,16 +8,16 @@ About: Multi-hop topology for network coding application(s)
 
 
 import time
+import csv
 from shlex import split
 from subprocess import check_output
 
 from comnetsemu.net import Containernet, VNFManager
 from mininet.cli import CLI
-from mininet.log import info, setLogLevel, error
+from mininet.log import error, info, setLogLevel
 from mininet.node import Controller
 
 
-# TODO(zuo): Add placement algo here
 def get_recoder_placement(recoder_num, link_para={}):
     """Get the placement of the recoder based on link parameters
 
@@ -89,7 +89,21 @@ def disable_cksum_offload(switch_num):
         )
 
 
-def TestMultiHopNC(host_num, print_recoder_logs=False):
+def save_hosts_info(hosts):
+    info = list()
+    for i, h in enumerate(hosts):
+        mac = str(h.MAC("h{}-s{}".format(i+1, i+1)))
+        ip = str(h.IP())
+        info.append([h.name, mac, ip])
+
+    with open('hosts_info.csv', 'w+') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for i in info:
+            writer.writerow(i)
+
+
+def TestMultiHopNC(host_num, coder_log_conf):
     "Create an empty network and add nodes to it."
 
     if host_num < 5:
@@ -121,6 +135,8 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
                                      bw=10, delay="1ms", use_htb=True)
             last_sw = switch
 
+        # save_hosts_info(hosts)
+
         info("*** Starting network\n")
         net.start()
         info("*** Ping all to update ARP tables of each host\n")
@@ -145,23 +161,6 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
         for i in range(2, 2+rec_num):
             name = "recoder_on_h%d" % (i+1)
             rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
-            # MARK: The destination MAC address of the frame MUST be updated if this
-            # frame is transmitted to a host on which a l4-socket-base program is
-            # running. Otherwise the kernel will simply drop packets
-            dst_h_ifce = "h{}-s{}".format(host_num-1, host_num-1)
-            # Avoid error during querying MAC address
-            _try = 0
-            while True:
-                _try += 1
-                time.sleep(0.5)
-                dst_h_mac = hosts[-2].MAC(dst_h_ifce)
-                print("**** Try %d times to get destination MAC address" % _try)
-                if dst_h_mac:
-                    break
-            # info("[Recoder] The MAC address of the last recoder: %s\n" % dst_h_mac)
-            rec_cli += " --dst_mac " + dst_h_mac
-
-            # MARK: recoder uses raw socket, the root privilege is required
             recoder = mgr.addContainer(
                 name, hosts[i], "nc_coder",
                 " ".join(("sudo python3 ./recoder.py", rec_cli)))
@@ -174,20 +173,22 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
             "encoder", hosts[1], "nc_coder",
             "sudo python3 ./encoder.py h2-s2")
 
-        CLI(net)
+        # CLI(net)
 
-        info("*** Run Iperf server on host %s\n" % hosts[-1].name)
-        hosts[-1].cmd("iperf -s {} -p 8888 -D".format(hosts[-1].IP()))
+        info("*** Run Iperf server on host %s in background.\n" %
+             hosts[-1].name)
+        hosts[-1].cmd(
+            "iperf -s {} -p 9999 -i 1 -u > /tmp/iperf_server.log 2>&1 &".format(
+                hosts[-1].IP()))
 
-        info("*** Run Iperf client on host %s\n" % hosts[0].name)
-        # Iperf3 client parameter: Check https://iperf.fr/iperf-doc.php
+        info("*** Run Iperf client on host %s, wait for its output...\n" %
+             hosts[0].name)
         iperf_client_para = {
             "server_ip": hosts[-1].IP(),
-            "port": 8888,
-            "bw": "1K",
-            "time": 6,
-            "length": "50",
-            # "suffix": ""
+            "port": 9999,
+            "bw": "100",
+            "time": 17,
+            "length": "20",
             # Use UDP rather than TCP
             "suffix": "-u"
             # "suffix": "-u > /dev/null 2>&1 &"
@@ -197,37 +198,24 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
                 **iperf_client_para
             )
         )
-        info("*** Output of Iperf client: \n")
+        info("*** Output of Iperf client:\n")
         print(ret)
 
-        # Wait until decoder finishes its task
-        dec_timeout = 10
-        wait_time = 0
-        while True:
-            time.sleep(3)
-            wait_time += 3
-            if wait_time > dec_timeout:
-                info("*** Decode timeout! Stop the emulation \n")
-                break
-            log = decoder.dins.logs().decode("utf-8")
-            if not log:
-                continue
-            sig = log.splitlines()[-1].strip()
-            if sig == "Decoder will exit.":
-                break
+        info("*** Output of Iperf server:\n")
+        print(hosts[-1].cmd("cat /tmp/iperf_server.log"))
 
-        info("*** Decoder will exit. Log of decoder: \n")
-        print(decoder.dins.logs().decode("utf-8"))
+        if coder_log_conf.get("decoder", None):
+            info("*** Log of decoder: \n")
+            print(decoder.dins.logs().decode("utf-8"))
 
-        info("*** Log of the encoder: \n")
-        print(encoder.dins.logs().decode("utf-8"))
+        if coder_log_conf.get("encoder", None):
+            info("*** Log of the encoder: \n")
+            print(encoder.dins.logs().decode("utf-8"))
 
-        if print_recoder_logs:
+        if coder_log_conf.get("recoder", None):
             info("*** Log of recoders: \n")
             for r in recoders:
                 print(r.dins.logs().decode("utf-8"))
-
-        # dump_ovs_flows(3)
 
         info("*** Emulation stops...")
         mgr.removeContainer("encoder")
@@ -246,4 +234,11 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    TestMultiHopNC(host_num=5, print_recoder_logs=False)
+
+    coder_log_conf = {
+        "encoder": False,
+        "decoder": False,
+        "recoder": False
+    }
+
+    TestMultiHopNC(5, coder_log_conf)

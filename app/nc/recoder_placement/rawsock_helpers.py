@@ -19,8 +19,15 @@ IP_PROTO_UDP = 17
 IP_PROTO_TCP = 6
 
 
+def print_hex(arr):
+    print("".join("x{:02x}".format(x) for x in arr))
+
+
 def update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len):
-    """Update the IPv4 header checksum"""
+    """Update the IPv4 header checksum
+
+    http://en.wikipedia.org/wiki/IPv4_header_checksum
+    """
     struct.pack_into(">H", rx_tx_buf, ip_hd_offset+10, 0)
 
     s = 0
@@ -29,7 +36,15 @@ def update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len):
             '>2B', rx_tx_buf[ip_hd_offset:ip_hd_offset+ip_hd_len], i
         )
         w = a + (b << 8)
-        s = ((s + w) & 0xffff + (s + w >> 16))
+        s = s + w
+
+    s = (s >> 16) + (s & 0xffff)
+    s = s + (s >> 16)
+    # complement and mask to 4 byte short
+    s = ~s & 0xffff
+
+    logger.debug("[IP_CKSUM] New IP checksum:0x{:02x}".format(s))
+    struct.pack_into("<H", rx_tx_buf, ip_hd_offset+10, (s))
 
     struct.pack_into("<H", rx_tx_buf, ip_hd_offset+10, (~s & 0xffff))
 

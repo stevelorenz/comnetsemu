@@ -112,6 +112,5 @@ venv.bak/
 ----------
 
 .vagrant/*
-script/MaxiNet.cfg
-script/*.txt
-
+app/nc/adaptive_redundancy/*.csv
+app/nc/adaptive_redundancy/*.pcap
