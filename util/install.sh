@@ -19,6 +19,7 @@ DEP_DIR="$HOME/comnetsemu_dependencies"
 
 MININET_VER="e20380"
 RYU_VER="v4.32"
+BCC_VER="v0.9.0"
 
 function usage() {
     printf '\nUsage: %s [-andy]\n\n' "$(basename "$0")" >&2
@@ -78,6 +79,7 @@ function install_ryu() {
     mkdir -p "$ryu_dir"
     git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
     cd "$ryu_dir/ryu" || exit
+    git checkout -b dev $RYU_VER
     sudo -H $PIP install .
 }
 
@@ -85,6 +87,20 @@ function install_devs() {
     echo "*** Install tools for development"
     echo "- Install pytest for unit tests"
     sudo -H $PIP install pytest
+}
+
+function install_bcc() {
+    echo "*** Install BPF Compiler Collection"
+    sudo apt-get -y install bison build-essential cmake flex git libedit-dev libllvm6.0 llvm-6.0-dev libclang-6.0-dev python3 zlib1g-dev libelf-dev
+    sudo apt-get -y install linux-headers-$(uname -r)
+    bcc_dir="$DEP_DIR/bcc-$BCC_VER"
+    git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
+    cd "$bcc_dir/bcc" || exit
+    git checkout -b dev $BCC_VER
+    mkdir -p build; cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3
+    make
+    sudo make install
 }
 
 function remove() {
@@ -110,8 +126,11 @@ function remove() {
     cd "$mininet_dir/mininet/util" || exit
     ./install.sh -r
 
+    # TODO: Remove BCC properly
+
     echo "Remove dependency folder"
     sudo rm -rf "$DEP_DIR"
+
 }
 
 function all() {
@@ -128,10 +147,11 @@ if [ $# -eq 0 ]
 then
     all
 else
-    while getopts 'acdhnrvy' OPTION
+    while getopts 'abcdhnrvy' OPTION
     do
         case $OPTION in
             a) all;;
+            b) install_bcc;;
             c) install_comnetsemu;;
             d) install_docker;;
             h) usage;;
