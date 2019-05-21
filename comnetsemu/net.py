@@ -14,6 +14,7 @@ from mininet.log import debug, error, info, output, warn
 from mininet.net import Mininet
 from mininet.node import OVSBridge, Switch
 from mininet.util import BaseString
+from mininet.link import TCIntf
 
 # ComNetsEmu version: should be consistent with README and LICENSE
 VERSION = "0.1.0"
@@ -155,6 +156,28 @@ class Containernet(Mininet):
         info(
             "remove SAP NAT rules for: {0} - {1}\n".format(SAPSwitch.name, SAPNet))
 
+    def change_host_ifce_loss(self, host, ifce, loss, parent=" parent 5:1"):
+        if isinstance(host, BaseString):
+            host = self.net.get(host)
+        if not host:
+            error("Can not find the running host\n")
+            return False
+        tc_ifce = host.intf(ifce)
+        if not isinstance(tc_ifce, TCIntf):
+            error("The interface must be a instance of TCIntf\n")
+            return False
+
+        # WARN: The parent number is defined in mininet/link.py
+        ret = host.cmd(
+            "tc qdisc change dev {} {} handle 10: netem loss {}%".format(
+                ifce, parent, loss
+            ))
+        if ret != "":
+            error("Failed to change loss. Error:%s\n", ret)
+            return False
+
+        return True
+
     def stop(self):
         super(Containernet, self).stop()
 
@@ -246,8 +269,8 @@ class VNFManager(object):
     def removeContainer(self, container):
         """Remove the internal container
 
-        :param container (str or DockerContainer): Internal container object (or
         its name)
+        :param container (str or DockerContainer): Internal container object (or
 
         :return: Return True/False for success/fail remove.
         """

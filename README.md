@@ -94,25 +94,28 @@ Then the package must be re-installed with: `python3 ./setup.py install`
 
 ### Run examples
 
+In order to run examples, the Docker image described in ./test_containers/Dockerfile.dev_test must be built with
+./test_containers/build.sh .
+
+#### Run Docker host example
+
+./examples/dockerhost.py shows the management of Docker hosts (external containers) in ComNetsEmu. It shows how to
+create a network with Docker hosts, switches and connect them with configurable (bandwidth, delay and loss rate) links.
+It also shows how to change the loss rate of a host's interface (with Linux NetEm) at runtime.
+
 #### Run Docker-in-Docker example
 
 The dockerindocker.py in the example fold show the basic functionality of running Docker container inside a Mininet
-host(the host itself also uses Docker container). In order to run it, a Docker image with Docker installed must be
-built. The Dockerfile for this can be found in ./test_containersDockerfile.dev_test The default image name used in
-dockerindocker.py is dev_test.
+host(the host itself also uses Docker container). It shows how to add/remove internal containers on running Docker hosts
+and also change the resource limitation of Docker hosts at runtime.
 
-```
-cd ./test_containers || exit
-sudo docker build -t dev_test -f Dockerfile.dev_test .
-```
-
-### Run multi-hop network coding example
+### Run multi-hop network coding application example
 
 The network coding example requires the licence of Kodo library from [Steiwurf](www.steinwurf.com). Contact them for
 licence before running the example. Once you have the licence, run following commands:
 
 ```
-cd ./app/nc/ || exit
+cd ./app/nc/recoder_placement/ || exit
 bash ./build_kodo_lib.sh  # Build Kodo-python library on your host system to get the kodo.so shared library.
 bash ./build_docker_images.sh  # Build the Docker image for encoders, recoders and docoders.
 sudo python3 ./multihop_topo.py  # Run the NC emulation

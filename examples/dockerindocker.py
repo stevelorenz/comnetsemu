@@ -10,9 +10,8 @@ import time
 from comnetsemu.net import Containernet, VNFManager
 from mininet.cli import CLI
 from mininet.log import info, setLogLevel
-from mininet.node import Controller, CPULimitedHost
-from mininet.topo import Topo
-from mininet.util import dumpNodeConnections
+from mininet.node import Controller
+from mininet.link import TCLink
 
 # Limit the specific CPUs or cores a container can use. A comma-separated list
 # or hyphen-separated range of CPUs a container can use, if you have more than
@@ -24,7 +23,7 @@ CPU_SETS = "0"
 def testDockerInDocker(n=2):
     "Create a chain topology for "
 
-    net = Containernet(controller=Controller)
+    net = Containernet(controller=Controller, link=TCLink)
     mgr = VNFManager(net)
 
     info('*** Adding controller\n')
@@ -51,6 +50,8 @@ def testDockerInDocker(n=2):
 
     info('*** Starting network\n')
     net.start()
+
+    # TODO: Add tests for external docker hosts
 
     info('*** Run a simple ping test between two internal containers deployed on h1 and h%s\n' % n)
     head = mgr.addContainer("head", "h1", "dev_test",
@@ -84,12 +85,18 @@ def testDockerInDocker(n=2):
 
     for c in containers:
         usages = mgr.monResourceStats(c)
-        print(
-            " The average CPU and Memory usage of container:{} is {:.2f}%, {}".format(
-                c.name,
-                (sum(u[0] for u in usages) / len(usages)),
-                (sum(u[1] for u in usages) / len(usages))
-            ))
+        if usages:
+            print(
+                " The average CPU and Memory usage of container:{} is {:.2f}%, {}".format(
+                    c.name,
+                    (sum(u[0] for u in usages) / len(usages)),
+                    (sum(u[1] for u in usages) / len(usages))
+                ))
+        else:
+            print("[ERROR] Failed to get resource usages from manager")
+
+    info('*** Running CLI\n')
+    CLI(net)
 
     for c in containers:
         mgr.removeContainer(c)
