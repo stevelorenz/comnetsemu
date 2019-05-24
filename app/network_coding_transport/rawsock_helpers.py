@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 """
-About: Raw Socket IO helper functions
+About: Raw Packet Socket IO helper functions
 """
 
 import struct
@@ -19,8 +19,11 @@ ETH_PROTO_IPV4 = int("0x0800", 16)
 IP_PROTO_UDP = 17
 IP_PROTO_TCP = 6
 
+TCP_HD_LEN_MAX = 60
+
 
 def print_hex(arr):
+    """Print a bytearray in xNN format"""
     print("".join("x{:02x}".format(x) for x in arr))
 
 
@@ -55,14 +58,11 @@ def update_ip_udp_len(
 
 
 def recv_ipv4(sock, rx_tx_buf, buf_size):
-    """Receive a IPv4 packet into rx/tx buffer
-
-    :return: (frame_len, ip_hd_offset, ip_hd_len) for IPv4 packet, None for other
-    frame types.
-    """
+    """Receive a IPv4 packet into rx/tx buffer"""
     frame_len = sock.recv_into(rx_tx_buf, buf_size)
     hd_offset = 0
-    eth_typ = struct.unpack(">H", rx_tx_buf[12:14])[0]
+    eth_typ = struct.unpack_from(">H", rx_tx_buf, 12)[0]
+
     # IPv4 packets 0x800
     if eth_typ != ETH_PROTO_IPV4:
         logger.debug("None-IPv4 Packet, ethernet type: %s", hex(eth_typ))
@@ -71,15 +71,12 @@ def recv_ipv4(sock, rx_tx_buf, buf_size):
     # Parse IPv4 header
     hd_offset += ETH_HDL
     # Calculate IP header length
-    ver_ihl = struct.unpack(">B", rx_tx_buf[hd_offset:hd_offset + 1])[0]
+    ver_ihl = struct.unpack_from(">B", rx_tx_buf, hd_offset)[0]
     ip_hd_len = 4 * int(hex(ver_ihl)[-1])
-    ip_tlen = struct.unpack(">H", rx_tx_buf[hd_offset + 2:hd_offset + 4])[0]
-    proto = struct.unpack(">B", rx_tx_buf[hd_offset + 9:hd_offset + 10])[0]
-    logger.debug(
-        "Recv a IPv4 packet, header len: {}, IP total len: {}, proto: {}".format(
-            ip_hd_len, ip_tlen, proto))
+    ip_proto = struct.unpack_from(">B", rx_tx_buf, hd_offset + 9)[0]
     ip_hd_offset = hd_offset
-    return (frame_len, ip_hd_offset, ip_hd_len, proto)
+
+    return (frame_len, ip_hd_offset, ip_hd_len, ip_proto)
 
 
 def parse_tcp(rx_tx_buf, ip_hd_offset, ip_hd_len):
@@ -99,21 +96,18 @@ def parse_tcp(rx_tx_buf, ip_hd_offset, ip_hd_len):
 
 
 def parse_udp(rx_tx_buf, ip_hd_offset, ip_hd_len):
-    """"""
+    """Parse UDP header"""
     udp_hd_offset = ip_hd_offset + ip_hd_len
     udp_pl_offset = udp_hd_offset + UDP_HDL
-    # UDP payload length
-    udp_pl_len = struct.unpack(
-        '>H', rx_tx_buf[udp_hd_offset + 4:udp_hd_offset + 6])[0] - UDP_HDL
+    udp_dst_port = struct.unpack_from(">H", rx_tx_buf, udp_hd_offset+2)[0]
+    udp_pl_len = struct.unpack_from(
+        ">H", rx_tx_buf, udp_hd_offset + 4)[0] - UDP_HDL
 
-    return (udp_hd_offset, udp_pl_offset, udp_pl_len)
+    return (udp_hd_offset, udp_dst_port, udp_pl_offset, udp_pl_len)
 
 
 def encap_tcp_udp(rx_tx_buf, ip_hd_offset, ip_hd_len):
-    """Encapsulate the TCP segment into a UDP segment
-
-    MARK:
-    """
+    """Encapsulate the TCP segment into a UDP segment"""
     src_port, dst_port, tcp_hd_offset, tcp_hd_len, tcp_pl_len, flags_arr = parse_tcp(
         rx_tx_buf, ip_hd_offset, ip_hd_len)
 
@@ -128,8 +122,4 @@ def encap_tcp_udp(rx_tx_buf, ip_hd_offset, ip_hd_len):
     ed = tcp_hd_offset+tcp_hd_len+tcp_pl_len
     rx_tx_buf[st+UDP_HDL:ed+UDP_HDL] = rx_tx_buf[st:ed]
     struct.pack_into(">HHH", rx_tx_buf, st, src_port, dst_port, _len)
-    # Update IP total len
-    struct.pack_into(">H", rx_tx_buf, ip_hd_offset+2,
-                     UDP_HDL+struct.unpack_from(">H",
-                                                rx_tx_buf, ip_hd_offset+2)[0]
-                     )
+    return (tcp_hd_len + tcp_pl_len)
