@@ -10,31 +10,21 @@ About: Full vector NC recoder
 import argparse
 import binascii
 import kodo
-import logging
 import socket
 import struct
 import time
-from multiprocessing import Process, active_children
 
-import rawsock_helpers as rsh
 import common
-from common import (BUFFER_SIZE, IO_SLEEP, META_DATA_LEN, MTU,
-                    FIELD, SYMBOLS, SYMBOL_SIZE)
+import log
+import rawsock_helpers as rsh
+from common import (BUFFER_SIZE, FIELD, IO_SLEEP, META_DATA_LEN, MTU,
+                    SYMBOL_SIZE, SYMBOLS, UDP_PORT_OAM, UDP_PORT_DATA)
 
-# Configure logger
-logger = logging.getLogger("nc_coder")
-fmt_str = "%(asctime)s %(levelname)-8s %(processName)s %(message)s"
-level = {"INFO": logging.INFO, "DEBUG": logging.DEBUG, "ERROR": logging.ERROR}
-
-handler = logging.StreamHandler()
-formatter = logging.Formatter(fmt_str)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(level["INFO"])
+log.conf_logger("error")
+logger = log.logger
 
 
-def io_loop(sock, action, dst_mac):
-    """Main IO loop"""
+def run_recoder(action, dst_mac):
 
     rx_tx_buf = bytearray(BUFFER_SIZE)
     udp_cnt = 0
@@ -46,6 +36,18 @@ def io_loop(sock, action, dst_mac):
             dst_mac
         )
 
+    try:
+        logger.info("Create a raw packet socket\n")
+        # Create a raw socket to recv and send packets, the protocol number 3
+        # means receive all types of Ethernet frames.
+        sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
+                             socket.htons(3))
+    except socket.error as error:
+        raise error
+
+    logger.info("Bind the socket to the interface: {}".format(ifce))
+    sock.bind((ifce, 0))
+
     if action == "recode":
         logger.info("Init kodo recoder...\n")
         decoder_factory = kodo.RLNCDecoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
@@ -53,38 +55,43 @@ def io_loop(sock, action, dst_mac):
         decode_buf = bytearray(recoder.block_size())
         recoder.set_mutable_symbols(decode_buf)
         recode_buf = bytearray(BUFFER_SIZE)
-        redundancy = 1  # Should be tuned by SDN controller
+        redundancy = 3  # Should be tuned by SDN controller
 
     logger.info("Entering IO loop.")
 
     while True:
         time.sleep(IO_SLEEP)
-
         ret = rsh.recv_ipv4(sock, rx_tx_buf, MTU)
+
         if not ret:
             logger.debug("Recv a non-IPv4 frame, frame is ignored.")
             continue
-        frame_len, ip_hd_offset, ip_hd_len, proto = ret
+        frame_len, ip_hd_offset, ip_hd_len, ip_proto = ret
 
-        if proto != rsh.IP_PROTO_UDP:
+        if ip_proto != rsh.IP_PROTO_UDP:
             logger.debug("Recv a non-UDP segment, packet is ignored.")
             continue
         else:
             udp_cnt += 1
-            logger.debug(
+            logger.info(
                 "Recv a UDP segment! Total UDP count: {}".format(udp_cnt))
 
         ret = rsh.parse_udp(rx_tx_buf, ip_hd_offset, ip_hd_len)
-        _, udp_pl_offset, udp_pl_len = ret
+        _, udp_dst_port, udp_pl_offset, udp_pl_len = ret
 
-        # Handle OAM packet
-        _type, cur_gen = common.pull_metadata(rx_tx_buf, udp_pl_offset)
-
-        if _type == common.MD_TYPE_OAM:
-            redundancy = struct.unpack_from(">B", rx_tx_buf, udp_pl_offset)[0]
-            logger.info(
-                "Recv a OAM packet, update redundancy number to %d", redundancy)
+        if udp_dst_port == UDP_PORT_OAM:
+            redundancy = struct.unpack_from(
+                ">B", rx_tx_buf, udp_pl_offset)[0]
+            logger.info("Recv an OAM packet, update redundancy to %d",
+                        redundancy)
             continue
+        elif udp_dst_port == UDP_PORT_DATA:
+            pass
+        else:
+            logger.error("Invalid UDP port, ignore the segment.")
+            continue
+
+        _, cur_gen, md_pl_len = common.pull_metadata(rx_tx_buf, udp_pl_offset)
 
         # Update the dst MAC address if is required
         if dst_mac != "":
@@ -99,7 +106,6 @@ def io_loop(sock, action, dst_mac):
         if action == "recode":
             # recode and forward
             sock.send(rx_tx_buf[:frame_len])
-
             logger.info(
                 "Generation number in packet {}, last generation number {}.".
                 format(cur_gen, generation))
@@ -118,9 +124,8 @@ def io_loop(sock, action, dst_mac):
             for _ in range(redundancy):
                 recode_buf = recoder.write_payload()
                 rx_tx_buf[head:tail] = recode_buf[:udp_pl_len]
-                # Update IP/UDP checksum
-                rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset,
-                                      ip_hd_len)
+                # Update IP header checksum
+                rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len)
                 sock.send(rx_tx_buf[:frame_len])
 
         elif action == "forward":
@@ -148,29 +153,4 @@ if __name__ == "__main__":
     dst_mac = args.dst_mac.strip()
     action = args.action
 
-    try:
-        logger.info("Create a raw socket\n")
-        # Create a raw socket to recv and send packets, the protocol number 3
-        # means receive all types of Ethernet frames.
-        sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
-                             socket.htons(3))
-    except socket.error as error:
-        raise error
-
-    logger.info("Bind the socket to the interface: {}".format(ifce))
-    sock.bind((ifce, 0))
-
-    io_proc = Process(target=io_loop, args=(sock, action, dst_mac))
-    io_proc.start()
-
-    try:
-        while True:
-            time.sleep(0.5)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt detected, exit.")
-        logger.info("Kill all sub-processes.")
-        for proc in active_children():
-            proc.terminate()
-    finally:
-        logger.info("Free resources")
-        sock.close()
+    run_recoder(action, dst_mac)

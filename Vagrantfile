@@ -47,7 +47,6 @@ end
 
 Vagrant.configure("2") do |config|
 
-  # --- MaxiNet Frontend ---
   config.vm.define "comnetsemu" do |comnetsemu|
 
     comnetsemu.vm.box = BOX

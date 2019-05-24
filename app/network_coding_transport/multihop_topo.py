@@ -7,17 +7,18 @@ About: Multi-hop topology for network coding application(s)
 """
 
 
+import csv
 import time
 from shlex import split
 from subprocess import check_output
 
+from common import SYMBOL_SIZE
 from comnetsemu.net import Containernet, VNFManager
 from mininet.cli import CLI
-from mininet.log import info, setLogLevel, error
+from mininet.log import error, info, setLogLevel
 from mininet.node import Controller
 
 
-# TODO(zuo): Add placement algo here
 def get_recoder_placement(recoder_num, link_para={}):
     """Get the placement of the recoder based on link parameters
 
@@ -38,15 +39,20 @@ def get_ofport(ifce):
 
 
 def add_ovs_flows(net, switch_num):
-    """Add OpenFlow rules for UDP traffic, should be performed by the SDN controller"""
+    """Add OpenFlow rules for TCP/UDP traffic for dev tests, SHOULD be performed by the SDN controller"""
 
     for i in range(switch_num - 1):
+        check_output(
+            split("sudo ovs-ofctl del-flows s{}".format(i+1))
+        )
+        proto = "udp"
         in_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
         out_port = get_ofport("s{}-s{}".format((i+1), (i+2)))
         check_output(
             split(
-                "sudo ovs-ofctl add-flow s{sw} \"udp,in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port}
+                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
+                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
+                       "proto": proto}
                 )
             )
         )
@@ -58,8 +64,9 @@ def add_ovs_flows(net, switch_num):
         out_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
         check_output(
             split(
-                "sudo ovs-ofctl add-flow s{sw} \"udp,in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port}
+                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
+                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
+                       "proto": proto}
                 )
             )
         )
@@ -83,11 +90,25 @@ def disable_cksum_offload(switch_num):
         )
 
 
-def TestMultiHopNC(host_num, print_recoder_logs=False):
+def save_hosts_info(hosts):
+    info = list()
+    for i, h in enumerate(hosts):
+        mac = str(h.MAC("h{}-s{}".format(i+1, i+1)))
+        ip = str(h.IP())
+        info.append([h.name, mac, ip])
+
+    with open('hosts_info.csv', 'w+') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for i in info:
+            writer.writerow(i)
+
+
+def TestMultiHopNC(host_num, coder_log_conf):
     "Create an empty network and add nodes to it."
 
-    if host_num < 3:
-        raise RuntimeError("Require at least 3 hosts")
+    if host_num < 5:
+        raise RuntimeError("Require at least 5 hosts")
 
     net = Containernet(controller=Controller)
     mgr = VNFManager(net)
@@ -115,6 +136,8 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
                                      bw=10, delay="1ms", use_htb=True)
             last_sw = switch
 
+        # save_hosts_info(hosts)
+
         info("*** Starting network\n")
         net.start()
         info("*** Ping all to update ARP tables of each host\n")
@@ -125,36 +148,20 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
         info("*** Disable Checksum offloading\n")
         disable_cksum_offload(host_num)
 
-        info("*** Run NC decoder on host %s\n" % hosts[-1].name)
+        info("*** Run NC decoder on host %s\n" % hosts[-2].name)
         decoder = mgr.addContainer(
-            "decoder", hosts[-1], "nc_coder",
-            "python3 ./decoder.py %s:%s" % (hosts[-1].IP(), 8888))
+            "decoder", hosts[-2], "nc_coder",
+            "sudo python3 ./decoder.py h%d-s%d" % (host_num-1, host_num-1))
 
-        rec_num = host_num - 2
+        rec_num = host_num - 2 - 2
         recoders = list()
         info("*** Run NC recoder(s) in the middle, on hosts %s...\n" % (
-            ", ".join([x.name for x in hosts[1:1+rec_num]])))
+            ", ".join([x.name for x in hosts[2:2+rec_num]])))
         action_map = get_recoder_placement(rec_num)
         print("Action map of recoders: %s" % ", ".join(action_map))
-        for i in range(1, 1+rec_num):
+        for i in range(2, 2+rec_num):
             name = "recoder_on_h%d" % (i+1)
             rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
-            # MARK: The destination MAC address of the frame MUST be updated if this
-            # frame is transmitted to a host on which a l4-socket-base program is
-            # running. Otherwise the kernel will simply drop packets
-            dst_h_ifce = "h{}-s{}".format(host_num, host_num)
-            # Avoid error during querying MAC address
-            _try = 0
-            while True:
-                _try += 1
-                time.sleep(0.5)
-                dst_h_mac = hosts[-1].MAC(dst_h_ifce)
-                # print("**** Try %d times to get destination MAC address" % _try)
-                if dst_h_mac:
-                    break
-            rec_cli += " --dst_mac " + dst_h_mac
-
-            # MARK: recoder uses raw socket, the root privilege is required
             recoder = mgr.addContainer(
                 name, hosts[i], "nc_coder",
                 " ".join(("sudo python3 ./recoder.py", rec_cli)))
@@ -162,43 +169,57 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
 
         time.sleep(3)
 
-        # CLI(net)
-        info("*** Run NC encoder on host %s\n" % hosts[0].name)
+        info("*** Run NC encoder on host %s\n" % hosts[1].name)
         encoder = mgr.addContainer(
-            "encoder", hosts[0], "nc_coder",
-            "python3 ./encoder.py %s:%s" % (hosts[-1].IP(), 8888))
+            "encoder", hosts[1], "nc_coder",
+            "sudo python3 ./encoder.py h2-s2")
+        # Wait for encoder to be ready
+        time.sleep(3)
 
-        # Wait until decoder finishes its task
-        dec_timeout = 30
-        wait_time = 0
-        while True:
-            time.sleep(3)
-            wait_time += 3
-            if wait_time > dec_timeout:
-                info("*** Decode timeout! Stop the emulation \n")
-                break
-            log = decoder.dins.logs().decode("utf-8")
-            if not log:
-                continue
-            sig = log.splitlines()[-1].strip()
-            if sig == "Decoder will exit.":
-                break
+        info("*** Run Iperf server on host %s in background.\n" %
+             hosts[-1].name)
+        hosts[-1].cmd(
+            "iperf -s {} -p 9999 -i 1 -u > /tmp/iperf_server.log 2>&1 &".format(
+                hosts[-1].IP()))
 
-        info("*** Decoder will exit. Log of decoder: \n")
-        print(decoder.dins.logs().decode("utf-8"))
+        info("*** Run Iperf client on host %s, wait for its output...\n" %
+             hosts[0].name)
+        iperf_client_para = {
+            "server_ip": hosts[-1].IP(),
+            "port": 9999,
+            "bw": "1K",
+            "time": 10,
+            "interval": 1,
+            "length": str(SYMBOL_SIZE - 60),
+            # Use UDP rather than TCP "proto": "-u",
+            "proto": "-u",
+            "suffix": "",
+            # "proto": "",
+            # "suffix": "> /dev/null 2>&1 &"
+        }
 
-        info("*** Log of the encoder: \n")
-        print(encoder.dins.logs().decode("utf-8"))
+        iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
+            **iperf_client_para)
+        print("Iperf client command: {}".format(iperf_clt_cmd))
+        ret = hosts[0].cmd(iperf_clt_cmd)
+        info("*** Output of Iperf client:\n")
+        print(ret)
 
-        if print_recoder_logs:
+        info("*** Output of Iperf server:\n")
+        print(hosts[-1].cmd("cat /tmp/iperf_server.log"))
+
+        if coder_log_conf.get("decoder", None):
+            info("*** Log of decoder: \n")
+            print(decoder.dins.logs().decode("utf-8"))
+
+        if coder_log_conf.get("encoder", None):
+            info("*** Log of the encoder: \n")
+            print(encoder.dins.logs().decode("utf-8"))
+
+        if coder_log_conf.get("recoder", None):
             info("*** Log of recoders: \n")
             for r in recoders:
                 print(r.dins.logs().decode("utf-8"))
-
-        # dump_ovs_flows(host_num)
-
-        info("*** Enter CLI")
-        # CLI(net)
 
         info("*** Emulation stops...")
         mgr.removeContainer("encoder")
@@ -216,5 +237,12 @@ def TestMultiHopNC(host_num, print_recoder_logs=False):
 
 
 if __name__ == '__main__':
+
     setLogLevel('info')
-    TestMultiHopNC(host_num=5, print_recoder_logs=False)
+    coder_log_conf = {
+        "encoder": False,
+        "decoder": False,
+        "recoder": False
+    }
+
+    TestMultiHopNC(5, coder_log_conf)

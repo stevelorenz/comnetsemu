@@ -1,6 +1,8 @@
 ComNetsEmu
 ==========
 
+This project is currently **under heavy development**.
+
 ### Description
 
 ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book.  The design focus on emulating all
@@ -35,7 +37,11 @@ node of the Kubernetes.
 ### Installation
 
 For development and using it as a playground, it is recommended to run ComNetsEmu INSIDE a VM. Run ComNetsEmu/Mininet
-application requires **root privilege**, hacking it inside a VM is also safer.
+application requires **root privilege**, hacking it inside a VM is also safer. ComNetsEmu's [install
+script](./util/install.sh) uses Mininet's install script to install Mininet natively from source. As described in
+Mininet's doc, the install script is a bit **intrusive** and may possible **damage** your OS and/or home directory. It
+is recommended to trying and installing ComNetsEmu in a VM. It runs smoothly in a VM with 2 vCPUs and 2GB RAM. (Physical
+CPU: Intel i7-7600U @ 2.80GHz).
 
 **MARK**: ComNetsEmu is developed with Python3 (3.6). Please use python3 command to run examples or applications.
 Because the current master branch is still under heavy development, therefore this python3 module can be only installed
@@ -47,50 +53,73 @@ examples and also applications. The Dockerfiles are located in ./test_containers
 Please **build** them after the installation and **re-build** them after updates by running the script:
 
 ```bash
-cd ./test_containers  || exit 0
-bash ./build.sh
+$ cd ./test_containers  || exit 0
+$ bash ./build.sh
 ```
 
-#### Install inside a VM
+#### Install in a Vagrant managed VM for Development
 
-For development and using it as a playground, it is recommended to run ComNetsEmu INSIDE a VM. Run ComNetsEmu/Mininet
-application requires root privilege, hacking it inside a VM is also safer. The pre-configured VM can be easily created
-and managed with [Vagrant](https://www.vagrantup.com/). If the Vagrant and the VM hypervisor (
-[Virtualbox](https://www.virtualbox.org/wiki/Downloads) is used in the ./Vagrantfile ) is installed properly. You can
-create the VM with: `vagrant up comnetsemu`
+For example and application developers, the comfortable way to setup the development environment is to run a
+pre-configured VM managed by [Vagrant](https://www.vagrantup.com/). If the Vagrant and the VM hypervisor (
+[Virtualbox](https://www.virtualbox.org/wiki/Downloads) is used in the ./Vagrantfile ) are installed properly. You can
+manage the VM with (cd to the same directory of the Vagrantfile):
 
-The creation takes around 15 minutes. Then you can SSH into the VM with `vagrant ssh comnetsemu`, the directory of the
-examples is in `/home/vagrant/comnetsemu/examples`.
+```bash
+# This will create the VM at the first time (takes around 15 minutes)
+$ vagrant up comnetsemu
 
-#### (**Not Recommended!**) Install on the host OS (Currently **only** Ubuntu 18.04 is supported and tested)
+# SSH into the VM
+$ vagrant ssh comnetemu
 
-- Install setup tools
+# Poweroff the VM
+$ vagrant halt comnetsemu
+
+# Remove the VM
+$ vagrant destory comnetsemu
+```
+
+As configured in ./Vagrantfile, current source code folder on the host OS is synced to the `/home/vagrant/comnetsemu`
+folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
+or application codes in your host OS and run/test them in the VM.
+
+#### Install on Ubuntu (Tested on Ubuntu Server 18.04 LTS)
+
+The install script currently only supports Debian/Ubuntu.
+
+- Install required packages from your package management systems
 
     ```bash
-    sudo apt update
-    sudo apt install -y python3 libpython3-dev python3-dev git python3-pip
+    $ sudo apt update
+    $ sudo apt install python3 libpython3-dev python3-dev git python3-pip
     ```
 
 - Install ComNetsEmu with all components
 
-    `PYTHON=python3 bash ./util/install.sh -a`
+    `$ PYTHON=python3 bash ./util/install.sh -a`
 
-### Update ComNetsEmu Python Module
+### Update ComNetsEmu From Source
 
-#### Install with python3 ./setup.py develop
+The master branch contains stable/tested sources.
 
-You can update the package by fetching and merging the latest commit in the master branch.
+#### Update examples and application source codes
+
+You can update them by fetching and merging the latest commit in the master branch:
 
 ```bash
-git fetch origin master:master
-git merge origin/master
+$ git fetch origin master:master
+$ git merge origin/master
 ```
 
-#### Install with python3 ./setup.py install
+#### Update ComNetsEmu emulator (The Python package)
 
-Fetch and merge the last commit in the master branch like the first case.
+You can update the Python package by fetching and merging the latest commit in the master branch and run the following
+command:
 
-Then the package must be re-installed with: `python3 ./setup.py install`
+```bash
+$ python3 ./setup.py install
+```
+
+Then you can check the version of installed package with e.g. pip: `pip3 list | grep comnetemu`
 
 ### Run examples
 
@@ -109,16 +138,16 @@ The dockerindocker.py in the example fold show the basic functionality of runnin
 host(the host itself also uses Docker container). It shows how to add/remove internal containers on running Docker hosts
 and also change the resource limitation of Docker hosts at runtime.
 
-### Run multi-hop network coding application example
+### Run network coding for transport application example
 
 The network coding example requires the licence of Kodo library from [Steiwurf](www.steinwurf.com). Contact them for
 licence before running the example. Once you have the licence, run following commands:
 
 ```
-cd ./app/nc/recoder_placement/ || exit
-bash ./build_kodo_lib.sh  # Build Kodo-python library on your host system to get the kodo.so shared library.
-bash ./build_docker_images.sh  # Build the Docker image for encoders, recoders and docoders.
-sudo python3 ./multihop_topo.py  # Run the NC emulation
+$ cd ./app/network_coding_transport/ || exit
+$ bash ./build_kodo_lib.sh  # Build Kodo-python library on your host system to get the kodo.so shared library.
+$ bash ./build_docker_images.sh  # Build the Docker image for encoders, recoders and docoders.
+$ sudo python3 ./multihop_topo.py  # Run the emulation of multi-hop topology
 ```
 
 #### Development Guide
@@ -136,7 +165,7 @@ sudo python3 ./multihop_topo.py  # Run the NC emulation
 
   - comnetemu/net.py: Two classes are added here to manage internal and external Docker hosts:
 
-      - Containernet: Management of the external containers. Example of its APIs can be found [here](./examples/containernet_example.py).
+      - Containernet: Management of the external containers. Example of its APIs can be found [here](./examples/dockerhost.py).
 
       - VNFManager: Management of the internal containers. To make it simple, currently there are only create, delete and
           the cleanup methods are implemented. More methods will be added depending on to be deployed applications.
@@ -164,3 +193,4 @@ delay (Use Linux TC utility). It is great for teaching.
 #### Maintainers
 
 - Zuo Xiang (zuo.xiang@tu-dresden.de)
+- Carl Collmann (carl.collmann@mailbox.tu-dresden.de)
