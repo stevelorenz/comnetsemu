@@ -8,7 +8,6 @@ About: Basic example of using Docker as a Mininet host
 
 import comnetsemu.tool as tool
 from comnetsemu.net import Containernet
-from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
@@ -54,9 +53,6 @@ def testTopo():
         print("Expected loss rate: {:.2f}%, measured loss rate: {:.2f}%".format(
             loss, measured
         ))
-
-    info('*** Running CLI\n')
-    CLI(net)
 
     info('*** Stopping network')
     net.stop()

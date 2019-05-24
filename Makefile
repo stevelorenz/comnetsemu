@@ -9,30 +9,26 @@ DOCDIRS = doc/html doc/latex
 
 CFLAGS += -Wall -Wextra
 
-all: codecheck test
+all: codecheck
 
 clean:
 	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
 
 codecheck: $(PYSRC)
-	-echo "Running code check"
+	@echo "*** Running code check"
 	pyflakes $(PYSRC)
 	pylint --rcfile=.pylint $(PYSRC)
 	pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
 
 errcheck: $(PYSRC)
-	-echo "Running check for errors only"
+	@echo "*** Running check for errors only"
 	pyflakes $(PYSRC)
 	pylint -E --rcfile=.pylint $(PYSRC)
 
-min_test: $(COMNETSEMU) $(TEST)
-	-echo "Running minimal tests"
-
-test: $(COMNETSEMU) $(TEST)
-	-echo "Running tests"
-
-slowtest: $(COMNETSEMU)
-	-echo "Running slower tests (walkthrough, examples)"
+test_examples: $(COMNETSEMU)
+	@echo "*** Running functional examples of the emulator"
+	$(PYTHON) ./examples/dockerhost.py
+	$(PYTHON) ./examples/dockerindocker.py
 
 install:
 	$(PYTHON) setup.py install

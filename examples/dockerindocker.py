@@ -8,7 +8,6 @@ Simple example of running Docker container inside Docker container Host
 import time
 
 from comnetsemu.net import Containernet, VNFManager
-from mininet.cli import CLI
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 from mininet.link import TCLink
@@ -94,9 +93,6 @@ def testDockerInDocker(n=2):
                 ))
         else:
             print("[ERROR] Failed to get resource usages from manager")
-
-    info('*** Running CLI\n')
-    CLI(net)
 
     for c in containers:
         mgr.removeContainer(c)
