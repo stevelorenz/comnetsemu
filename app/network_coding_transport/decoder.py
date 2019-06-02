@@ -6,7 +6,6 @@ About: On the Fly NC decoder
 """
 
 import argparse
-import copy
 import kodo
 import socket
 import struct
@@ -90,11 +89,11 @@ def run_decoder(ifce):
             not_decoded_indces = list(range(decoder.symbols()))
             generation = cur_gen
 
-        coded_symbol = copy.deepcopy(
-            rx_tx_buf[udp_pl_offset+META_DATA_LEN:frame_len])
-        decoder.read_payload(coded_symbol)
+        head = udp_pl_offset + META_DATA_LEN
+        tail = udp_pl_offset + META_DATA_LEN + udp_pl_len
+        decoder.read_payload(rx_tx_buf[head:tail])
         logger.debug("Decode rank: %d/%d, coded symbol len:%d",
-                     decoder.rank(), decoder.symbols(), len(coded_symbol))
+                     decoder.rank(), decoder.symbols(), udp_pl_offset)
 
         # Loop over un-decoded symbols
         for i in not_decoded_indces:

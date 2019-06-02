@@ -254,7 +254,8 @@ class VNFManager(object):
             try:
                 dins = self.dclt.containers.get(name)
             except docker.errors.NotFound:
-                debug("Failed to get container %s\n" % name)
+                error("Failed to get container:%s, try %d/%d times\n" % (
+                    name, cnt+1, retry_cnt))
                 cnt += 1
                 sleep(wait)
             else:

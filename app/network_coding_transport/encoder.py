@@ -6,7 +6,6 @@ About: On the Fly NC Encoder
 """
 
 import argparse
-import copy
 import kodo
 import socket
 import struct
@@ -30,7 +29,7 @@ def run_encoder():
 
     rank = 0
     generation = 0
-    redundancy = 1  # Should be tuned by SDN controller
+    redundancy = int(SYMBOLS / 2)  # Should be tuned by SDN controller
 
     logger.info("Create a raw packet socket.\n")
     try:
@@ -104,9 +103,9 @@ def run_encoder():
                      udp_pl_offset, udp_pl_len)
 
         rank = encoder.rank()
-        symbol_storage[rank] = copy.deepcopy(
-            rx_tx_buf[udp_pl_offset:udp_pl_offset+udp_pl_len]
-        )
+        symbol_storage[rank] = rx_tx_buf[
+            udp_pl_offset:udp_pl_offset+udp_pl_len]
+
         # Padding zeros
         symbol_storage[rank].extend(b"0" * (SYMBOL_SIZE-udp_pl_len))
         encoder.set_const_symbol(rank, symbol_storage[rank])

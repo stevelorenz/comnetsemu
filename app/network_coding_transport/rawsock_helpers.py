@@ -67,8 +67,8 @@ def recv_ipv4(sock, rx_tx_buf, buf_size):
     if eth_typ != ETH_PROTO_IPV4:
         logger.debug("None-IPv4 Packet, ethernet type: %s", hex(eth_typ))
         return None
-
     # Parse IPv4 header
+
     hd_offset += ETH_HDL
     # Calculate IP header length
     ver_ihl = struct.unpack_from(">B", rx_tx_buf, hd_offset)[0]

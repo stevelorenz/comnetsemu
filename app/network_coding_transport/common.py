@@ -15,7 +15,7 @@ IO_SLEEP = 0.001  # second
 
 # KODO parameters
 FIELD = kodo.field.binary8
-SYMBOLS = 4
+SYMBOLS = 10
 SYMBOL_SIZE = 100
 
 

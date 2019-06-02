@@ -55,7 +55,7 @@ def run_recoder(action, dst_mac):
         decode_buf = bytearray(recoder.block_size())
         recoder.set_mutable_symbols(decode_buf)
         recode_buf = bytearray(BUFFER_SIZE)
-        redundancy = 3  # Should be tuned by SDN controller
+        redundancy = int(SYMBOLS / 2)  # Should be tuned by SDN controller
 
     logger.info("Entering IO loop.")
 
@@ -91,45 +91,45 @@ def run_recoder(action, dst_mac):
             logger.error("Invalid UDP port, ignore the segment.")
             continue
 
-        _, cur_gen, md_pl_len = common.pull_metadata(rx_tx_buf, udp_pl_offset)
-
         # Update the dst MAC address if is required
         if dst_mac != "":
             logger.debug("Update the destination MAC to: {}".format(dst_mac))
             dst_mac_b = binascii.unhexlify(dst_mac.replace(":", ""))
             rx_tx_buf[0:len(dst_mac_b)] = dst_mac_b
 
+        if action == "forward":
+            # store and forward
+            sock.send(rx_tx_buf[:frame_len])
+            continue
+
+        # recode (compute) and forward
+        _, cur_gen, md_pl_len = common.pull_metadata(rx_tx_buf, udp_pl_offset)
+
         # Disable UDP checksum
         udp_hd_offset = ip_hd_offset + ip_hd_len
         struct.pack_into(">H", rx_tx_buf, udp_hd_offset+6, 0)
 
-        if action == "recode":
-            # recode and forward
-            sock.send(rx_tx_buf[:frame_len])
-            logger.info(
-                "Generation number in packet {}, last generation number {}.".
-                format(cur_gen, generation))
-            if cur_gen > generation:
-                generation = cur_gen
-                # Cleanup the old recoder
-                recoder = decoder_factory.build()
-                decode_buf = bytearray(recoder.block_size())
-                recoder.set_mutable_symbols(decode_buf)
+        sock.send(rx_tx_buf[:frame_len])
+        logger.info(
+            "Generation number in packet {}, last generation number {}.".
+            format(cur_gen, generation))
+        if cur_gen > generation:
+            generation = cur_gen
+            # Cleanup the old recoder
+            recoder = decoder_factory.build()
+            decode_buf = bytearray(recoder.block_size())
+            recoder.set_mutable_symbols(decode_buf)
 
-            head = udp_pl_offset + META_DATA_LEN
-            tail = udp_pl_offset + META_DATA_LEN + udp_pl_len
-            # Only feed payload into recoder
-            recoder.read_payload(rx_tx_buf[head:tail])
-            # Generate recoded packets
-            for _ in range(redundancy):
-                recode_buf = recoder.write_payload()
-                rx_tx_buf[head:tail] = recode_buf[:udp_pl_len]
-                # Update IP header checksum
-                rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len)
-                sock.send(rx_tx_buf[:frame_len])
-
-        elif action == "forward":
-            # store and forward
+        # Feed UDP payload into recoder
+        head = udp_pl_offset + META_DATA_LEN
+        tail = udp_pl_offset + META_DATA_LEN + udp_pl_len
+        recoder.read_payload(rx_tx_buf[head:tail])
+        # Generate recoded packets
+        for _ in range(redundancy):
+            recode_buf = recoder.write_payload()
+            rx_tx_buf[head:tail] = recode_buf[:udp_pl_len]
+            # Update IP header checksum
+            rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len)
             sock.send(rx_tx_buf[:frame_len])
 
 

@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Multi-hop topology for network coding application(s)
+About: Example of using Network Coding (NC) for transport on a multi-hop topology
 """
 
 
@@ -14,20 +14,14 @@ from subprocess import check_output
 
 from common import SYMBOL_SIZE
 from comnetsemu.net import Containernet, VNFManager
-from mininet.cli import CLI
 from mininet.log import error, info, setLogLevel
 from mininet.node import Controller
+from mininet.link import TCLink
 
 
-def get_recoder_placement(recoder_num, link_para={}):
-    """Get the placement of the recoder based on link parameters
-
-    :param recoder_num:
-    :param link_para:
-    """
-    return ["recode"] * recoder_num
-
-
+# Just for prototyping...
+# Should be replaced with SDN controller application
+# ------------------------------------------------------------------------------
 def get_ofport(ifce):
     """Get the openflow port based on iterface name
 
@@ -79,6 +73,7 @@ def dump_ovs_flows(switch_num):
         info("### Flow table of the switch s{} after adding flows:\n".format(
             i+1))
         print(ret.decode("utf-8"))
+# ------------------------------------------------------------------------------
 
 
 def disable_cksum_offload(switch_num):
@@ -91,6 +86,10 @@ def disable_cksum_offload(switch_num):
 
 
 def save_hosts_info(hosts):
+    """Save host's info (name, MAC, IP) in a CSV file
+
+    :param hosts:
+    """
     info = list()
     for i, h in enumerate(hosts):
         mac = str(h.MAC("h{}-s{}".format(i+1, i+1)))
@@ -104,21 +103,127 @@ def save_hosts_info(hosts):
             writer.writerow(i)
 
 
-def TestMultiHopNC(host_num, coder_log_conf):
-    "Create an empty network and add nodes to it."
+def deploy_coders(mgr, hosts, rec_st_idx, rec_num, action_map):
+    """Deploy en-, re- and decoders on the multi-hop topology
+
+    Since the tests run in a non-powerful VM for teaching purpose, the wait time
+    is set to 3 seconds.
+
+    :param mgr (VNFManager):
+    :param hosts (list): List of hosts
+    :param rec_st_idx (int): The index of the first recoder (start from 0)
+    :param rec_num (int): Number of recoders
+    :param action_map (list): Action maps of the recoders, can be forward or recode
+    """
+    recoders = list()
+
+    info("*** Run NC recoder(s) in the middle, on hosts %s...\n" % (
+        ", ".join([x.name for x in hosts[rec_st_idx:rec_st_idx+rec_num]])))
+    for i in range(rec_st_idx, rec_st_idx+rec_num):
+        name = "recoder_on_h%d" % (i+1)
+        rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
+        recoder = mgr.addContainer(
+            name, hosts[i], "nc_coder",
+            " ".join(("sudo python3 ./recoder.py", rec_cli)), wait=3
+        )
+        recoders.append(recoder)
+    time.sleep(rec_num)
+    info("*** Run NC decoder on host %s\n" % hosts[-2].name)
+    decoder = mgr.addContainer(
+        "decoder", hosts[-2], "nc_coder",
+        "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
+        wait=3)
+    info("*** Run NC encoder on host %s\n" % hosts[1].name)
+    encoder = mgr.addContainer(
+        "encoder", hosts[1], "nc_coder",
+        "sudo python3 ./encoder.py h2-s2", wait=3)
+
+    return (encoder, decoder, recoders)
+
+
+def remove_coders(mgr, coders):
+    encoder, decoder, recoders = coders
+    mgr.removeContainer(encoder)
+    mgr.removeContainer(decoder)
+    for r in recoders:
+        mgr.removeContainer(r)
+
+
+def print_coders_log(coders, coder_log_conf):
+    encoder, decoder, recoders = coders
+    if coder_log_conf.get("recoder", None):
+        info("*** Log of recoders: \n")
+        for r in recoders:
+            print(r.dins.logs().decode("utf-8"))
+
+    if coder_log_conf.get("decoder", None):
+        info("*** Log of decoder: \n")
+        print(decoder.dins.logs().decode("utf-8"))
+
+    if coder_log_conf.get("encoder", None):
+        info("*** Log of the encoder: \n")
+        print(encoder.dins.logs().decode("utf-8"))
+
+
+def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
+    """Run Iperf tests between h_clt and h_srv (DockerHost) and print the output
+    of the Iperf server.
+
+    :param proto (str):  Transport protocol, UDP or TCP
+    :param time (int): Duration of the traffic flow
+    :param print_clt_log (Bool): If true, print the log of the Iperf client
+    """
+    info(
+        "Run Iperf test between {} (Client) and {} (Server), protocol: {}\n".format(
+            h_clt.name, h_srv.name, proto
+        ))
+    iperf_client_para = {
+        "server_ip": h_srv.IP(),
+        "port": 9999,
+        "bw": "0.5K",
+        "time": time,
+        "interval": 1,
+        "length": str(SYMBOL_SIZE - 60),
+        "proto": "-u",
+        "suffix": "> /dev/null 2>&1 &"
+    }
+    if proto == "UDP" or proto == "udp":
+        iperf_client_para["proto"] = "-u"
+        iperf_client_para["suffix"] = ""
+
+    h_srv.cmd(
+        "iperf -s {} -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
+            h_srv.IP(), iperf_client_para["proto"]))
+
+    iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
+        **iperf_client_para)
+    print("Iperf client command: {}".format(iperf_clt_cmd))
+    ret = h_clt.cmd(iperf_clt_cmd)
+
+    info("*** Output of Iperf server:\n")
+    print(h_srv.cmd("cat /tmp/iperf_server.log"))
+
+    if print_clt_log:
+        info("*** Output of Iperf client:\n")
+        print(ret)
+
+
+def create_topology(net, host_num):
+    """Create the multi-hop topology
+
+    :param net (Mininet):
+    :param host_num (int): Number of hosts
+    """
+
+    hosts = list()
 
     if host_num < 5:
         raise RuntimeError("Require at least 5 hosts")
-
-    net = Containernet(controller=Controller)
-    mgr = VNFManager(net)
-
-    info('*** Adding controller\n')
-    net.addController('c0')
-
     try:
+        info('*** Adding controller\n')
+        net.addController('c0')
+
         info("*** Adding Docker hosts and switches in a multi-hop chain topo\n")
-        hosts = list()
         last_sw = None
         # Connect hosts
         for i in range(host_num):
@@ -129,107 +234,71 @@ def TestMultiHopNC(host_num, coder_log_conf):
                 volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
             hosts.append(host)
             switch = net.addSwitch("s%s" % (i + 1))
-            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms", use_htb=True)
+            # MARK: The losses are emulated via netemu of host's interface
+            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms",
+                                 loss=3, use_htb=True)
             if last_sw:
                 # Connect switches
                 net.addLinkNamedIfce(switch, last_sw,
                                      bw=10, delay="1ms", use_htb=True)
             last_sw = switch
 
-        # save_hosts_info(hosts)
+        return hosts
 
+    except Exception as e:
+        error(e)
+        net.stop()
+
+
+def run_multihop_nc_test(host_num, profile, coder_log_conf):
+    """Run network application for multi-hop topology
+
+    :param host_num (int): Number of hosts
+    :param profile (int): To be tested profile
+    :param coder_log_conf (dict): Configs for logs of coders
+    """
+
+    net = Containernet(controller=Controller, link=TCLink, autoStaticArp=True)
+    mgr = VNFManager(net)
+    hosts = create_topology(net, host_num)
+    # Number of recoders: 2 en- and decoder, 2 iperf client and server
+    rec_num = host_num - 2 - 2
+    rec_st_idx = 2
+
+    try:
         info("*** Starting network\n")
         net.start()
-        info("*** Ping all to update ARP tables of each host\n")
-        net.pingAll()
+        # MARK: Use static ARP to avoid ping losses
+        # info("*** Ping all to update ARP tables of each host\n")
+        # net.pingAll()
 
         info("*** Adding OpenFlow rules\n")
         add_ovs_flows(net, host_num)
         info("*** Disable Checksum offloading\n")
         disable_cksum_offload(host_num)
 
-        info("*** Run NC decoder on host %s\n" % hosts[-2].name)
-        decoder = mgr.addContainer(
-            "decoder", hosts[-2], "nc_coder",
-            "sudo python3 ./decoder.py h%d-s%d" % (host_num-1, host_num-1))
-
-        rec_num = host_num - 2 - 2
-        recoders = list()
-        info("*** Run NC recoder(s) in the middle, on hosts %s...\n" % (
-            ", ".join([x.name for x in hosts[2:2+rec_num]])))
-        action_map = get_recoder_placement(rec_num)
-        print("Action map of recoders: %s" % ", ".join(action_map))
-        for i in range(2, 2+rec_num):
-            name = "recoder_on_h%d" % (i+1)
-            rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
-            recoder = mgr.addContainer(
-                name, hosts[i], "nc_coder",
-                " ".join(("sudo python3 ./recoder.py", rec_cli)))
-            recoders.append(recoder)
-
-        time.sleep(3)
-
-        info("*** Run NC encoder on host %s\n" % hosts[1].name)
-        encoder = mgr.addContainer(
-            "encoder", hosts[1], "nc_coder",
-            "sudo python3 ./encoder.py h2-s2")
-        # Wait for encoder to be ready
-        time.sleep(3)
-
-        info("*** Run Iperf server on host %s in background.\n" %
-             hosts[-1].name)
-        hosts[-1].cmd(
-            "iperf -s {} -p 9999 -i 1 -u > /tmp/iperf_server.log 2>&1 &".format(
-                hosts[-1].IP()))
-
-        info("*** Run Iperf client on host %s, wait for its output...\n" %
-             hosts[0].name)
-        iperf_client_para = {
-            "server_ip": hosts[-1].IP(),
-            "port": 9999,
-            "bw": "1K",
-            "time": 10,
-            "interval": 1,
-            "length": str(SYMBOL_SIZE - 60),
-            # Use UDP rather than TCP "proto": "-u",
-            "proto": "-u",
-            "suffix": "",
-            # "proto": "",
-            # "suffix": "> /dev/null 2>&1 &"
-        }
-
-        iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
-            **iperf_client_para)
-        print("Iperf client command: {}".format(iperf_clt_cmd))
-        ret = hosts[0].cmd(iperf_clt_cmd)
-        info("*** Output of Iperf client:\n")
-        print(ret)
-
-        info("*** Output of Iperf server:\n")
-        print(hosts[-1].cmd("cat /tmp/iperf_server.log"))
-
-        if coder_log_conf.get("decoder", None):
-            info("*** Log of decoder: \n")
-            print(decoder.dins.logs().decode("utf-8"))
-
-        if coder_log_conf.get("encoder", None):
-            info("*** Log of the encoder: \n")
-            print(encoder.dins.logs().decode("utf-8"))
-
-        if coder_log_conf.get("recoder", None):
-            info("*** Log of recoders: \n")
-            for r in recoders:
-                print(r.dins.logs().decode("utf-8"))
+        if profile == PROFILES["mobile_recoder"]:
+            info("*** Run mobile recoder experiment.\n")
+            for i in range(rec_num):
+                action_map = ["forward"] * rec_num
+                action_map[i] = "recode"
+                info(
+                    "Number of recoders: %s, the action map: %s\n" % (
+                        rec_num, ", ".join(action_map))
+                )
+                coders = deploy_coders(
+                    mgr, hosts, rec_st_idx, rec_num, action_map)
+                # Wait for coders to be ready
+                time.sleep(3)
+                run_iperf_test(hosts[0], hosts[-1], "udp", 30)
+                print_coders_log(coders, coder_log_conf)
+                remove_coders(mgr, coders)
 
         info("*** Emulation stops...")
-        mgr.removeContainer("encoder")
-        mgr.removeContainer("decoder")
-        for r in recoders:
-            mgr.removeContainer(r)
 
     except Exception as e:
         error("*** Emulation has errors:")
-        print(e)
+        error(e)
     finally:
         info('*** Stopping network\n')
         net.stop()
@@ -240,9 +309,14 @@ if __name__ == '__main__':
 
     setLogLevel('info')
     coder_log_conf = {
-        "encoder": False,
-        "decoder": False,
-        "recoder": False
+        "encoder": 0,
+        "decoder": 0,
+        "recoder": 0
     }
 
-    TestMultiHopNC(5, coder_log_conf)
+    PROFILES = {
+        "mobile_recoder": 0,
+        "adaptive_redundancy": 1
+    }
+
+    run_multihop_nc_test(7, PROFILES["mobile_recoder"], coder_log_conf)
