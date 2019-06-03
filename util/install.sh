@@ -20,6 +20,7 @@ DEP_DIR="$HOME/comnetsemu_dependencies"
 MININET_VER="e20380"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
+OVX_VER="0.0-MAINT"
 
 function usage() {
     printf '\nUsage: %s [-andy]\n\n' "$(basename "$0")" >&2
@@ -53,9 +54,10 @@ function install_docker() {
 }
 
 function install_mininet() {
-    echo "*** Install Mininet"
-    mininet_dir="$DEP_DIR/mininet-$MININET_VER"
+    local mininet_dir="$DEP_DIR/mininet-$MININET_VER"
     mkdir -p "$mininet_dir"
+
+    echo "*** Install Mininet"
     cd "$mininet_dir" || exit
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
@@ -72,11 +74,12 @@ function install_comnetsemu() {
 
 
 function install_ryu() {
+    local ryu_dir="$DEP_DIR/ryu-$RYU_VER"
+    mkdir -p "$ryu_dir"
+
     echo "*** Install Ryu SDN controller"
     sudo apt update
     sudo apt install -y gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev
-    ryu_dir="$DEP_DIR/ryu-$RYU_VER"
-    mkdir -p "$ryu_dir"
     git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
     cd "$ryu_dir/ryu" || exit
     git checkout -b dev $RYU_VER
@@ -90,10 +93,12 @@ function install_devs() {
 }
 
 function install_bcc() {
+    local bcc_dir="$DEP_DIR/bcc-$BCC_VER"
+    mkdir -p "$bcc_dir"
+
     echo "*** Install BPF Compiler Collection"
     sudo apt-get -y install bison build-essential cmake flex git libedit-dev libllvm6.0 llvm-6.0-dev libclang-6.0-dev python3 zlib1g-dev libelf-dev
-    sudo apt-get -y install linux-headers-$(uname -r)
-    bcc_dir="$DEP_DIR/bcc-$BCC_VER"
+    sudo apt-get -y install linux-headers-"$(uname -r)"
     git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
     cd "$bcc_dir/bcc" || exit
     git checkout -b dev $BCC_VER
@@ -103,7 +108,45 @@ function install_bcc() {
     sudo make install
 }
 
-function remove() {
+function install_ovx() {
+    local ovx_dir="$DEP_DIR/ovx-$OVX_VER"
+    mkdir -p "$ovx_dir"
+
+    echo "*** Install OpenVirtex"
+    echo "Install Apache Maven"
+    sudo apt update
+    sudo apt install -y maven
+    cd "$ovx_dir" || exit
+    echo "Install OpenJDK7 from deb packages"
+    # MARK: Use the FTP server in Germany, students can change URL based on their location
+    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jdk_7u161-2.6.12-1_amd64.deb
+    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre_7u161-2.6.12-1_amd64.deb
+    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre-headless_7u161-2.6.12-1_amd64.deb
+    wget http://ftp.de.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_1.5.2-2+b1_amd64.deb
+    sudo dpkg -i ./*.deb
+    # Resolve potential dependency issues
+    sudo apt install -f
+    # Update java alternatives
+    # - IcedTeaPlugin.so plugin is unavailable
+    sudo update-java-alternatives -s java-1.7.0-openjdk-amd64
+    echo "Clone OpenVirteX source code"
+    git clone https://github.com/os-libera/OpenVirteX
+    cd OpenVirteX || exit
+    git checkout -b "$OVX_VER"
+    echo "*** OpenVirtex's dependencies installed finished."
+    echo "*** Please run: 'sh $ovx_dir/OpenVirteX/scripts/ovx.sh' to start OpenVirtex"
+}
+
+function update_comnetsemu() {
+    echo "*** Update ComNetsEmu"
+    echo "- Update Python module, examples and applications"
+    cd "$COMNETSEMU_DIR/comnetsemu" || exit
+    git pull origin master
+    sudo PYTHON=python3 make install
+}
+
+# TODO: Extend remove function for all installed packages
+function remove_comnetsemu() {
     # ISSUE: pip uninstall does not uninstall all dependencies of the packages
     echo "*** Remove ComNetsEmu and its dependencies"
 
@@ -147,7 +190,7 @@ if [ $# -eq 0 ]
 then
     all
 else
-    while getopts 'abcdhnrvy' OPTION
+    while getopts 'abcdhnoruvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -156,9 +199,11 @@ else
             d) install_docker;;
             h) usage;;
             n) install_mininet;;
+            o) install_ovx;;
+            u) update_comnetsemu;;
             v) install_devs;;
             y) install_ryu;;
-            r) remove;;
+            r) remove_comnetsemu;;
             *) usage;;
         esac
     done

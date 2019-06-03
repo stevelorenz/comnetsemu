@@ -8,7 +8,7 @@ sudo docker rm --force $(sudo docker ps -a -q)
 sudo mn -c
 
 echo "# Delete links between switches"
-sw_num=10
+sw_num=20
 if [[ "$1" != "" ]]; then
     sw_num=$1
 fi
