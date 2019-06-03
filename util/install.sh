@@ -23,7 +23,20 @@ BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
 
 function usage() {
-    printf '\nUsage: %s [-andy]\n\n' "$(basename "$0")" >&2
+    printf '\nUsage: %s [-abcdhnoruvy]\n\n' "$(basename "$0")" >&2
+    echo 'options:'
+    echo " -a: install (A)ll packages - good luck!"
+    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
+    echo " -c: install (C)omNetsEmu [master] python module"
+    echo " -d: install (D)ocker CE"
+    echo " -h: print usage"
+    echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
+    echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
+    echo " -r: try to (R)emove installed packages - good luck!"
+    echo " -u: (U)pdate ComNetsEmu [master]"
+    echo " -v: install de(V)elopment tools"
+    echo " -y: install R(Y)u SDN controller [$RYU_VER]"
+    exit 2
 }
 
 function install_docker() {
@@ -188,7 +201,7 @@ function all() {
 
 if [ $# -eq 0 ]
 then
-    all
+    usage
 else
     while getopts 'abcdhnoruvy' OPTION
     do
