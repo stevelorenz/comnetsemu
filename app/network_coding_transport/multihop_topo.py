@@ -236,11 +236,11 @@ def create_topology(net, host_num):
             switch = net.addSwitch("s%s" % (i + 1))
             # MARK: The losses are emulated via netemu of host's interface
             net.addLinkNamedIfce(switch, host, bw=10, delay="1ms",
-                                 loss=3, use_htb=True)
+                                 use_htb=True)
             if last_sw:
                 # Connect switches
-                net.addLinkNamedIfce(switch, last_sw,
-                                     bw=10, delay="1ms", use_htb=True)
+                net.addLinkNamedIfce(switch, last_sw, use_htb=True,
+                                     bw=10, delay="1ms", loss=3)
             last_sw = switch
 
         return hosts
@@ -277,7 +277,7 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
         info("*** Disable Checksum offloading\n")
         disable_cksum_offload(host_num)
 
-        if profile == PROFILES["mobile_recoder"]:
+        if profile == PROFILES["mobile_recoder_deterministic"]:
             info("*** Run mobile recoder experiment.\n")
             for i in range(rec_num):
                 action_map = ["forward"] * rec_num
@@ -315,8 +315,9 @@ if __name__ == '__main__':
     }
 
     PROFILES = {
-        "mobile_recoder": 0,
+        "mobile_recoder_deterministic": 0,
         "adaptive_redundancy": 1
     }
 
-    run_multihop_nc_test(7, PROFILES["mobile_recoder"], coder_log_conf)
+    run_multihop_nc_test(
+        7, PROFILES["mobile_recoder_deterministic"], coder_log_conf)
