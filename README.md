@@ -1,13 +1,21 @@
 ComNetsEmu
 ==========
+*A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice*
 
-This project is currently **under heavy development**.
+
+**This project is currently under heavy development [beta]**.
+
+This repository is synced with the [Gitlab repository](https://git.comnets.net/book/comnetsemu) hosted on the server of
+[The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/). The master branch contains latest
+stable sources, the dev branch is used as blessed branch for development.
+
+Issues and pull requests can be created on both repositories.
 
 ### Description
 
-ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book.  The design focus on emulating all
-applications on a single physical machine, e.g. on a single laptop. ComNetsEmu, SDN controller programs and emulated
-applications are developed with **Python3**(3.6).
+ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks:
+From Theory to Practice".  The design focus on emulating all applications on a single physical machine, e.g. on a single
+laptop. ComNetsEmu, SDN controller programs and emulated applications are developed with **Python3**(3.6).
 
 #### What is Mininet and What's the main difference ?
 
@@ -48,7 +56,7 @@ Because the current master branch is still under heavy development, therefore th
 from source using setuptools. Pip package will be created for stable releases later.
 
 ComNetsEmu uses Docker containers to emulate network nodes. Some images are used to run hosts and app containers in
-examples and also applications. The Dockerfiles are located in ./test_containers
+examples and also applications. The Dockerfiles for external Docker hosts are located in ./test_containers.
 
 Please **build** them after the installation and **re-build** them after updates by running the script:
 
@@ -93,45 +101,41 @@ The install script currently only supports Debian/Ubuntu.
     $ sudo apt install python3 libpython3-dev python3-dev git python3-pip
     ```
 
-- Install ComNetsEmu with all components
+- Install ComNetsEmu with all dependencies
 
     `$ PYTHON=python3 bash ./util/install.sh -a`
 
-### Update ComNetsEmu From Source
+### Update ComNetsEmu and  Dependencies
 
-The master branch contains stable/tested sources.
+The master branch contains stable/tested sources for ComNetsEmu's python module, utility scripts, examples and
+applications. It is recommended to update to latest commit of master branch.
 
-#### Update examples and application source codes
-
-You can update them by fetching and merging the latest commit in the master branch:
-
-```bash
-$ git fetch origin master:master
-$ git merge origin/master
-```
-
-#### Update ComNetsEmu emulator
-
-You can use the installer script to update installed ComNetsEmu python modules, examples, application sources and
-required dependencies (WARN: this script is only tested on Ubuntu 18.04 LTS). The script has some default variables:
+The [installer script](./util/install.sh) has a function to update ComNetsEmu's python modules and dependencies software
+automatically. This script **ONLY** supports Ubuntu/Debian (Tested on Ubuntu 18.04 LTS) and has some default variables:
 
 1. The default remote name is origin and should linked to a fetch-0able Repository with latest updates. e.g. https://bitbucket.org/comnets/comnetsemu.git
 2. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
 3. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
 
+You can modify these variables in the installer script for your customized installation.
 
-Run following commands to update (good luck ^_^):
+Before run the update program, the source code directly (by default, "$HOME/comnetsemu") should be updated to the latest
+commit in master branch via git:
 
 ```bash
 $ cd $HOME/comnetsemu
 $ git checkout master
 $ git pull origin master
+```
+
+Then run following commands to update automatically (good luck ^_^):
+
+```bash
 $ cd ./util/
 $ bash ./install.sh -u
 ```
 
-
-### Run examples
+### Run basic examples
 
 In order to run examples, the Docker image described in ./test_containers/Dockerfile.dev_test must be built with
 ./test_containers/build.sh .
@@ -160,7 +164,23 @@ $ bash ./build_docker_images.sh  # Build the Docker image for encoders, recoders
 $ sudo python3 ./multihop_topo.py  # Run the emulation of multi-hop topology
 ```
 
-#### Development Guide
+### Catalog
+
+- [app](./app/): All application programs are classified in this directory. Each subdirectory contains a brief
+    introduction, source codes, Dockerfiles for internal containers and utility scripts of the application.
+
+- [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python modules.
+
+- [examples](./examples/): Example programs for functionalities of the emulator. Including all examples in upstream
+    Mininet and additional examples of ComNetsEmu.
+
+- [test_containers](./test_containers/): Contains Dockerfiles for external Docker containers (Docker host).
+
+- [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
+
+### Development Guide
+
+! TODO: Use [Sphinx](https://www.sphinx-doc.org/en/master/) for better documentation.
 
 - To build the API documentation (in HTML and PDF version), install doxygen and help2man packages and run `make doc`.
 
@@ -196,9 +216,12 @@ And thanks to Mininet, all links on the data plane can be configured with differ
 delay (Use Linux TC utility). It is great for teaching.
 
 
-#### MISC
+#### Useful Links
 
 - [README](https://github.com/mininet/mininet) of upstream Mininet.
+- [Mininet's Walkthrough Tutorial](http://mininet.org/walkthrough/)
+- [Mininet's Python API Reference](http://mininet.org/api/hierarchy.html)
+- [Docker Get Started Tutorial](https://docs.docker.com/get-started/)
 
 #### Maintainers
 
