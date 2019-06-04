@@ -17,7 +17,7 @@ from mininet.util import BaseString
 from mininet.link import TCIntf
 
 # ComNetsEmu version: should be consistent with README and LICENSE
-VERSION = "0.1.0"
+VERSION = "0.1.3"
 
 
 # If an external SAP (Service Access Point) is made, it is deployed with this prefix in the name,

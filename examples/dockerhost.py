@@ -12,12 +12,14 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 
+PING_COUNT = 15
+
 
 def testTopo():
     "Create an empty network and add nodes to it."
 
     # To be tested parameters at runtime
-    loss_rates = list(range(10, 50, 10))
+    loss_rates = [30]
 
     net = Containernet(controller=Controller, link=TCLink)
 
@@ -46,8 +48,9 @@ def testTopo():
     info("*** Configure the link loss rate of h1 at runtime\n")
     for loss in loss_rates:
         print("* The loss rate of h1 is {:.2f}%".format(loss))
+        print("* Ping test count: %d" % PING_COUNT)
         net.change_host_ifce_loss(h1, "h1-s1", loss)
-        ret = h1.cmd("ping -c 30 10.0.0.2")
+        ret = h1.cmd("ping -c %d 10.0.0.2" % PING_COUNT)
         sent, received = tool.parsePing(ret)
         measured = ((sent - received) / float(sent)) * 100.0
         print("Expected loss rate: {:.2f}%, measured loss rate: {:.2f}%".format(

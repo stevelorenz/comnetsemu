@@ -82,11 +82,13 @@ def testDockerInDocker(n=2):
                              "dev_test", "stress -c 1 -m 1 --vm-bytes 300M")
         containers.append(c)
 
+    info("Start monitoring resource usage of internal containers"
+         "with default sample count: 3 and sample period: 1 sec\n")
     for c in containers:
         usages = mgr.monResourceStats(c)
         if usages:
             print(
-                " The average CPU and Memory usage of container:{} is {:.2f}%, {}".format(
+                " The average CPU and Memory usage of container:{} is {:.2f}%, {:.2f}MB".format(
                     c.name,
                     (sum(u[0] for u in usages) / len(usages)),
                     (sum(u[1] for u in usages) / len(usages))

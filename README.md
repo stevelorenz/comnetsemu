@@ -69,7 +69,7 @@ manage the VM with (cd to the same directory of the Vagrantfile):
 $ vagrant up comnetsemu
 
 # SSH into the VM
-$ vagrant ssh comnetemu
+$ vagrant ssh comnetsemu
 
 # Poweroff the VM
 $ vagrant halt comnetsemu
@@ -110,16 +110,26 @@ $ git fetch origin master:master
 $ git merge origin/master
 ```
 
-#### Update ComNetsEmu emulator (The Python package)
+#### Update ComNetsEmu emulator
 
-You can update the Python package by fetching and merging the latest commit in the master branch and run the following
-command:
+You can use the installer script to update installed ComNetsEmu python modules, examples, application sources and
+required dependencies (WARN: this script is only tested on Ubuntu 18.04 LTS). The script has some default variables:
+
+1. The default remote name is origin and should linked to a fetch-0able Repository with latest updates. e.g. https://bitbucket.org/comnets/comnetsemu.git
+2. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
+3. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
+
+
+Run following commands to update (good luck ^_^):
 
 ```bash
-$ python3 ./setup.py install
+$ cd $HOME/comnetsemu
+$ git checkout master
+$ git pull origin master
+$ cd ./util/
+$ bash ./install.sh -u
 ```
 
-Then you can check the version of installed package with e.g. pip: `pip3 list | grep comnetemu`
 
 ### Run examples
 
@@ -154,16 +164,16 @@ $ sudo python3 ./multihop_topo.py  # Run the emulation of multi-hop topology
 
 - To build the API documentation (in HTML and PDF version), install doxygen and help2man packages and run `make doc`.
 
-- In order to enable Docker-Docker setup, following modules are added in comnetemu:
+- In order to enable Docker-Docker setup, following modules are added in comnetsemu:
 
-  - comnetemu/node.py: Two sub-classes are added here to enable docker-in-docker setup:
+  - comnetsemu/node.py: Two sub-classes are added here to enable docker-in-docker setup:
 
       - DockerHost: Class of external containers. Its instances have the same methods of default Mininet host.
 
       - DockerContainer: Class of the internal container. To make it simple, currently there are no private methods
           implemented in this sub-class.
 
-  - comnetemu/net.py: Two classes are added here to manage internal and external Docker hosts:
+  - comnetsemu/net.py: Two classes are added here to manage internal and external Docker hosts:
 
       - Containernet: Management of the external containers. Example of its APIs can be found [here](./examples/dockerhost.py).
 

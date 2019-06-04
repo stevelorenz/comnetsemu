@@ -1,6 +1,7 @@
-#! /bin/bash
+#!/usr/bin/env bash
 #
-# About: Install ComNetsEmu
+# About: ComNetsEmu Installer
+# Email: zuo.xiang@tu-dresden.de
 #
 
 # Fail on error
@@ -12,23 +13,58 @@ set -o nounset
 PYTHON=python3
 PIP=pip3
 
-echo "ComNetsEmu Installer"
+echo "*** ComNetsEmu Installer ***"
 
+DEFAULT_REMOTE="origin"
+
+# Get the directory containing comnetsemu source code folder
 COMNETSEMU_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd -P )"
-DEP_DIR="$HOME/comnetsemu_dependencies"
+# The name of the comnetsemu source code folder
+COMNETSEMU_SRC_DIR="comnetsemu"
 
-MININET_VER="e20380"
+# Directory containing dependencies installed from source
+DEP_DIR="$HOME/comnetsemu_dependencies"
+# Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
+DEPS_INSTALLED_FROM_SRC=(mininet ryu ovx)
+# Tags/branch names of dependencies
+COMNETSEMU_VER="master"
+MININET_VER="e203808"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
+DOCKER_PY_VER="3.7.2"
+DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
+DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
+
+echo " - The default git remote name: $DEFAULT_REMOTE"
+echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+echo " - The path to install all dependencies: $DEP_DIR"
+
+msg() {
+    printf '%b\n' "$1" >&2
+}
+
+warning(){
+    declare _type=$1 text=$2
+    msg "\033[33mWarning:\033[0m ${_type} ${text}"
+}
+
+error() {
+    declare _type=$1 text=$2
+    msg "\033[31m[✘]\033[0m ${_type} ${text}"
+}
 
 function usage() {
     printf '\nUsage: %s [-abcdhnoruvy]\n\n' "$(basename "$0")" >&2
-    echo 'options:'
+    echo " - Dependencies are installed with package manager (apt, pip) or from sources (git clone)."
+    echo " - [] in options are used to mark the version (git tags or branch)"
+
+    echo ""
+    echo "Options:"
     echo " -a: install (A)ll packages - good luck!"
     echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
     echo " -c: install (C)omNetsEmu [master] python module"
-    echo " -d: install (D)ocker CE"
+    echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
     echo " -h: print usage"
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
@@ -62,7 +98,7 @@ function install_docker() {
 
     sudo apt-get update
     sudo apt-get install -y docker-ce
-    sudo -H $PIP install docker==3.7.2
+    sudo -H $PIP install docker=="$DOCKER_PY_VER"
 
 }
 
@@ -151,11 +187,40 @@ function install_ovx() {
 }
 
 function update_comnetsemu() {
+    local dep_name
+    local installed_ver
+    local req_ver
+
+    echo ""
     echo "*** Update ComNetsEmu"
-    echo "- Update Python module, examples and applications"
+
+
+    echo "[1] Update ComNetsEmu's Python module, examples and applications"
     cd "$COMNETSEMU_DIR/comnetsemu" || exit
-    git pull origin master
+    git pull "$DEFAULT_REMOTE" "$COMNETSEMU_VER"
     sudo PYTHON=python3 make install
+
+    echo "[2] Update dependencies installed with package manager."
+    install_docker
+
+    echo "[3] Update dependencies installed from source"
+    echo "  The update script checks the version flag (format tool_name-version) in $DEP_DIR"
+    echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
+
+    for (( i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++ )); do
+        dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
+        echo "Step$i: Check and update ${DEPS_INSTALLED_FROM_SRC[i]}"
+        # TODO: Replace ls | grep with glob or for loop
+        installed_ver=$(ls "$DEP_DIR/" | grep "$dep_name-" | cut -d '-' -f 2-)
+        req_ver=${DEPS_VERSIONS[i]}
+        echo "Installed version: $installed_ver, requested version: ${req_ver}"
+        if [[ "$installed_ver" != "$req_ver" ]]; then
+            warning "[Update]" "Update $dep_name from $installed_ver to $req_ver"
+            rm -rf "$DEP_DIR/$dep_name-$installed_ver"
+            ${DEP_INSTALL_FUNCS[i]}
+        fi
+        echo ""
+    done
 }
 
 # TODO: Extend remove function for all installed packages
@@ -194,10 +259,33 @@ function all() {
     install_mininet
     install_ryu
     install_docker
+    install_ovx
     install_devs
-    # Should run at the end!
+    # MUST run at the end!
     install_comnetsemu
 }
+
+# Check if source and dependency directory exits
+if [[ ! -d "$COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR" ]]; then
+    error "[PATH]" "The ComNetsEmu source directory does not exist."
+    echo " The default path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+    echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
+    exit 1
+fi
+
+if [[ ! -d "$DEP_DIR" ]]; then
+    warning "[PATH]" "The default dependency directory does not exist."
+    echo "Do you want to create the dependency directory here: $DEP_DIR? ([y]/n)"
+    read -r -n 1;
+    if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
+        mkdir -p "$DEP_DIR"
+        echo "Dependency directory created! Please run the installer again."
+        exit 0
+    else
+        error "[PATH]" "Missing dependency directory, installer exists."
+        exit 1
+    fi
+fi
 
 if [ $# -eq 0 ]
 then
