@@ -216,7 +216,7 @@ function update_comnetsemu() {
         echo "Installed version: $installed_ver, requested version: ${req_ver}"
         if [[ "$installed_ver" != "$req_ver" ]]; then
             warning "[Update]" "Update $dep_name from $installed_ver to $req_ver"
-            rm -rf "$DEP_DIR/$dep_name-$installed_ver"
+            sudo rm -rf "$DEP_DIR/$dep_name-$installed_ver"
             ${DEP_INSTALL_FUNCS[i]}
         fi
         echo ""
