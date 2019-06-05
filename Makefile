@@ -30,6 +30,11 @@ test_examples: $(COMNETSEMU)
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
 
+check_installer: ./util/install.sh
+	@ echo "*** Check installer"
+	bash ./check_installer.sh
+
+
 install:
 	$(PYTHON) setup.py install
 
