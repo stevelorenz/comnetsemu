@@ -172,9 +172,11 @@ function install_ovx() {
     wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre_7u161-2.6.12-1_amd64.deb
     wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre-headless_7u161-2.6.12-1_amd64.deb
     wget http://ftp.de.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_1.5.2-2+b1_amd64.deb
-    sudo dpkg -i ./*.deb
+    # ISSUE: Failed to exit due to dependency problems. Issues are fixed with
+    # apt install -f. So force the error status to zero.
+    sudo dpkg -i ./*.deb || true
     # Resolve potential dependency issues
-    sudo apt install -f
+    sudo apt install -f -y
     # Update java alternatives
     # - IcedTeaPlugin.so plugin is unavailable
     sudo update-java-alternatives -s java-1.7.0-openjdk-amd64
@@ -275,16 +277,8 @@ fi
 
 if [[ ! -d "$DEP_DIR" ]]; then
     warning "[PATH]" "The default dependency directory does not exist."
-    echo "Do you want to create the dependency directory here: $DEP_DIR? ([y]/n)"
-    read -r -n 1;
-    if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
-        mkdir -p "$DEP_DIR"
-        echo "Dependency directory created! Please run the installer again."
-        exit 0
-    else
-        error "[PATH]" "Missing dependency directory, installer exists."
-        exit 1
-    fi
+    echo "Create the dependency directory : $DEP_DIR"
+    mkdir -p "$DEP_DIR"
 fi
 
 if [ $# -eq 0 ]
