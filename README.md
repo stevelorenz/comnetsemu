@@ -5,23 +5,28 @@ ComNetsEmu
 
 **This project is currently under heavy development [beta]**.
 
-This repository is synced with the [Gitlab repository](https://git.comnets.net/book/comnetsemu) hosted on the server of
-[The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/). The master branch contains latest
-stable sources, the dev branch is used as blessed branch for development.
+This project is currently hosted both on [Bitbucket](https://bitbucket.org/comnets/comnetsemu/src/master/) and [Comnets
+Gitlab](https://git.comnets.net/book/comnetsemu) (on the server of [The Telekom Chair of Communication
+Networks](https://cn.ifn.et.tu-dresden.de/)). The master and dev branches are synchronized. The master branch contains
+latest stable sources, the dev branch is used as blessed branch for development.
 
-Issues and pull requests can be created on both repositories.
+Issues and pull requests can be created on **both** repositories.
 
 ### Description
 
 ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks:
-From Theory to Practice".  The design focus on emulating all applications on a single physical machine, e.g. on a single
-laptop. ComNetsEmu, SDN controller programs and emulated applications are developed with **Python3**(3.6).
+From Theory to Practice".  The design focus on emulating all examples and applications on a single physical machine,
+e.g. on a single laptop. ComNetsEmu, SDN controller programs and emulated applications are mainly developed with
+**Python3**(3.6).
 
 #### What is Mininet and What's the main difference ?
 
 Check the homepage of [Mininet](http://mininet.org/) for this great network emulator. The main difference of this fork
-is: This version allows developer to deploy Docker containers *INSIDE* Mininet hosts (also use Docker instead of the
-default Mininet light process-based isolation), which is beneficial to emulate many practical scenarios.
+is: This version allows developer to deploy Docker containers *INSIDE* Mininet's hosts (Instead of Mininet's default
+Host or CPULimitedHost, ComNetsEmu uses Docker containers for hosts), which is beneficial to emulate many practical
+compute  and network setups. By default all Mininet's hosts share the host file system and PID space. And it is
+non-trivial to let the application containers to share the networking stack of the Mininet's host. So in ComNetsEmu, the
+Mininet's hosts are also Docker containers.
 
 A simple example is given with a [sketch](./doc/NFV_SDN_Testbed.png) for the emulation scenario: Assume Alice wants to
 send packets to Bob with random linear network coding. Packet has to be transmitted through two switches S1 and S2. Link
@@ -61,7 +66,7 @@ examples and also applications. The Dockerfiles for external Docker hosts are lo
 Please **build** them after the installation and **re-build** them after updates by running the script:
 
 ```bash
-$ cd ./test_containers  || exit 0
+$ cd ./test_containers
 $ bash ./build.sh
 ```
 
@@ -90,20 +95,21 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Install on Ubuntu (Tested on Ubuntu Server 18.04 LTS)
-
-The install script currently only supports Debian/Ubuntu.
+#### Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS)
 
 - Install required packages from your package management systems
 
     ```bash
     $ sudo apt update
-    $ sudo apt install python3 libpython3-dev python3-dev git python3-pip
+    $ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
     ```
 
 - Install ComNetsEmu with all dependencies
 
-    `$ PYTHON=python3 bash ./util/install.sh -a`
+    ```bash
+    $ cd $HOME/comnetsemu/util
+    $ PYTHON=python3 bash ./install.sh -a
+    ```
 
 ### Update ComNetsEmu and  Dependencies
 
@@ -131,7 +137,7 @@ $ git pull origin master
 Then run following commands to update automatically (good luck ^_^):
 
 ```bash
-$ cd ./util/
+$ cd $HOME/comnetsemu/util
 $ bash ./install.sh -u
 ```
 
@@ -155,14 +161,9 @@ and also change the resource limitation of Docker hosts at runtime.
 ### Run network coding for transport application example
 
 The network coding example requires the licence of Kodo library from [Steiwurf](www.steinwurf.com). Contact them for
-licence before running the example. Once you have the licence, run following commands:
+licence before running the example. Once you have the licence, check this
+[guide](./app/network_coding_transport/README.md) to run this application.
 
-```
-$ cd ./app/network_coding_transport/ || exit
-$ bash ./build_kodo_lib.sh  # Build Kodo-python library on your host system to get the kodo.so shared library.
-$ bash ./build_docker_images.sh  # Build the Docker image for encoders, recoders and docoders.
-$ sudo python3 ./multihop_topo.py  # Run the emulation of multi-hop topology
-```
 
 ### Catalog
 
@@ -175,6 +176,8 @@ $ sudo python3 ./multihop_topo.py  # Run the emulation of multi-hop topology
     Mininet and additional examples of ComNetsEmu.
 
 - [test_containers](./test_containers/): Contains Dockerfiles for external Docker containers (Docker host).
+
+- [utils](./util/): Utility and helper scripts.
 
 - [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
 

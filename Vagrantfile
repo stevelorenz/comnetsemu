@@ -18,17 +18,17 @@ BOX = "bento/ubuntu-18.04"
 # Common bootstrap
 $bootstrap= <<-SCRIPT
 # Install dependencies
-sudo apt update
-sudo apt install -y git pkg-config gdb tmux
-sudo apt install -y bash-completion htop dfc
-sudo apt install -y iperf iperf3
-sudo apt install -y python3-pip
+sudo apt-get update
+sudo apt-get install -y git pkg-config gdb tmux sudo make
+sudo apt-get install -y bash-completion htop dfc
+sudo apt-get install -y iperf iperf3
+sudo apt-get install -y python3-pip
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
-sudo apt update
-sudo apt install -y xorg
-sudo apt install -y openbox
+sudo apt-get update
+sudo apt-get install -y xorg
+sudo apt-get install -y openbox
 SCRIPT
 
 ####################
@@ -59,6 +59,7 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: false
 
     comnetsemu.vm.provision "shell",privileged: false,inline: <<-SHELL
+      sudo apt-get update
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
 
@@ -68,6 +69,10 @@ Vagrant.configure("2") do |config|
       # installed to the (virtual) environment, and have the changes take
       # effect immediately. Convinient for development
       sudo make develop
+
+      # Build images for Docker hosts
+      cd /home/vagrant/comnetsemu/test_containers || exit
+      bash ./build.sh
     SHELL
 
     # Enable X11 forwarding
