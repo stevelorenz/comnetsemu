@@ -2,40 +2,29 @@
 About: ComNetsEmu Network
 """
 
-import ipaddress
-import shlex
 import sys
-from subprocess import Popen
 from time import sleep
+import os
 
 import docker
 from comnetsemu.node import DockerContainer, DockerHost
+from comnetsemu.cli import spawnAttachedXterm
+from mininet.link import TCIntf
 from mininet.log import debug, error, info, output, warn
 from mininet.net import Mininet
-from mininet.node import OVSBridge, Switch
+from mininet.node import Switch
 from mininet.util import BaseString
-from mininet.link import TCIntf
+from mininet.term import makeTerms, cleanUpScreens
 
 # ComNetsEmu version: should be consistent with README and LICENSE
 VERSION = "0.1.3"
 
 
-# If an external SAP (Service Access Point) is made, it is deployed with this prefix in the name,
-# so it can be removed at a later time
-SAP_PREFIX = 'sap.'
-
-
 class Containernet(Mininet):
-    """
-    A Mininet with DockerHost related methods.
-    Inherits Mininet.
-    This class is not more than API beautification.
-    """
+    """A Mininet sub-class with DockerHost related methods."""
 
     def __init__(self, **params):
-        # call original Mininet.__init__
         Mininet.__init__(self, **params)
-        self.SAPswitches = dict()
 
     def addDockerHost(self, name, cls=DockerHost, **params):
         """
@@ -43,12 +32,6 @@ class Containernet(Mininet):
         Docker container as a host.
         """
         return self.addHost(name, cls=cls, **params)
-
-    # def removeDockerHost( self, name, **params):
-    #    """
-    #    Wrapper for removeHost. Just to be complete.
-    #    """
-    #    return self.removeHost(name, **params)
 
     def addLink(self, node1, node2, port1=None, port2=None,
                 cls=None, **params):
@@ -60,6 +43,21 @@ class Containernet(Mininet):
         else:
             super(Containernet, self).addLink(node1, node2, port1, port2, cls,
                                               **params)
+
+    def startTerms(self):
+        "Start a terminal for each node."
+        if 'DISPLAY' not in os.environ:
+            error("Error starting terms: Cannot connect to display\n")
+            return
+        info("*** Running terms on %s\n" % os.environ['DISPLAY'])
+        cleanUpScreens()
+        self.terms += makeTerms(self.controllers, 'controller')
+        self.terms += makeTerms(self.switches, 'switch')
+        dhosts = [h for h in self.hosts if isinstance(h, DockerHost)]
+        for d in dhosts:
+            self.terms.append(spawnAttachedXterm(d.name))
+        rest = [h for h in self.hosts if h not in dhosts]
+        self.terms += makeTerms(rest, 'host')
 
     def addLinkNamedIfce(self, src, dst, *args, **kwargs):
         """Add a link with named two interfaces
@@ -73,88 +71,6 @@ class Containernet(Mininet):
                      intfName1="-".join((src.name, dst.name)),
                      intfName2="-".join((dst.name, src.name)),
                      *args, **kwargs)
-
-    def addExtSAP(self, sapName, sapIP, dpid=None, **params):
-        """
-        Add an external Service Access Point, implemented as an OVSBridge
-        :param sapName:
-        :param sapIP: str format: x.x.x.x/x
-        :param dpid:
-        :param params:
-        :return:
-        """
-        SAPswitch = self.addSwitch(sapName, cls=OVSBridge, prefix=SAP_PREFIX,
-                                   dpid=dpid, ip=sapIP, **params)
-        self.SAPswitches[sapName] = SAPswitch
-
-        NAT = params.get('NAT', False)
-        if NAT:
-            self.addSAPNAT(SAPswitch)
-
-        return SAPswitch
-
-    def removeExtSAP(self, sapName):
-        SAPswitch = self.SAPswitches[sapName]
-        info('stopping external SAP:' + SAPswitch.name + ' \n')
-        SAPswitch.stop()
-        SAPswitch.terminate()
-
-        self.removeSAPNAT(SAPswitch)
-
-    def addSAPNAT(self, SAPSwitch):
-        """
-        Add NAT to the Containernet, so external SAPs can reach the outside internet through the host
-        :param SAPSwitch: Instance of the external SAP switch
-        :param SAPNet: Subnet of the external SAP as str (eg. '10.10.1.0/30')
-        :return:
-        """
-        SAPip = SAPSwitch.ip
-        SAPNet = str(ipaddress.IPv4Network(SAPip, strict=False))
-        # due to a bug with python-iptables, removing and finding rules does not succeed when the mininet CLI is running
-        # so we use the iptables tool
-        # create NAT rule
-        rule0_ = "iptables -t nat -A POSTROUTING ! -o {0} -s {1} -j MASQUERADE".format(
-            SAPSwitch.deployed_name, SAPNet)
-        p = Popen(shlex.split(rule0_))
-        p.communicate()
-
-        # create FORWARD rule
-        rule1_ = "iptables -A FORWARD -o {0} -j ACCEPT".format(
-            SAPSwitch.deployed_name)
-        p = Popen(shlex.split(rule1_))
-        p.communicate()
-
-        rule2_ = "iptables -A FORWARD -i {0} -j ACCEPT".format(
-            SAPSwitch.deployed_name)
-        p = Popen(shlex.split(rule2_))
-        p.communicate()
-
-        info(
-            "added SAP NAT rules for: {0} - {1}\n".format(SAPSwitch.name, SAPNet))
-
-    def removeSAPNAT(self, SAPSwitch):
-
-        SAPip = SAPSwitch.ip
-        SAPNet = str(ipaddress.IPv4Network(SAPip, strict=False))
-        # due to a bug with python-iptables, removing and finding rules does not succeed when the mininet CLI is running
-        # so we use the iptables tool
-        rule0_ = "iptables -t nat -D POSTROUTING ! -o {0} -s {1} -j MASQUERADE".format(
-            SAPSwitch.deployed_name, SAPNet)
-        p = Popen(shlex.split(rule0_))
-        p.communicate()
-
-        rule1_ = "iptables -D FORWARD -o {0} -j ACCEPT".format(
-            SAPSwitch.deployed_name)
-        p = Popen(shlex.split(rule1_))
-        p.communicate()
-
-        rule2_ = "iptables -D FORWARD -i {0} -j ACCEPT".format(
-            SAPSwitch.deployed_name)
-        p = Popen(shlex.split(rule2_))
-        p.communicate()
-
-        info(
-            "remove SAP NAT rules for: {0} - {1}\n".format(SAPSwitch.name, SAPNet))
 
     def change_host_ifce_loss(self, host, ifce, loss, parent=" parent 5:1"):
         if isinstance(host, BaseString):
@@ -180,11 +96,6 @@ class Containernet(Mininet):
 
     def stop(self):
         super(Containernet, self).stop()
-
-        info('*** Removing NAT rules of %i SAPs\n' % len(self.SAPswitches))
-        for SAPswitch in self.SAPswitches:
-            self.removeSAPNAT(self.SAPswitches[SAPswitch])
-        info("\n")
 
 
 class VNFManager(object):

@@ -15,7 +15,8 @@ from mininet.node import Controller
 
 def testTopo():
 
-    net = Containernet(controller=Controller, link=TCLink)
+    # xterms=True, spawn xterms for all nodes after net.start()
+    net = Containernet(controller=Controller, link=TCLink, xterms=True)
 
     info('*** Adding controller\n')
     net.addController('c0')
@@ -26,14 +27,17 @@ def testTopo():
     h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2',
                            cpuset_cpus="1", cpu_quota=25000)
     h3 = net.addHost('h3', ip='10.0.0.3')
+    h4 = net.addDockerHost('h4', dimage='alpine_dockerhost', ip='10.0.0.4',
+                           cpuset_cpus="0", cpu_quota=25000)
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h3, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay='100ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h2, bw=10, delay='100ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h3, bw=10, delay='100ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h4, bw=10, delay='100ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
