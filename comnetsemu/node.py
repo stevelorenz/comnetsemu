@@ -4,6 +4,7 @@ About: ComNetsEmu Node
 
 import json
 import os
+import shlex
 import pty
 import select
 from subprocess import check_output
@@ -21,7 +22,8 @@ class DockerHost (Host):
     """
 
     def __init__(
-            self, name, dimage=None, dcmd=None, **kwargs):
+            self, name, dimage=None, dcmd=None,
+            ishell="bash", ishell_args="--norc -is", **kwargs):
         """
         Creates a Docker container as Mininet host.
 
@@ -44,7 +46,9 @@ class DockerHost (Host):
         """
         self.dimage = dimage
         self.dnameprefix = "mn"
-        self.dcmd = dcmd if dcmd is not None else "/bin/bash"
+        self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
+        self.ishell = ishell
+        self.ishell_args = ishell_args
         self.dc = None  # pointer to the dict containing 'Id' and 'Warnings' keys of the container
         self.dcinfo = None
         self.did = None  # Id of running container
@@ -224,16 +228,18 @@ class DockerHost (Host):
         if self.shell:
             error("%s: shell is already running\n" % self.name)
             return
-        # mnexec: (c)lose descriptors, (d)etach from tty,
-        # (p)rint pid, and run in (n)amespace
-        # opts = '-cd' if mnopts is None else mnopts
-        # if self.inNamespace:
-        #     opts += 'n'
+
         # bash -i: force interactive
         # -s: pass $* to shell, and make process easy to find in ps
         # prompt is set to sentinel chr( 127 )
         cmd = ['docker', 'exec', '-it', '%s.%s' % (self.dnameprefix, self.name), 'env', 'PS1=' + chr(127),
-               'bash', '--norc', '-is', 'mininet:' + self.name]
+               'mininet:' + self.name]
+        debug("Insert interactive shell bin and args")
+        cmd.insert(-1, self.ishell)
+        ishell_args = shlex.split(self.ishell_args)
+        for a in ishell_args:
+            cmd.insert(-1, a)
+
         # Spawn a shell subprocess in a pseudo-tty, to disable buffering
         # in the subprocess and insulate it from signals (e.g. SIGINT)
         # received by the parent
@@ -308,6 +314,9 @@ class DockerHost (Host):
             return
         Host.sendCmd(self, *args, **kwargs)
 
+    def sendInt(self):
+        super(DockerHost, self).sendInt()
+
     def popen(self, *args, **kwargs):
         """Return a Popen() object in node's namespace
            args: Popen() args, single list, or string
@@ -316,6 +325,7 @@ class DockerHost (Host):
             error("ERROR: Can't connect to Container \'%s\'' for docker host \'%s\'!\n" % (
                 self.did, self.name))
             return
+        # MARK: Use -t option to allocate pseudo-TTY for each DockerHost
         mncmd = ["docker", "exec", "-t", "%s.%s" %
                  (self.dnameprefix, self.name)]
         return Host.popen(self, *args, mncmd=mncmd, **kwargs)
@@ -552,7 +562,7 @@ class DockerContainer(Host):
         self.name = name
         self.dhost = dhost
         self.dimage = dimage
-        self.dcmd = dcmd if dcmd is not None else "/bin/bash"
+        self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.dins = dins
 
     def terminate(self):

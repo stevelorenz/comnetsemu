@@ -4,3 +4,4 @@
 #
 
 sudo docker build -t dev_test -f ./Dockerfile.dev_test .
+sudo docker build -t alpine_dockerhost -f ./Dockerfile.alpine_dockerhost .

@@ -5,10 +5,10 @@ ComNetsEmu
 
 **This project is currently under heavy development [beta]**.
 
-This project is currently hosted both on [Bitbucket](https://bitbucket.org/comnets/comnetsemu/src/master/) and [Comnets
-Gitlab](https://git.comnets.net/book/comnetsemu) (on the server of [The Telekom Chair of Communication
-Networks](https://cn.ifn.et.tu-dresden.de/)). The master and dev branches are synchronized. The master branch contains
-latest stable sources, the dev branch is used as blessed branch for development.
+This project is currently hosted both on [Bitbucket](https://bitbucket.org/comnets/comnetsemu/src/master/) and
+[Comnets Gitlab](https://git.comnets.net/book/comnetsemu) (on the server of [The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/)).
+The master and dev branches are synchronized. The **master** branch contains latest stable sources, the **dev** branch
+is used as blessed branch for development.
 
 Issues and pull requests can be created on **both** repositories.
 
@@ -43,9 +43,10 @@ PIPEs open (stdin, stdout and stderr) that can be used by the Mininet manager to
 emulation. The VNFs or cloud applications are encapsulated in Docker containers and deployed inside each Mininet Host.
 In order to emulate this, the application containers (a.k.a internal containers) should be isolated: It should inherent
 from the resource isolation of corresponded Mininet Host and also inherent the network namespace of its Mininet Host.
-This is currently not supported in the Mininet's default host, therefore I replace it with Docker host to have a
-Docker-In-Docker setup. The internal dockers are like PODs of the K8s and the external(outside) docker is the compute
-node of the Kubernetes.
+This is currently not supported in the Mininet's default host, therefore I replace it with Docker host (by integrating
+codes from [Containernet](https://github.com/containernet/containernet)) to have a Docker-In-Docker setup. The internal
+dockers are like PODs of the K8s and the external(outside) docker is the compute node of the Kubernetes.
+Please check [Q&A](#### Q&A) section for why these decisions are made.
 
 ### Installation
 
@@ -212,6 +213,23 @@ Ans: Default Mininet (the latest version) does not support running Docker contai
 Mininet Host with sufficient isolation. So I have to replace Mininet Host with Docker Host and add internal docker
 functions on top of this modified version.
 
+#### Ques: Why not Containernet ?
+
+Ans: Containernet did a hard fork (hold all source codes of Mininet in its own Repo) of the Mininet. New features and
+fixes from upstream Mininet can not be **merged** into Containernet **directly**. For example, while Mininet has already
+updated to support Python3, Containernet still only supports Python2.7. Our ComNetsEmu is only an extension of the
+upstream Mininet:
+
+- Mininet's python modules are installed with its built-in installer.
+
+- ComNetsEmu's python modules only create sub-classes of **essential and minimal** classes of Mininet to add its
+    features. So Mininet must be installed before installing ComNetsEmu.
+
+- With this development profile, upstream's commits can be updated easily by running the [installer's](./util/install.sh) update function.
+
+- ComNetsEmu tries its best to keep the comparability with upstream Mininet. All examples, CLI commands of Mininet
+    should also work on ComNetsEmu.
+
 ##### Ques: Why not Kubernetes(K8s)?
 
 Ans: For teaching, K8s is too heavy and complex. We can emulate typical K8s setup with more lightweight virtualisation.
@@ -222,7 +240,7 @@ delay (Use Linux TC utility). It is great for teaching.
 #### Useful Links
 
 - [README](https://github.com/mininet/mininet) of upstream Mininet.
-- [Mininet's Walkthrough Tutorial](http://mininet.org/walkthrough/)
+- [Mininet's Salk through Tutorial](http://mininet.org/walkthrough/)
 - [Mininet's Python API Reference](http://mininet.org/api/hierarchy.html)
 - [Docker Get Started Tutorial](https://docs.docker.com/get-started/)
 

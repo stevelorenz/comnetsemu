@@ -1,0 +1,18 @@
+#
+# About: Alpine Linux image used for DockerHost instances
+#
+
+FROM alpine:3.9
+
+RUN apk update
+# For an interactive shell
+RUN apk add bash
+# For tc and interface CRUD
+RUN apk add iproute2
+
+# Add Tini --- A tiny but valid init for containers
+RUN apk add --no-cache tini
+ENTRYPOINT ["/sbin/tini", "-g","--"]
+
+ENV HOME /root
+WORKDIR /root
