@@ -66,7 +66,7 @@ DEP_DIR="$HOME/comnetsemu_dependencies"
 DEPS_INSTALLED_FROM_SRC=(mininet ryu ovx)
 # Tags/branch names of dependencies
 COMNETSEMU_VER="master"
-MININET_VER="e203808"
+MININET_VER="de28f67"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
