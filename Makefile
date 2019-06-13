@@ -44,5 +44,4 @@ develop: $(MNEXEC) $(MANPAGES)
 .PHONY: doc
 
 doc: $(PYSRC)
-	doxygen doc/doxygen.cfg
-	make -C doc/latex
+	doxygen doc/Doxyfile
