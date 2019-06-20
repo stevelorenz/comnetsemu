@@ -289,7 +289,6 @@ function install_lightweight() {
     install_mininet
     install_ryu
     install_docker
-    install_ovx
     # MUST run at the end!
     install_comnetsemu
 }

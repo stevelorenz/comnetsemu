@@ -235,10 +235,15 @@ delay (Use Linux TC utility). It is great for teaching.
 #### Useful Links
 
 - [README](https://github.com/mininet/mininet) of upstream Mininet.
-- [Mininet's Salk through Tutorial](http://mininet.org/walkthrough/)
+- [Mininet's Walk through Tutorial](http://mininet.org/walkthrough/)
+- [Mininet's OpenFlow Tutorial](https://github.com/mininet/openflow-tutorial/wiki)
 - [Mininet's Python API Reference](http://mininet.org/api/hierarchy.html)
-- [Docker Get Started Tutorial](https://docs.docker.com/get-started/)
 - [Mininet SIGCOMM/Hackathon 2018](https://github.com/acmsigcomm18hackathon/hackathonprojects/wiki/Mininet#enhancements-to-mininet)
+- [Docker Get Started Tutorial](https://docs.docker.com/get-started/)
+- [Containers unplugged: Understanding user namespaces](http://man7.org/conf/meetup/understanding-user-namespaces--jambit-Kerrisk-2019-05-28.pdf)
+- [Containers unplugged: An introduction to control groups (cgroups) v2](http://man7.org/conf/meetup/conf_cgroups_v2--jambit-Kerrisk-2019-06-05.pdf)
+- [Introduction to Open vSwitch (Video)](https://www.youtube.com/watch?v=rYW7kQRyUvA)
+- [Ryu SDN Framework (Free eBook)](https://osrg.github.io/ryu-book/en/html/)
 
 #### Maintainers
 
