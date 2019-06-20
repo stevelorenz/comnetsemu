@@ -10,7 +10,8 @@ This project is currently hosted both on [Bitbucket](https://bitbucket.org/comne
 The master and dev branches are synchronized. The **master** branch contains latest stable sources, the **dev** branch
 is used as blessed branch for development.
 
-Issues and pull requests can be created on **both** repositories.
+Issues and pull requests can be created on **both** repositories. Please create an issues if there are any problems or
+feature requirement of the tested. It will be answered more quickly than Emails.
 
 ### Description
 
@@ -90,20 +91,34 @@ $ vagrant ssh comnetsemu
 # Poweroff the VM
 $ vagrant halt comnetsemu
 
-# Remove the VM
+# Remove/Delete the VM
 $ vagrant destory comnetsemu
+```
+
+The `vagrant up` should run correctly. If there are some "apt" or "dpkg" related error messages (like some packages can
+not be found or installed) during the `vagrant up`, it might due to the box you used to build the VM is outdated. It is
+configured in current ./Vagrantfile that the vagrant will check if there are any updates to the box used in the current
+environment.  It can be checked manually with `vagrant box update`. You need to destory the already built VM and
+recreate it to acquire the new updates in the box with:
+
+```bash
+$ vagrant box update
+$ vagrant destory comnetsemu
+# This will create the VM at the first time (takes around 15 minutes)
+$ vagrant up comnetsemu
 ```
 
 As configured in ./Vagrantfile, current source code folder on the host OS is synced to the `/home/vagrant/comnetsemu`
 folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS)
+#### Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS (Bionic Beaver))
 
 - Install required packages from your package management systems
 
     ```bash
     $ sudo apt update
+    $ sudo apt upgrade
     $ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
     ```
 

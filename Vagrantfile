@@ -9,7 +9,11 @@
 CPUS = 2
 RAM = 2048
 
+# Bento: Packer templates for building minimal Vagrant baseboxes
+# The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
 BOX = "bento/ubuntu-18.04"
+BOX_VER = "201906.18.0"
+VM_NAME = "ubuntu-18.04-comnetsemu"
 
 ######################
 #  Provision Script  #
@@ -19,6 +23,7 @@ BOX = "bento/ubuntu-18.04"
 $bootstrap= <<-SCRIPT
 # Install dependencies
 sudo apt-get update
+sudo apt-get upgrade -y
 sudo apt-get install -y git pkg-config gdb tmux sudo make
 sudo apt-get install -y bash-completion htop dfc
 sudo apt-get install -y iperf iperf3
@@ -26,7 +31,6 @@ sudo apt-get install -y python3-pip
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
-sudo apt-get update
 sudo apt-get install -y xorg
 sudo apt-get install -y openbox
 SCRIPT
@@ -39,12 +43,15 @@ if Vagrant.has_plugin?("vagrant-vbguest")
   config.vbguest.auto_update = false
 end
 
+
 Vagrant.configure("2") do |config|
 
   config.vm.define "comnetsemu" do |comnetsemu|
 
-    comnetsemu.vm.box = BOX
     comnetsemu.vm.hostname = "comnetsemu"
+    comnetsemu.vm.box = BOX
+    comnetsemu.vm.box_version = BOX_VER
+    comnetsemu.vm.box_check_update = true
 
     # Sync ./ to home dir of vagrant to simplify the install script
     comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
@@ -59,7 +66,6 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: false
 
     comnetsemu.vm.provision "shell",privileged: false,inline: <<-SHELL
-      sudo apt-get update
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
 
@@ -81,7 +87,7 @@ Vagrant.configure("2") do |config|
 
     # VirtualBox-specific configuration
     comnetsemu.vm.provider "virtualbox" do |vb|
-      vb.name = "ubuntu-18.04-comnetsemu"
+      vb.name = VM_NAME
       vb.memory = RAM
       vb.cpus = CPUS
       # MARK: The CPU should enable SSE3 or SSE4 to compile DPDK

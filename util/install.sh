@@ -286,6 +286,7 @@ function remove_comnetsemu() {
 function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     echo "To be installed dependencies: mininet ryu docker docker-py"
+    $update update
     install_mininet
     install_ryu
     install_docker
@@ -295,6 +296,7 @@ function install_lightweight() {
 
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
+    $update update
     install_mininet
     install_ryu
     install_docker
