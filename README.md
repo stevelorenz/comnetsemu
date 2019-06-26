@@ -116,18 +116,18 @@ or application codes in your host OS and run/test them in the VM.
 
 - Install required packages from your package management systems
 
-    ```bash
-    $ sudo apt update
-    $ sudo apt upgrade
-    $ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
-    ```
+```bash
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
+```
 
 - Install ComNetsEmu with all dependencies
 
-    ```bash
-    $ cd $HOME/comnetsemu/util
-    $ PYTHON=python3 bash ./install.sh -a
-    ```
+```bash
+$ cd $HOME/comnetsemu/util
+$ PYTHON=python3 bash ./install.sh -a
+```
 
 ### Update ComNetsEmu and  Dependencies
 
@@ -207,10 +207,10 @@ doxygen and help2man before building the documentation. The built documentation 
 
 - Build and open HTML documentation in browser:
 
-    ```bash
-    $ make doc
-    $ xdg-open ./doc/html/index.html
-    ```
+```bash
+$ make doc
+$ xdg-open ./doc/html/index.html
+```
 
 - To build PDF documentation with Latex, the `GENERATE_LATEX` flag in ./doc/Doxyfile should be set to `YES`.
 
