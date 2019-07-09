@@ -39,12 +39,16 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-if Vagrant.has_plugin?("vagrant-vbguest")
-  config.vbguest.auto_update = false
-end
+#iif Vagrant.has_plugin?("vagrant-vbguest")
+#  config.vbguest.auto_update = false
+#end
 
 
 Vagrant.configure("2") do |config|
+
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+  end
 
   config.vm.define "comnetsemu" do |comnetsemu|
 
