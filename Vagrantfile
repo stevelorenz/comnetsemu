@@ -28,6 +28,11 @@ sudo apt-get install -y git pkg-config gdb tmux sudo make
 sudo apt-get install -y bash-completion htop dfc
 sudo apt-get install -y iperf iperf3
 sudo apt-get install -y python3-pip
+# Install wireguard kernel module
+sudo add-apt-repository -y ppa:wireguard/wireguard
+sudo apt-get update
+sudo apt-get install -y linux-headers-4.15.0-52-generic
+sudo apt-get install -y wireguard
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
