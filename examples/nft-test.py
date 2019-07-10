@@ -48,7 +48,7 @@ def testTopo():
     test_connection(h1)
 
     info('*** Stopping network')
-    #net.stop()
+    net.stop()
 
 
 def test_connection(h1):
