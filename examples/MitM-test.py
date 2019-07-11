@@ -97,7 +97,7 @@ def testTopo():
 
 def login_at_ftp_server(client_container, ftp_server_ip):
     info('*** Login into ftp server\n')
-    # Do a correct login...
+    # TODO: Do a correct login...
     print(client_container.cmd(
         "printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh"))
 
