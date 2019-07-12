@@ -7,21 +7,18 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 from ryu.lib.packet import udp
-from ryu.lib.packet import tcp
-from ryu.lib.packet import arp
-
 
 class TrafficSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
         super(TrafficSlicing, self).__init__(*args, **kwargs)
-        # initialize mac address table.
-        self.mac_to_port = {}
+
+        #outport = self.mac_to_port[dpid][mac_address]
+        self.mac_to_port = {1: {'00:00:00:00:00:01': 3, '00:00:00:00:00:02': 4}, 4: {'00:00:00:00:00:03': 3, '00:00:00:00:00:04': 4}}
         self.slice_TCport = 9999
-        self.mac = '6D:0D:E5:0A:C4:7E'.lower()
-        self.ip = '10.1.1.1'
-        self.hosts_IPs = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
+
+        #outport = self.slice_ports[dpid][slicenumber]
         self.slice_ports = {1 : {1 : 1, 2 : 2}, 4 : {1 : 1 , 2 : 2}}
         self.end_swtiches = [1 ,4]
 
@@ -36,34 +33,6 @@ class TrafficSlicing(app_manager.RyuApp):
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
-        
-        for ip in self.hosts_IPs:
-            self._broadcast_arp_request(datapath, ip)
-
-
-    def _broadcast_arp_request(self, datapath, dest_ip):
-        pkg_request = packet.Packet()
-        pkg_request.add_protocol(ethernet.ethernet(ethertype=ether_types.ETH_TYPE_ARP, dst='ff:ff:ff:ff:ff:ff', src=self.mac))
-        pkg_request.add_protocol(arp.arp(opcode=arp.ARP_REQUEST,
-                                 src_mac=self.mac,
-                                 src_ip=self.ip,
-                                 dst_ip=dest_ip))
-
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-        pkg_request.serialize()
-        #self.logger.info("send arp request: packet-out %s" % (pkg_request,))
-        actions = [parser.OFPActionOutput(ofproto.OFPP_ALL)]
-        out = parser.OFPPacketOut(datapath=datapath,
-                                  buffer_id=ofproto.OFP_NO_BUFFER,
-                                  in_port=ofproto.OFPP_CONTROLLER,
-                                  actions=actions,
-                                  data=pkg_request.data)
-        datapath.send_msg(out)
-        
-    def _handle_arp_response(self, dpid, src, in_port):
-        self.mac_to_port.setdefault(dpid, {})
-        self.mac_to_port[dpid][src] = in_port
 
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
@@ -105,14 +74,7 @@ class TrafficSlicing(app_manager.RyuApp):
 
         dpid = datapath.id
 
-        #self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
-
-        if dst == self.mac and pkt.get_protocol(arp.arp):
-            self._handle_arp_response(dpid, src, in_port)
-            print(self.mac_to_port)
-            return
-
-        elif dpid in self.mac_to_port:
+        if dpid in self.mac_to_port:
             if dst in self.mac_to_port[dpid]:
                 out_port = self.mac_to_port[dpid][dst]
                 actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
