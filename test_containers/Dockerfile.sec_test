@@ -5,7 +5,7 @@
 FROM ubuntu:18.04
 
 RUN \
-        apt-get update && \
+        apt-get update --fix-missing && \
         apt-get -y upgrade && \
         apt-get install -y build-essential && \
         apt-get install -y net-tools iproute2 iputils-ping \
@@ -16,7 +16,7 @@ RUN curl -sSL https://get.docker.com/ | sh
 
 # Install wireguard
 RUN 	apt-get install -y software-properties-common && \
-	add-apt-repository -y ppa:wireguard/wireguard && \ 
+	add-apt-repository -y ppa:wireguard/wireguard && \
 	apt-get update && \
 	apt-get install -y wireguard
 
@@ -25,7 +25,7 @@ RUN	apt-get update && \
 	apt-get install -y nftables
 
 # Install network sniffing and ftp server
-RUN 	apt-get update && \ 
+RUN 	apt-get update && \
 		apt-get install -y tcpdump ftp vsftpd dsniff
 
 # Add Tini --- A tiny but valid init for containers
