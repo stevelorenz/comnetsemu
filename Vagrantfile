@@ -28,6 +28,11 @@ sudo apt-get install -y git pkg-config gdb tmux sudo make
 sudo apt-get install -y bash-completion htop dfc
 sudo apt-get install -y iperf iperf3
 sudo apt-get install -y python3-pip
+# Install wireguard kernel module
+sudo add-apt-repository -y ppa:wireguard/wireguard
+sudo apt-get update
+sudo apt-get install -y linux-headers-4.15.0-ap51-generic
+sudo apt-get install -y wireguard=0.0.20190702-wg1~bionic
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
@@ -39,12 +44,16 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-if Vagrant.has_plugin?("vagrant-vbguest")
-  config.vbguest.auto_update = false
-end
+#iif Vagrant.has_plugin?("vagrant-vbguest")
+#  config.vbguest.auto_update = false
+#end
 
 
 Vagrant.configure("2") do |config|
+
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+  end
 
   config.vm.define "comnetsemu" do |comnetsemu|
 
