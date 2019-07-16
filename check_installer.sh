@@ -16,7 +16,7 @@ set -o nounset
 # TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
 
 TEST_IMAGES=("ubuntu:18.04")
-TEST_OPTIONS=("-l" "-o")
+TEST_OPTIONS=("-a")
 COMNETSEMU_DIR="/root/comnetsemu"
 
 for img in "${TEST_IMAGES[@]}"; do
