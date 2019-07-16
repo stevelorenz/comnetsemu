@@ -2,9 +2,16 @@
 
 """
 """
+import sys, os
+print(sys.path)
+# os.chdir("..")
+# os.chdir("..")
+sys.path.append(os.getcwd())
+print(sys.path)
 
-import docker
+# import docker
 import time
+from app.mec.docker_cleanup import cleanup
 
 from mininet.net import Mininet, Containernet, VNFManager
 from mininet.link import TCIntf, Intf
@@ -15,44 +22,58 @@ from mininet.log import setLogLevel, info
 from mininet.cli import CLI
 
 
-def cleanup() -> bool:
-    try:
-        client = docker.from_env()
-
-        images = client.images.list()
-        print(f"found {images.__len__()} images")
-        for img in images:
-            img = str(img)
-            if "dev_test" in img:
-                print("found \"dev_test\"")
-                break
-        else:
-            raise Exception
-
-        containers = client.containers.list()  # consider supplementing cleanup with "docker rm $(docker ps -aq)"
-        print(f"found {containers.__len__()} containers")
-        for container_id in containers:
-            container_id = str(container_id).replace(">", "").split(" ")[1]
-            container = client.containers.get(container_id=container_id)
-            print(f"putting container {container_id} to sleep . . .")
-            container.stop()
-            time.sleep(2)
-
-        return True
-
-    except Exception:
-        return False
+# def cleanup() -> bool:
+#     try:
+#         client = docker.from_env()
+#
+#         images = client.images.list()
+#         print(f"found {images.__len__()} images")
+#         for img in images:
+#             img = str(img)
+#             if "dev_test" in img:
+#                 print("found \"dev_test\"")
+#                 break
+#         else:
+#             raise Exception
+#
+#         containers = client.containers.list()  # consider supplementing cleanup with "docker rm $(docker ps -aq)"
+#         print(f"found {containers.__len__()} containers")
+#         for container_id in containers:
+#             container_id = str(container_id).replace(">", "").split(" ")[1]
+#             container = client.containers.get(container_id=container_id)
+#             print(f"putting container {container_id} to sleep . . .")
+#             container.stop()
+#             time.sleep(2)
+#
+#         return True
+#
+#     except Exception:
+#         return False
 
 
 def start() -> None:
-    net = Containernet()  # use build=false ?
+    net = Containernet(build=False)  # use build=false ?
     mgr = VNFManager(net)
 
+    # remote_controller: RemoteController = RemoteController("remote_controller", ip='127.0.0.1', port=6653)
+    # local_controller: Controller = Controller("local_controller", port=6634)
+    controller1 = net.addController("controller1", controller=RemoteController, ip='127.0.0.1', port=6633)
+    # controller2 = net.addController("controller2", controller=RemoteController, ip='127.0.0.1', port=6653)
+    # controller3 = net.addController("controller3", controller=RemoteController, ip='127.0.0.1', port=6653)
+
     info('*** Adding controller\n')  # run 2 instances of custom controller
-    controller1 = net.addController("controller1", controller=RemoteController, port=6653)  # controller=RemoteController, ip=127.0.0.1, port=6633
-    # controller2 = net.addController("controller2", controller=RemoteController, port=6633)  # controller=RemoteController, ip=127.0.0.1, port=6633
+    # controller1 = net.addController("controller1", controller=RemoteController, port=6653)
+    # controller=RemoteController, ip=127.0.0.1, port=6633
+    # controller2 = net.addController("controller2", controller=RemoteController, port=6633)
+    # controller=RemoteController, ip=127.0.0.1, port=6633
+    # controller1.start()
+    # controller2.start()
+    # controller_client = net.addController(local_controller)
+    # controller_client.start()
+
     controller1.start()
     # controller2.start()
+    # controller3.start()
 
     cleanup()
 
@@ -67,54 +88,60 @@ def start() -> None:
     server1_1 = net.addDockerHost(
         "server1_1",
         dimage='dev_test',
-        ip='10.0.0.20',
+        ip='10.0.0.21',
         mac="00:00:00:00:01:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server1_2 = net.addDockerHost(
         "server1_2",
         dimage='dev_test',
-        ip='10.0.0.20',
-        mac="00:00:00:00:01:01",
+        ip='10.0.0.22',
+        mac="00:00:00:00:01:02",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server1_3 = net.addDockerHost(
         "server1_3",
         dimage='dev_test',
-        ip='10.0.0.20',
-        mac="00:00:00:00:01:01",
+        ip='10.0.0.23',
+        mac="00:00:00:00:01:03",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
 
     server2_1 = net.addDockerHost(
         "server2_1",
         dimage='dev_test',
-        ip='10.0.0.40',
-        mac="00:00:00:00:01:01",
+        ip='10.0.0.41',
+        mac="00:00:00:00:02:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server2_2 = net.addDockerHost(
         "server2_2",
         dimage='dev_test',
-        ip='10.0.0.40',
-        mac="00:00:00:00:01:01",
+        ip='10.0.0.42',
+        mac="00:00:00:00:02:02",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server2_3 = net.addDockerHost(
         "server2_3",
         dimage='dev_test',
-        ip='10.0.0.40',
-        mac="00:00:00:00:01:01",
+        ip='10.0.0.43',
+        mac="00:00:00:00:02:03",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
 
     info('*** Adding switches\n')
     switch1 = net.addSwitch('switch1')  # listenPort=6634, switch1.start([controller1])
-    # switch1.start([controller1])
+    switch1.start([controller1])
     switch1.cmdPrint("ovs-vsctl show")
 
     switch2 = net.addSwitch('switch2')  # listenPort=6634, switch1.start([controller1])
-    # switch1.start([controller2])
+    switch1.start([controller1])
     switch2.cmdPrint("ovs-vsctl show")
     # net.waitConnected(timeout=5, delay=.1)
 
+    switch0 = net.addSwitch("switch0")
+    switch0.start([controller1])
+    switch0.cmdPrint("ovs-vsctl show")
+
     info('*** Creating links\n')
-    net.addLink(node1=switch1, node2=client1)
-    net.addLink(node1=switch2, node2=client1)
+    net.addLink(node1=switch0, node2=client1)
+
+    net.addLink(node1=switch1, node2=switch0)
+    net.addLink(node1=switch2, node2=switch0)
 
     net.addLink(switch1, server1_1)
     net.addLink(switch1, server1_2)
@@ -127,15 +154,24 @@ def start() -> None:
     # configure interfaces of client
 
     info('*** Starting network\n')
+    # try:
+    #     i = 1
+    #     for intf in client1.intfs:
+    #         intf.config(mac=f"00:00:00:00:00:0{i+1}", ip=f"10.0.0.1{i+1}")
+    #         i += 1
+    # except Exception:
+    #     pass
+    net.build()
     net.start()
-    # net.pingAll()
+    net.pingAll()
 
     try:
-        intf: Intf = client1.intfs[1]
-        intf.config(mac="00:00:00:00:00:01", ip="10.0.0.11", up=True)
-        client1.setHostRoute(ip="10.0.0.11", intf="client1-eth1")
-        client1.setDefaultRoute(intf="client1-eth1")
-        client1.cmd("ifconfig client1-eth0 down")
+        pass
+        # intf: Intf = client1.intfs[1]
+        # intf.config(mac="00:00:00:00:00:01", ip="10.0.0.11", up=True)
+        # client1.setHostRoute(ip="10.0.0.11", intf="client1-eth1")
+        # client1.setDefaultRoute(intf="client1-eth1")
+        # client1.cmd("ifconfig client1-eth0 down")
         # intf: Intf = client1.intfs[0]
         # intf.config(up=False)
         # intf.config(ifconfig="client1-eth1 10.0.0.10 netmask 255.0.0.0 broadcast 10.255.255.255")
@@ -175,11 +211,11 @@ def start() -> None:
     print(f"server 3 : \n{server2_3_container.dins.logs().decode('utf-8')}")
 
     time.sleep(2)
-    try:
-        pass
-        info(f"info client 1 : {client1.IP()} {client1.intfs} {client1.MAC()} {client1.ports}\n")
-    except:
-        pass
+    # try:
+    #     pass
+    #     info(f"info client 1 : {client1.IP()} {client1.intfs} {client1.MAC()} {client1.ports}\n")
+    # except:
+    #     pass
 
     CLI(net)
     time.sleep(5)
@@ -196,6 +232,9 @@ def start() -> None:
     mgr.removeContainer(server2_3_container)
 
     info('*** Stopping network\n')
+    # local_controller.stop()
+    # remote_controller.stop()
+
     net.stop()
     mgr.stop()
 

@@ -13,16 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+from typing import Dict, List, Tuple
+
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
-from ryu.ofproto import ofproto_v1_3
+from ryu.ofproto import ofproto_v1_3, ether
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
-from ryu.lib.packet import udp
-from ryu.lib.packet import ipv4
+from ryu.lib.packet import udp, ipv4, arp
 
 
 class Controller(app_manager.RyuApp):
@@ -32,6 +34,9 @@ class Controller(app_manager.RyuApp):
         super(Controller, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
         self.eth_to_ip = {}
+        self.latency = ({}, {})  # first is direct, second application traffic
+        self.time: Tuple[float, float] = (0.0, 0.0)  # first is direct, second application traffic
+        self.msg_cnt = 0
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -68,6 +73,7 @@ class Controller(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):  # avoid triggering this for server -> client
+        self.msg_cnt += 1
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
@@ -90,55 +96,78 @@ class Controller(app_manager.RyuApp):
             ip = pkt.protocols[1]
             ip_dst = ip.dst
             ip_src = ip.src
-            self.eth_to_ip.update({ip_dst: dst})
-            self.eth_to_ip.update({ip_src: src})
+            self.eth_to_ip.update({dst: ip_dst})
+            self.eth_to_ip.update({src: ip_src})
         except Exception:
             ip_dst = "none"
             ip_src = "none"
 
-        self.logger.info(f"\ndst {dst} {ip_dst} src {src} {ip_src}")
+        # self.logger.info(f"\ndst {dst} {ip_dst} src {src} {ip_src} cnt {self.msg_cnt}")
         # self.logger.info(f"dict {self.eth_to_ip}")
 
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
 
         flag = False
+        from_client = False
 
-        # try:
-        #     for p in pkt:
-        #         # self.logger.info(f"{p.protocol_name} {p}")
-        #         if p.protocol_name == "ethernet":
-        #             try:
-        #                 p.dst = self.eth_to_ip.get("10.0.0.21")
-        #                 dst = p.dst
-        #                 self.logger.info(f"packet rewrite OK, eth")
-        #             except Exception:
-        #                 pass
-        #         if p.protocol_name == "ipv4":
-        #             if p.dst == "10.0.0.20":
-        #                 p.dst = "10.0.0.21"
-        #                 flag = True
-        #                 self.logger.info(f"packet rewrite OK, ipv4")
-        #         if p.protocol_name == "udp":
-        #             if p.dst_port == 8004:
-        #                 p.dst_port = 8008
-        #                 flag = True
-        #                 self.logger.info(f"packet rewrite OK, udp")
-        # except Exception:
-        #     pass
+        if ip_src == "10.0.0.10":  # udp out, arp out
+            from_client = True
+            # self.time = (self.time[0], time.time())
+            # self.logger.info(f"time[1] updated : {self.time}")
+            self.logger.critical(f"")  # optical padding
+            # send arp probe to all servers
+            for key, value in self.mac_to_port[dpid].items():
+                if key != "00:00:00:00:00:01":
+                    # self.logger.info(f"key : {key}, value : {value}, ip : {self.eth_to_ip.get(key)}")
+                    probe_packet = packet.Packet()
+                    probe_packet.add_protocol(ethernet.ethernet(dst='ff:ff:ff:ff:ff:ff',
+                                                                src='00:00:00:00:00:01',
+                                                                ethertype=ether.ETH_TYPE_ARP))
+                    probe_packet.add_protocol(arp.arp(hwtype=1, proto=0x0800, hlen=6, plen=4, opcode=1,
+                                                      src_mac='00:00:00:00:00:01', src_ip='10.0.0.10',
+                                                      dst_mac='00:00:00:00:00:00', dst_ip=self.eth_to_ip.get(key)))
+                    probe_packet.serialize()
+                    # self.logger.debug(probe_packet.__repr__())
+                    out = parser.OFPPacketOut(datapath=datapath,
+                                              buffer_id=msg.buffer_id,
+                                              in_port=in_port,
+                                              actions=[parser.OFPActionOutput(value)],
+                                              data=probe_packet.data)
+                    datapath.send_msg(out)
+                    self.time = (time.time(), self.time[1])
+                    # self.logger.info(f"probe packet sent, time[0] updated : {self.time}")
+                    self.logger.critical(f"ARP_OUT,{self.msg_cnt},{self.eth_to_ip.get(key)},{key},{value},{self.time[0]},0")
+                    del out
+                    del probe_packet
+
+        if ip_dst == "10.0.0.10":  # udp in
+            latency: float = (time.time() - self.time[1]) * 1e3
+            self.latency[1].update({src: latency})
+            # self.logger.info(f"updated entry[1] : {src} ; {latency} msec")
+            self.logger.critical(f"UDP_IN,{self.msg_cnt},{ip_src},{src},0,0,{latency}")
+
+        if ip_dst == "none" and dst == "00:00:00:00:00:01":  # arp in
+            latency: float = (time.time() - self.time[0]) * 1e3
+            self.latency[0].update({src: latency})
+            # self.logger.info(f"updated entry[0] : {src} ; {latency} msec")
+            if latency < 150.0:  # remove waste packets
+                self.logger.critical(f"ARP_IN,{self.msg_cnt},0,{src},0,0,{latency}")
+            if self.msg_cnt > 50:
+                return  # pass probe packet
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
-        self.logger.info(f"port in {in_port} {dpid} {src}")
+        # self.logger.info(f"port in {in_port} {dpid} {src}")
 
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
-            self.logger.info(f"port {out_port}")
+            # self.logger.debug(f"out port {out_port}")
             if ip_dst != "10.0.0.10":  # flood servers, not client
-                self.logger.info("flood")
+                # self.logger.info("flood")
                 out_port = ofproto.OFPP_FLOOD
         else:
-            self.logger.info("flood")
+            # self.logger.info("flood")
             out_port = ofproto.OFPP_FLOOD
 
         # out_port = ofproto.OFPP_FLOOD
@@ -155,8 +184,11 @@ class Controller(app_manager.RyuApp):
                                       in_port=in_port, actions=actions, data=pkt.data)
             datapath.send_msg(out)
         elif not flag:
-            self.logger.info("packet out")
-            self.logger.info(f"port dict {self.mac_to_port}")
+            # self.logger.debug(f"packet out\nport dict {self.mac_to_port}")
             out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
                                       in_port=in_port, actions=actions, data=data)
             datapath.send_msg(out)
+            if from_client:
+                self.time = (self.time[0], time.time())
+                # self.logger.info(f"time[1] updated : {self.time}")
+                self.logger.critical(f"UDP_OUT,{self.msg_cnt},{ip_src},{src},0,{self.time[1]},0")
