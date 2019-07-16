@@ -41,6 +41,7 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
     pkginst='sudo dpkg -i'
     update='sudo apt-get'
+    upgrade='sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y'
     addrepo='sudo add-apt-repository'
     # Prereqs for this script
     if ! lsb_release -v &> /dev/null; then
@@ -63,10 +64,10 @@ COMNETSEMU_SRC_DIR="comnetsemu"
 # Directory containing dependencies installed from source
 DEP_DIR="$HOME/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
-DEPS_INSTALLED_FROM_SRC=(mininet ryu ovx)
+DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # Tags/branch names of dependencies
 COMNETSEMU_VER="master"
-MININET_VER="de28f67"
+MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
@@ -300,7 +301,7 @@ function all() {
     install_mininet
     install_ryu
     install_docker
-    install_ovx
+    # install_ovx
     install_devs
     # MUST run at the end!
     install_comnetsemu
