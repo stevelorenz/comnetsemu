@@ -41,7 +41,6 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
     pkginst='sudo dpkg -i'
     update='sudo apt-get'
-    upgrade='sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y'
     addrepo='sudo add-apt-repository'
     # Prereqs for this script
     if ! lsb_release -v &> /dev/null; then
@@ -89,14 +88,15 @@ function usage() {
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
     echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
-    echo " -c: install (C)omNetsEmu [master] python module. Docker-Py and Mininet MUST be ALREADY installed."
+    echo " -c: install (C)omNetsEmu [Ver: $COMNETSEMU_VER] python module. Docker-Py and Mininet MUST be ALREADY installed."
     echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
     echo " -h: print usage"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
+    echo " -p: Update ComNetsEmu's de(P)endencies. The source repo and Python module are not updated."
     echo " -r: try to (R)emove installed dependencies - good luck!"
-    echo " -u: (U)pdate ComNetsEmu [master]"
+    echo " -u: Fully (U)pdate ComNetsEmu [Ver: $COMNETSEMU_VER]. Including pulling the default remote and installing the Python module."
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
     exit 2
@@ -121,10 +121,12 @@ function install_docker() {
 
     fi
 
+}
+
+function update_docker() {
     $update update
     $install docker-ce
-    sudo -H $PIP install docker=="$DOCKER_PY_VER"
-
+    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
 function install_mininet() {
@@ -215,24 +217,37 @@ function install_ovx() {
     echo "*** Please run: 'sh $ovx_dir/OpenVirteX/scripts/ovx.sh' to start OpenVirtex"
 }
 
-function update_comnetsemu() {
+function update_comnetsemu_all() {
     local dep_name
     local installed_ver
     local req_ver
 
     echo ""
-    echo "*** Update ComNetsEmu"
+    echo "*** Fully update ComNetsEmu"
 
 
-    echo "[1] Update ComNetsEmu's Python module, examples and applications"
+    echo "- Update ComNetsEmu's Python module, examples and applications"
     cd "$COMNETSEMU_DIR/comnetsemu" || exit
+    git checkout master
     git pull "$DEFAULT_REMOTE" "$COMNETSEMU_VER"
     sudo PYTHON=python3 make install
 
-    echo "[2] Update dependencies installed with package manager."
-    install_docker
+    update_comnetsemu_deps
+}
 
-    echo "[3] Update dependencies installed from source"
+function update_comnetsemu_deps() {
+    local dep_name
+    local installed_ver
+    local req_ver
+
+    echo ""
+    echo "*** Update ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not updated."
+
+
+    echo "- Update dependencies installed with package manager."
+    update_docker
+
+    echo "- Update dependencies installed from source"
     echo "  The update script checks the version flag (format tool_name-version) in $DEP_DIR"
     echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
 
@@ -250,6 +265,7 @@ function update_comnetsemu() {
         fi
         echo ""
     done
+
 }
 
 # TODO: Extend remove function for all installed packages
@@ -325,7 +341,7 @@ if [ $# -eq 0 ]
 then
     usage
 else
-    while getopts 'abcdhlnoruvy' OPTION
+    while getopts 'abcdhlnopruvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -336,7 +352,8 @@ else
             l) install_lightweight;;
             n) install_mininet;;
             o) install_ovx;;
-            u) update_comnetsemu;;
+            p) update_comnetsemu_deps;;
+            u) update_comnetsemu_all;;
             v) install_devs;;
             y) install_ryu;;
             r) remove_comnetsemu;;
