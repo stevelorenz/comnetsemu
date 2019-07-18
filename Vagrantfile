@@ -44,7 +44,7 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-#iif Vagrant.has_plugin?("vagrant-vbguest")
+#if Vagrant.has_plugin?("vagrant-vbguest")
 #  config.vbguest.auto_update = false
 #end
 
@@ -66,12 +66,17 @@ Vagrant.configure("2") do |config|
 VM started! Run "vagrant ssh <vmname>" to connect.
 
 INFO !!! For all developers:
-If there are any new commits in the dev or master branches in the remote repository, Please do following steps to update:
+
+If there are any new commits in the dev branch in the remote repository, Please do following steps to upgrade dependencies:
 
 - [On the host system] Fetch and merge new commits from upstream dev branch and solve potential conflicts.
-  By default, ComNetsEmu Python module is installed with develop mode inside VM, so the changes of the module should be applied automatically inside VM.
+  By default, ComNetsEmu Python module is installed using develop mode inside VM, so the updates of the module should be applied automatically inside VM. No re-install is required.
 
-- [Inside Vagrant VM] Change current path to /home/vagrant/comnetsemu/util and run $ PYTHON=python3 ./install.sh -d to check and update all dependencies when required.
+- [Inside Vagrant VM] Change current path to "/home/vagrant/comnetsemu/util" and run "$ PYTHON=python3 ./install.sh -u" to check and upgrade all dependencies when required.
+
+- [Inside Vagrant VM] Rebuild the containers in "test_containers" with "build.sh" (The dockerfile may be modified in the latest updates)
+
+- [On the host system] If the Vagrant file is modified in the lastest updates. run "$ vagrant provision" to re-provision the created VM.
     '
 
     # Sync ./ to home dir of vagrant to simplify the install script

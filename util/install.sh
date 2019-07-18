@@ -65,7 +65,6 @@ DEP_DIR="$HOME/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # Tags/branch names of dependencies
-COMNETSEMU_VER="master"
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
@@ -80,23 +79,22 @@ echo " - The path to install all dependencies: $DEP_DIR"
 
 
 function usage() {
-    printf '\nUsage: %s [-abcdhlnoruvy]\n\n' "$(basename "$0")" >&2
+    printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
     echo " - Dependencies are installed with package manager (apt, pip) or from sources (git clone)."
-    echo " - [] in options are used to mark the version (git tags or branch)"
+    echo " - [] in options are used to mark the version (If the tool is installed from source, the version can be a Git commit, branch or tag.)"
 
     echo ""
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
     echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
-    echo " -c: install (C)omNetsEmu [Ver: $COMNETSEMU_VER] python module. Docker-Py and Mininet MUST be ALREADY installed."
+    echo " -c: install (C)omNetsEmu Python module. Docker-Py and Mininet MUST be ALREADY installed."
     echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
     echo " -h: print usage"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
-    echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
-    echo " -p: Update ComNetsEmu's de(P)endencies. The source repo and Python module are not updated."
-    echo " -r: try to (R)emove installed dependencies - good luck!"
-    echo " -u: Fully (U)pdate ComNetsEmu [Ver: $COMNETSEMU_VER]. Including pulling the default remote and installing the Python module."
+    # echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
+    # echo " -r: try to (R)emove installed dependencies - good luck!"
+    echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
     exit 2
@@ -121,9 +119,13 @@ function install_docker() {
 
     fi
 
+    $update update
+    $install docker-ce
+    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
+
 }
 
-function update_docker() {
+function upgrade_docker() {
     $update update
     $install docker-ce
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
@@ -217,59 +219,53 @@ function install_ovx() {
     echo "*** Please run: 'sh $ovx_dir/OpenVirteX/scripts/ovx.sh' to start OpenVirtex"
 }
 
-function update_comnetsemu_all() {
+function upgrade_comnetsemu_deps() {
     local dep_name
     local installed_ver
     local req_ver
 
+    warning "[Upgrade]" "The upgrade function checks information written in the installer script and only upgrade dependencies."
+    warning "[Upgrade]" "The repository of all examples, application codes and source code of the Python module is not updated. Please check and merge updates manually."
+    warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
     echo ""
-    echo "*** Fully update ComNetsEmu"
-
-
-    echo "- Update ComNetsEmu's Python module, examples and applications"
-    cd "$COMNETSEMU_DIR/comnetsemu" || exit
-    git checkout master
-    git pull "$DEFAULT_REMOTE" "$COMNETSEMU_VER"
-    sudo PYTHON=python3 make install
-
-    update_comnetsemu_deps
-}
-
-function update_comnetsemu_deps() {
-    local dep_name
-    local installed_ver
-    local req_ver
-
-    echo ""
-    echo "*** Update ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not updated."
-
-
-    echo "- Update dependencies installed with package manager."
-    update_docker
-
-    echo "- Update dependencies installed from source"
-    echo "  The update script checks the version flag (format tool_name-version) in $DEP_DIR"
-    echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
-
-    for (( i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++ )); do
-        dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
-        echo "Step$i: Check and update ${DEPS_INSTALLED_FROM_SRC[i]}"
-        # TODO: Replace ls | grep with glob or for loop
-        installed_ver=$(ls "$DEP_DIR/" | grep "$dep_name-" | cut -d '-' -f 2-)
-        req_ver=${DEPS_VERSIONS[i]}
-        echo "Installed version: $installed_ver, requested version: ${req_ver}"
-        if [[ "$installed_ver" != "$req_ver" ]]; then
-            warning "[Update]" "Update $dep_name from $installed_ver to $req_ver"
-            sudo rm -rf "$DEP_DIR/$dep_name-$installed_ver"
-            ${DEP_INSTALL_FUNCS[i]}
-        fi
+    warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
+    read -r -n 1;
+    if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
         echo ""
-    done
+        echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
 
+
+        echo "- Upgrade dependencies installed with package manager."
+        upgrade_docker
+
+        echo "- Upgrade dependencies installed from source"
+        echo "  The upgrade script checks the version flag (format tool_name-version) in $DEP_DIR"
+        echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
+
+        for (( i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++ )); do
+            dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
+            echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
+            # TODO: Replace ls | grep with glob or for loop
+            installed_ver=$(ls "$DEP_DIR/" | grep "$dep_name-" | cut -d '-' -f 2-)
+            req_ver=${DEPS_VERSIONS[i]}
+            echo "Installed version: $installed_ver, requested version: ${req_ver}"
+            if [[ "$installed_ver" != "$req_ver" ]]; then
+                warning "[Upgrade]" "Upgrade $dep_name from $installed_ver to $req_ver"
+                sudo rm -rf "$DEP_DIR/$dep_name-$installed_ver"
+                ${DEP_INSTALL_FUNCS[i]}
+            fi
+            echo ""
+        done
+    else
+        error "[Upgrade]" "Please check and merge remote updates before upgrading."
+    fi
 }
 
 # TODO: Extend remove function for all installed packages
 function remove_comnetsemu() {
+    echo "*** Remove function currently under development"
+    exit 0
+
     # ISSUE: pip uninstall does not uninstall all dependencies of the packages
     echo "*** Remove ComNetsEmu and its dependencies"
     warning "[REMOVE]" "Try its best to remove all packages and configuration files, not 100% clean."
@@ -341,7 +337,7 @@ if [ $# -eq 0 ]
 then
     usage
 else
-    while getopts 'abcdhlnopruvy' OPTION
+    while getopts 'abcdhlnoruvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -352,11 +348,10 @@ else
             l) install_lightweight;;
             n) install_mininet;;
             o) install_ovx;;
-            p) update_comnetsemu_deps;;
-            u) update_comnetsemu_all;;
+            u) upgrade_comnetsemu_deps;;
             v) install_devs;;
             y) install_ryu;;
-            r) remove_comnetsemu;;
+            # r) remove_comnetsemu;;
             *) usage;;
         esac
     done
