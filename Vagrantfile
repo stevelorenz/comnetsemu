@@ -62,6 +62,18 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.box_version = BOX_VER
     comnetsemu.vm.box_check_update = true
 
+    comnetsemu.vm.post_up_message = '
+VM started! Run "vagrant ssh <vmname>" to connect.
+
+INFO !!! For all developers:
+If there are any new commits in the dev or master branches in the remote repository, Please do following steps to update:
+
+- [On the host system] Fetch and merge new commits from upstream dev branch and solve potential conflicts.
+  By default, ComNetsEmu Python module is installed with develop mode inside VM, so the changes of the module should be applied automatically inside VM.
+
+- [Inside Vagrant VM] Change current path to /home/vagrant/comnetsemu/util and run $ PYTHON=python3 ./install.sh -d to check and update all dependencies when required.
+    '
+
     # Sync ./ to home dir of vagrant to simplify the install script
     comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
     comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu"
@@ -89,6 +101,14 @@ Vagrant.configure("2") do |config|
       cd /home/vagrant/comnetsemu/test_containers || exit
       bash ./build.sh
     SHELL
+
+    # Always run this when use `vagrant up`
+    # - Check to update all dependencies
+    # ISSUE: The VM need to have Internet connection to boot up...
+    #comnetsemu.vm.provision :shell, privileged: false, run: "always", inline: <<-SHELL
+    #  cd /home/vagrant/comnetsemu/util || exit
+    #  PYTHON=python3 ./install.sh -p
+    #SHELL
 
     # Enable X11 forwarding
     comnetsemu.ssh.forward_agent = true

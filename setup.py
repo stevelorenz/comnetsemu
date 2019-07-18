@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 
-from comnetsemu.net import VERSION
-"Setuptools params"
+"Setuptools Params"
 
 from setuptools import setup, find_packages
-from os.path import join
+
+# from os.path import join
 
 # Get version number from source tree
 import sys
 sys.path.append('.')
+from comnetsemu.net import VERSION
 
 modname = distname = 'comnetsemu'
 
 setup(
     name=distname,
     version=VERSION,
-    description='Docker-container based SDN/NFV emulator',
+    description='A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice',
     author='The Deutsche Telekom Chair of Communication Networks, TU Dresden',
-    author_email='rlantz@cs.stanford.edu',
+    author_email='zuo.xiang@tu-dresden.de',
     packages=find_packages(
         exclude=['app', 'examples', 'util', 'venv']),
     long_description="""
-        ComNetsEmu is a network emulator based on Mininet and Containernet.
+        A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice
         """,
     classifiers=[
         #   3 - Alpha
