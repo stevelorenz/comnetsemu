@@ -7,6 +7,8 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 from ryu.lib.packet import udp
+from ryu.lib.packet import tcp
+from ryu.lib.packet import icmp
 
 class TrafficSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -86,29 +88,61 @@ class TrafficSlicing(app_manager.RyuApp):
                 pkt_udp = pkt.get_protocol(udp.udp)
                 slice_number = 1
                 out_port = self.slice_ports[dpid][slice_number]
-                match = datapath.ofproto_parser.OFPMatch(   
+                match = datapath.ofproto_parser.OFPMatch(
                     in_port = in_port,
                     eth_dst = dst,
                     eth_type = ether_types.ETH_TYPE_IP,
                     ip_proto = 0x11,    #udp
                     udp_dst = self.slice_TCport
                 )
-                
+
                 actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
                 self.add_flow(datapath, 2, match, actions)
                 self._send_package(msg, datapath, in_port, actions)
 
-            else:
+            elif pkt.get_protocol(udp.udp) and pkt.get_protocol(udp.udp).dst_port != self.slice_TCport:
                 slice_number = 2
                 out_port = self.slice_ports[dpid][slice_number]
                 match = datapath.ofproto_parser.OFPMatch(   
                     in_port=in_port, 
                     eth_dst=dst,
-                    eth_src=src
+                    eth_src=src,
+                    eth_type=ether_types.ETH_TYPE_IP,
+                    ip_proto=0x11,  # udp
+                    udp_dst=pkt.get_protocol(udp.udp).dst_port
                     )
                 actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
                 self.add_flow(datapath, 1, match, actions)
                 self._send_package(msg, datapath, in_port, actions)
+
+            elif pkt.get_protocol(tcp.tcp):
+                slice_number = 2
+                out_port = self.slice_ports[dpid][slice_number]
+                match = datapath.ofproto_parser.OFPMatch(
+                    in_port=in_port,
+                    eth_dst=dst,
+                    eth_src=src,
+                    eth_type=ether_types.ETH_TYPE_IP,
+                    ip_proto=0x06,  # tcp
+                )
+                actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
+                self.add_flow(datapath, 1, match, actions)
+                self._send_package(msg, datapath, in_port, actions)
+
+            elif pkt.get_protocol(icmp.icmp):
+                slice_number = 2
+                out_port = self.slice_ports[dpid][slice_number]
+                match = datapath.ofproto_parser.OFPMatch(
+                    in_port=in_port,
+                    eth_dst=dst,
+                    eth_src=src,
+                    eth_type=ether_types.ETH_TYPE_IP,
+                    ip_proto=0x01,  # icmp
+                )
+                actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
+                self.add_flow(datapath, 1, match, actions)
+                self._send_package(msg, datapath, in_port, actions)
+
 
         elif dpid not in self.end_swtiches:
             out_port = ofproto.OFPP_FLOOD
