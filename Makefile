@@ -26,9 +26,21 @@ errcheck: $(PYSRC)
 	pylint -E --rcfile=.pylint $(PYSRC)
 
 test_examples: $(COMNETSEMU)
-	@echo "*** Running functional examples of the emulator"
+	@echo "*** Running basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
+
+test_examples_full: $(COMNETSEMU) $(EXAMPLES)
+	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
+	@echo "*** WARN: It takes time..."
+	@echo "**** Basic functional examples of the emulator"
+	$(PYTHON) ./examples/dockerhost.py
+	$(PYTHON) ./examples/dockerindocker.py
+	@echo "**** Examples for security..."
+	$(PYTHON) ./examples/nft-test.py
+	$(PYTHON) ./examples/MitM-test.py
+	$(PYTHON) ./examples/firewall-test.py
+	$(PYTHON) ./examples/wg-test.py
 
 check_installer: ./util/install.sh
 	@ echo "*** Check installer"
@@ -45,3 +57,17 @@ develop: $(MNEXEC) $(MANPAGES)
 
 doc: $(PYSRC)
 	doxygen doc/Doxyfile
+
+## Cleanup utilities
+
+rm-all-containers:
+	@echo "Remove all docker containers"
+	docker container rm $$(docker ps -aq) -f
+
+rm-dangling-images:
+	@echo "Remove all dangling docker images"
+	docker rmi $$(docker images -f "dangling=true" -q)
+
+pp-empty-dirs:
+	@echo "Print empty directories"
+	@find -maxdepth 3 -type d -empty

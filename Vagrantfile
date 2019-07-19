@@ -28,6 +28,11 @@ sudo apt-get install -y git pkg-config gdb tmux sudo make
 sudo apt-get install -y bash-completion htop dfc
 sudo apt-get install -y iperf iperf3
 sudo apt-get install -y python3-pip
+# Install wireguard kernel module
+sudo add-apt-repository -y ppa:wireguard/wireguard
+sudo apt-get update
+sudo apt-get install -y linux-headers-4.15.0-ap51-generic
+sudo apt-get install -y wireguard=0.0.20190702-wg1~bionic
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
@@ -39,12 +44,16 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-if Vagrant.has_plugin?("vagrant-vbguest")
-  config.vbguest.auto_update = false
-end
+#if Vagrant.has_plugin?("vagrant-vbguest")
+#  config.vbguest.auto_update = false
+#end
 
 
 Vagrant.configure("2") do |config|
+
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+  end
 
   config.vm.define "comnetsemu" do |comnetsemu|
 
@@ -52,6 +61,23 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.box = BOX
     comnetsemu.vm.box_version = BOX_VER
     comnetsemu.vm.box_check_update = true
+
+    comnetsemu.vm.post_up_message = '
+VM started! Run "vagrant ssh <vmname>" to connect.
+
+INFO !!! For all developers:
+
+If there are any new commits in the dev branch in the remote repository, Please do following steps to upgrade dependencies:
+
+- [On the host system] Fetch and merge new commits from upstream dev branch and solve potential conflicts.
+  By default, ComNetsEmu Python module is installed using develop mode inside VM, so the updates of the module should be applied automatically inside VM. No re-install is required.
+
+- [Inside Vagrant VM] Change current path to "/home/vagrant/comnetsemu/util" and run "$ PYTHON=python3 ./install.sh -u" to check and upgrade all dependencies when required.
+
+- [Inside Vagrant VM] Rebuild the containers in "test_containers" with "build.sh" (The dockerfile may be modified in the latest updates)
+
+- [On the host system] If the Vagrant file is modified in the lastest updates. run "$ vagrant provision" to re-provision the created VM.
+    '
 
     # Sync ./ to home dir of vagrant to simplify the install script
     comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
@@ -80,6 +106,14 @@ Vagrant.configure("2") do |config|
       cd /home/vagrant/comnetsemu/test_containers || exit
       bash ./build.sh
     SHELL
+
+    # Always run this when use `vagrant up`
+    # - Check to update all dependencies
+    # ISSUE: The VM need to have Internet connection to boot up...
+    #comnetsemu.vm.provision :shell, privileged: false, run: "always", inline: <<-SHELL
+    #  cd /home/vagrant/comnetsemu/util || exit
+    #  PYTHON=python3 ./install.sh -p
+    #SHELL
 
     # Enable X11 forwarding
     comnetsemu.ssh.forward_agent = true

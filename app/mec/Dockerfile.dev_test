@@ -14,6 +14,12 @@ RUN \
 # Install Docker from Docker Inc. repositories.
 RUN curl -sSL https://get.docker.com/ | sh
 
+# Install Python
+RUN apt-get -y install python-pip python3.6
+
+# Install numpy with pip3
+RUN pip install numpy
+
 # Add Tini --- A tiny but valid init for containers
 ENV TINI_VERSION v0.18.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
@@ -25,3 +31,7 @@ WORKDIR /root
 
 # Define default command.
 CMD ["bash"]
+
+# Add Directories
+ADD client.py /tmp/
+ADD server.py /tmp/

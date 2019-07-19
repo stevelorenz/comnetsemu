@@ -12,11 +12,9 @@ set -e
 set -o nounset
 
 # TODO:  <06-06-19, Zuo> Test installation on other distributions
-# BUG: debian:buster can not install OpenVirtex
-# TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
-
-TEST_IMAGES=("ubuntu:18.04")
-TEST_OPTIONS=("-l" "-o")
+TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
+# TEST_IMAGES=("ubuntu:18.04")
+TEST_OPTIONS=("-a")
 COMNETSEMU_DIR="/root/comnetsemu"
 
 for img in "${TEST_IMAGES[@]}"; do
@@ -42,6 +40,6 @@ RUN bash ./install.sh $opt
 
 CMD ["bash"]
 EOF
-        sudo docker image rm "test_comnetsemu_install_$img"
-    done
+sudo docker image rm "test_comnetsemu_install_$img"
+done
 done

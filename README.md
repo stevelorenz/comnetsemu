@@ -74,7 +74,15 @@ $ cd ./test_containers
 $ bash ./build.sh
 ```
 
-#### Install in a Vagrant managed VM for Development
+#### Main Dependencies
+
+- Mininet: branch master, commit e0436642ae1005d2ec9f58ba698125d718072293
+- Docker-CE: latest, Docker-Py: V3.7.2
+- Ryu SDN controller: V4.32
+
+- Wireguard: 0.0.20190702-wg1~bionic
+
+#### Install in a Vagrant managed VM (for Development)
 
 For example and application developers, the comfortable way to setup the development environment is to run a
 pre-configured VM managed by [Vagrant](https://www.vagrantup.com/). If the Vagrant and the VM hypervisor (
@@ -98,7 +106,7 @@ $ vagrant destory comnetsemu
 The `vagrant up` should run correctly. If there are some "apt" or "dpkg" related error messages (like some packages can
 not be found or installed) during the `vagrant up`, it might due to the box you used to build the VM is outdated. It is
 configured in current ./Vagrantfile that the vagrant will check if there are any updates to the box used in the current
-environment.  It can be checked manually with `vagrant box update`. You need to destory the already built VM and
+environment.  It can be checked manually with `vagrant box update`. You need to destroy the already built VM and
 recreate it to acquire the new updates in the box with:
 
 ```bash
@@ -112,39 +120,42 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS (Bionic Beaver))
+#### Install on Debian/Ubuntu (Only tested on Debian Jessie and Ubuntu Server 18.04 LTS (Bionic Beaver))
 
 - Install required packages from your package management systems
 
-    ```bash
-    $ sudo apt update
-    $ sudo apt upgrade
-    $ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
-    ```
+```bash
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt install python3 libpython3-dev python3-dev git python3-pip make git sudo
+```
 
 - Install ComNetsEmu with all dependencies
 
-    ```bash
-    $ cd $HOME/comnetsemu/util
-    $ PYTHON=python3 bash ./install.sh -a
-    ```
+```bash
+$ cd $HOME/comnetsemu/util
+$ PYTHON=python3 bash ./install.sh -a
+```
 
-### Update ComNetsEmu and  Dependencies
+### Upgrade ComNetsEmu and Dependencies
 
-The master branch contains stable/tested sources for ComNetsEmu's python module, utility scripts, examples and
-applications. It is recommended to update to latest commit of master branch.
+The **master** branch contains stable/tested sources for ComNetsEmu's python module, utility scripts, examples and
+applications. It is recommended to upgraded to latest commit of the master branch.
 
-The [installer script](./util/install.sh) has a function to update ComNetsEmu's python modules and dependencies software
+The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software
 automatically. This script **ONLY** supports Ubuntu/Debian (Tested on Ubuntu 18.04 LTS) and has some default variables:
 
-1. The default remote name is origin and should linked to a fetch-0able Repository with latest updates. e.g. https://bitbucket.org/comnets/comnetsemu.git
-2. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
-3. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
+1. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
+2. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
 
 You can modify these variables in the installer script for your customized installation.
 
-Before run the update program, the source code directly (by default, "$HOME/comnetsemu") should be updated to the latest
-commit in master branch via git:
+**WARNING**: The upgrade function does not re-install(upgrade) the Python module of ComNetsEmu. If the Vagrant VM is
+used, the develop mode and sync folder are used to apply changes automatically. Otherwise, the module should be
+re-installed manually.
+
+Before running the upgrade function, the source code repository (by default, "$HOME/comnetsemu") should be updated to the latest
+commit in master branch via git (fix conflicts if required):
 
 ```bash
 $ cd $HOME/comnetsemu
@@ -152,7 +163,7 @@ $ git checkout master
 $ git pull origin master
 ```
 
-Then run following commands to update automatically (good luck ^_^):
+Then run following commands to upgrade automatically (good luck ^_^):
 
 ```bash
 $ cd $HOME/comnetsemu/util
@@ -193,7 +204,7 @@ licence before running the example. Once you have the licence, check this
 - [examples](./examples/): Example programs for functionalities of the emulator. Including all examples in upstream
     Mininet and additional examples of ComNetsEmu.
 
-- [test_containers](./test_containers/): Contains Dockerfiles for external Docker containers (Docker host).
+- [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
 
 - [utils](./util/): Utility and helper scripts.
 
@@ -207,10 +218,10 @@ doxygen and help2man before building the documentation. The built documentation 
 
 - Build and open HTML documentation in browser:
 
-    ```bash
-    $ make doc
-    $ xdg-open ./doc/html/index.html
-    ```
+```bash
+$ make doc
+$ xdg-open ./doc/html/index.html
+```
 
 - To build PDF documentation with Latex, the `GENERATE_LATEX` flag in ./doc/Doxyfile should be set to `YES`.
 
