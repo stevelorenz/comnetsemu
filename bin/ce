@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import docker
-from mininet.log import LEVELS, debug, error, info, lg, output, warn
+from mininet.log import LEVELS, debug, error, info, lg
 
 
 def run():
