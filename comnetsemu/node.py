@@ -553,6 +553,35 @@ class DockerHost (Host):
             error("Problem reading cgroup info: %r\n" % cmd)
             return -1
 
+    # MARK(Zuo): This is a temporary workaround. I will submit an issue to upstream
+    # Mininet project to modify the current Intf.setIP() method.
+    def setIP(self, ip, prefixLen=8, intf=None, **kwargs):
+        """Set the IP address for an interface.
+           intf: intf or intf name
+           ip: IP address as a string
+           prefixLen: prefix length, e.g. 8 for /8 or 16M addrs
+           kwargs: any additional arguments for intf.setIP"""
+
+        ifce = self.intf(intf)
+        ret = ifce.setIP(ip, prefixLen, **kwargs)
+        if ret.startswith("ifconfig: bad"):
+            error("\nFailed to set IP address with ifconfig\n")
+            info("Use iproute2 instead of ifconfig (used by Mininet).\n")
+            if '/' in ip:
+                ifce.ip, ifce.prefixLen = ip.split('/')
+                ret = self.cmd("ip addr add {} dev {}".format(
+                    ip, ifce.name
+                ))
+            else:
+                if prefixLen is None:
+                    raise Exception('No prefix length set for IP address %s'
+                                    % (ip, ))
+                ifce.ip, ifce.prefixLen = ip, prefixLen
+                ret = self.cmd("ip addr add {}/{} dev {}".format(
+                    ip, prefixLen, ifce.name
+                ))
+        return ret
+
 
 class DockerContainer(Host):
 

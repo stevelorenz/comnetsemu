@@ -9,7 +9,7 @@ RUN \
         apt-get -y upgrade && \
         apt-get install -y build-essential && \
         apt-get install -y net-tools iproute2 iputils-ping \
-        apt-transport-https ca-certificates curl stress iperf iperf3
+        apt-transport-https ca-certificates curl stress iperf iperf3 telnet
 
 # Install Docker from Docker Inc. repositories.
 RUN curl -sSL https://get.docker.com/ | sh
