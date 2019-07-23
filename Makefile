@@ -1,4 +1,5 @@
 COMNETSEMU = comnetsemu/*.py
+CE_BIN = bin/ce
 TEST = comnetsemu/test/*.py
 EXAMPLES = examples/*.py
 PYTHON ?= python3
@@ -14,13 +15,13 @@ all: codecheck
 clean:
 	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
 
-codecheck: $(PYSRC)
+codecheck: $(PYSRC) $(CE_BIN) $(TEST)
 	@echo "*** Running code check"
 	pyflakes $(PYSRC)
 	pylint --rcfile=.pylint $(PYSRC)
 	pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
 
-errcheck: $(PYSRC)
+errcheck: $(PYSRC) $(CE_BIN) $(TEST)
 	@echo "*** Running check for errors only"
 	pyflakes $(PYSRC)
 	pylint -E --rcfile=.pylint $(PYSRC)
@@ -41,6 +42,10 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	$(PYTHON) ./examples/MitM-test.py
 	$(PYTHON) ./examples/firewall-test.py
 	$(PYTHON) ./examples/wg-test.py
+
+ce_slowtest: $(COMNETSEMU) $(TEST)
+	@echo "Running slower tests of ComNetsEmu python module."
+	$(PYTHON) ./comnetsemu/test/test_cleanup.py
 
 check_installer: ./util/install.sh
 	@ echo "*** Check installer"

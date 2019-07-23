@@ -122,6 +122,9 @@ class VNFManager(object):
         self.container_queue = list()
         self.name_container_map = dict()
 
+        # mininet's internal containers -> mni
+        self.dnameprefix = "mni"
+
     def addContainer(self, name, dhost, dimage, dcmd, retry_cnt=3, wait=0.5,
                      **params):
         """Create and run a new container inside a Mininet DockerHost
@@ -153,7 +156,7 @@ class VNFManager(object):
 
         # 2. Current version, the container inside share the network stack of
         # the parent docker.
-
+        name = ".".join((self.dnameprefix, name))
         run_cmd = """docker run -idt --name {} --cgroup-parent=/docker/{} \
 --network container:mn.{} {} {}
         """.format(name, dhost.did, dhost.name, dimage, dcmd)
