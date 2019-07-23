@@ -39,22 +39,25 @@ def testTopo():
     info('*** Starting network\n')
     net.start()
 
-    test_connection(h1)
+    test_connection(h2)
 
     info('*** Add drop all nftables rule\n')
     h1.cmd("nft add table inet filter")
-    h1.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
+    h1.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy accept \; }")
+    h1.cmd("nft add rule inet filter input ip saddr 10.0.0.2 counter drop")
 
-    test_connection(h1)
+    test_connection(h2)
+
+    print(h1.cmd("nft list table inet filter"))
 
     info('*** Stopping network')
     net.stop()
 
 
-def test_connection(h1):
+def test_connection(client):
     info("*** Test the connection\n")
     print("* Ping test count: %d" % PING_COUNT)
-    ret = h1.cmd("ping -c %d 10.0.0.2" % PING_COUNT)
+    ret = client.cmd("ping -c %d 10.0.0.1" % PING_COUNT)
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     print("* Measured loss rate: {:.2f}%".format(measured))
