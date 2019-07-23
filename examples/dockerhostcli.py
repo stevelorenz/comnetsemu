@@ -50,5 +50,5 @@ def testTopo():
 
 
 if __name__ == '__main__':
-    setLogLevel('info')
+    setLogLevel('debug')
     testTopo()
