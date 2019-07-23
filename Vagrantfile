@@ -31,8 +31,8 @@ sudo apt-get install -y python3-pip
 # Install wireguard kernel module
 sudo add-apt-repository -y ppa:wireguard/wireguard
 sudo apt-get update
-sudo apt-get install -y linux-headers-4.15.0-ap51-generic
-sudo apt-get install -y wireguard=0.0.20190702-wg1~bionic
+sudo apt-get install -y linux-headers-$(uname -r)
+sudo apt-get install -y wireguard
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
