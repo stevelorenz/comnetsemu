@@ -37,9 +37,7 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
 	@echo "**** Examples for security..."
-	$(PYTHON) ./examples/nft-test.py
-	$(PYTHON) ./examples/MitM-test.py
-	$(PYTHON) ./examples/firewall-test.py
+	$(PYTHON) ./examples/nft-test.py	
 	$(PYTHON) ./examples/wg-test.py
 
 check_installer: ./util/install.sh
