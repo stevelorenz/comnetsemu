@@ -39,9 +39,6 @@ def testTopo():
     info('*** Starting network\n')
     net.start()
 
-    # TODO: IP is not assigned by mininet for some reason
-    h2.cmd("ip a a 10.0.0.2/24 dev h2-s1")
-
     info('** h1 -> h2\n')
     test_connection(h1, "10.0.0.2")
 
@@ -71,7 +68,7 @@ def testTopo():
 
     # h1 is overdoing it a little and our server cannot handle all of its requests...
     info('*** h1 is flodding h2 with too many requests!\n')
-    h2.cmd("iperf -s &")
+    print(h2.cmd("iperf -s &"))
     print(h1.cmd("iperf -c 10.0.0.2"))
 
     h2.cmd("nft insert rule inet filter input position 2 limit rate over 1 mbytes/second drop")
