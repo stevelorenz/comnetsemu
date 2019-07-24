@@ -3,14 +3,14 @@
 "Setuptools Params"
 
 from setuptools import setup, find_packages
-
-# from os.path import join
+from os.path import join
 
 # Get version number from source tree
 import sys
 sys.path.append('.')
 from comnetsemu.net import VERSION
 
+scripts = [ join( 'bin', filename ) for filename in [ 'ce' ] ]
 modname = distname = 'comnetsemu'
 
 setup(
@@ -40,4 +40,5 @@ setup(
     install_requires=[
         'setuptools'
     ],
+    scripts=scripts,
 )

@@ -8,7 +8,7 @@ RUN apk update
 # For an interactive shell
 RUN apk add bash
 # For tc and interface CRUD
-RUN apk add iproute2
+RUN apk add iproute2 iperf busybox-extras
 
 # Add Tini --- A tiny but valid init for containers
 RUN apk add --no-cache tini

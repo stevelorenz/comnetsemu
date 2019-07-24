@@ -11,9 +11,7 @@ it with ../util/install.sh -b before running this example.
 
 from bcc import BPF
 
-import comnetsemu.tool as tool
 from comnetsemu.net import Containernet
-from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller

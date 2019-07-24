@@ -6,9 +6,7 @@ relaychannel.py: example of a simple relays channel model
 
 from mininet.net import Mininet
 from mininet.link import TCIntf
-from mininet.node import CPULimitedHost
-from mininet.topolib import TreeTopo
-from mininet.util import custom, quietRun
+from mininet.util import custom
 from mininet.log import setLogLevel, info
 
 from typing import List

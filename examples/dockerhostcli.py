@@ -22,12 +22,12 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.1',
+    h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.1/24',
                            cpuset_cpus="0", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2',
+    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2/24',
                            cpuset_cpus="1", cpu_quota=25000)
-    h3 = net.addHost('h3', ip='10.0.0.3')
-    h4 = net.addDockerHost('h4', dimage='alpine_dockerhost', ip='10.0.0.4',
+    h3 = net.addHost('h3', ip='10.0.0.3/24')
+    h4 = net.addDockerHost('h4', dimage='alpine_dockerhost', ip='10.0.0.4/24',
                            cpuset_cpus="0", cpu_quota=25000)
 
     info('*** Adding switch\n')

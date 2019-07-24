@@ -1,15 +1,16 @@
 COMNETSEMU = comnetsemu/*.py
+CE_BIN = bin/ce
 TEST = comnetsemu/test/*.py
 EXAMPLES = examples/*.py
+PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TEST)
 PYTHON ?= python3
-PYSRC = $(COMNETSEMU) $(EXAMPLES)
 P8IGN = E251,E201,E302,E202,E126,E127,E203,E226
 PREFIX ?= /usr
 DOCDIRS = doc/html doc/latex
 
 CFLAGS += -Wall -Wextra
 
-all: codecheck
+all: errcheck
 
 clean:
 	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
@@ -39,6 +40,10 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "**** Examples for security..."
 	$(PYTHON) ./examples/nft-test.py	
 	$(PYTHON) ./examples/wg-test.py
+
+ce_slowtest: $(COMNETSEMU) $(TEST)
+	@echo "Running slower tests of ComNetsEmu python module."
+	$(PYTHON) ./comnetsemu/test/test_cleanup.py
 
 check_installer: ./util/install.sh
 	@ echo "*** Check installer"
