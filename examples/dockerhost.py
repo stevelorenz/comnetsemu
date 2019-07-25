@@ -4,6 +4,12 @@
 
 """
 About: Basic example of using Docker as a Mininet host
+
+Topo: Two Docker hosts (h1, h2) connected directly to a single switch
+
+Tests:
+- Iperf UDP bandwidth test between h1 and h2.
+- Packet losses test with ping and increased link loss rate.
 """
 
 import comnetsemu.tool as tool
@@ -16,7 +22,6 @@ PING_COUNT = 15
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
 
     # To be tested parameters at runtime
     loss_rates = [30]
@@ -27,9 +32,9 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.1',
+    h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.1/24',
                            cpuset_cpus="0", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2',
+    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2/24',
                            cpuset_cpus="1", cpu_quota=25000)
 
     info('*** Adding switch\n')

@@ -1,11 +1,22 @@
 #!/usr/bin/python3
 
 """
-Simple example of running Docker container inside Docker container Host
+About: Basic example of running Docker container inside Docker container Host
+
+Topo: Chain topology  h1     h2     h3         hn
+                       |      |      |          |
+                      s1 --- s2 --- s3 --- ... sn
+Tests:
+- Ping test between internal container between head (h1) and tail (hn).
+- Resource limitation test for head and tail hosts: The CPU and memory
+  limitation of Dockerhost are configured to (50/n)% and 10MB. The internal
+  containers try to use 100% and 300MB RAM by execute stree-ng. The actual
+  resource usages are monitored and reported.
 """
 
 
 import time
+import argparse
 
 from comnetsemu.net import Containernet, VNFManager
 from mininet.log import info, setLogLevel
@@ -19,8 +30,7 @@ from mininet.link import TCLink
 CPU_SETS = "0"
 
 
-def testDockerInDocker(n=2):
-    "Create a chain topology for "
+def testDockerInDocker(n):
 
     net = Containernet(controller=Controller, link=TCLink)
     mgr = VNFManager(net)
@@ -50,8 +60,6 @@ def testDockerInDocker(n=2):
     info('*** Starting network\n')
     net.start()
 
-    # TODO: Add tests for external docker hosts
-
     info('*** Run a simple ping test between two internal containers deployed on h1 and h%s\n' % n)
     head = mgr.addContainer("head", "h1", "dev_test",
                             "/bin/bash")
@@ -79,7 +87,7 @@ def testDockerInDocker(n=2):
         h.updateCpuLimit(cpu_quota=int(50000 / n))
         h.updateMemoryLimit(mem_limit=10 * (1024**2))  # in bytes
         c = mgr.addContainer("stress_app_%s" % (i + 1), h.name,
-                             "dev_test", "stress -c 1 -m 1 --vm-bytes 300M")
+                             "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M")
         containers.append(c)
 
     info("Start monitoring resource usage of internal containers"
@@ -106,4 +114,11 @@ def testDockerInDocker(n=2):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testDockerInDocker(3)
+    host_num = 3
+    parser = argparse.ArgumentParser(
+        description="Basic example for Docker-in-Docker setup.")
+    parser.add_argument('--host_num', default=3, type=int,
+                        help="Number of hosts in the chain topology")
+    args = parser.parse_args()
+    print("*** The number of hosts in the chain: " + str(args.host_num))
+    testDockerInDocker(args.host_num)

@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Basic example to use CLI for Docker hosts
+About: Basic example to spawn Xterms for Docker hosts
 """
 
 from comnetsemu.cli import CLI
@@ -27,8 +27,7 @@ def testTopo():
     h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2/24',
                            cpuset_cpus="1", cpu_quota=25000)
     h3 = net.addHost('h3', ip='10.0.0.3/24')
-    h4 = net.addDockerHost('h4', dimage='alpine_dockerhost', ip='10.0.0.4/24',
-                           cpuset_cpus="0", cpu_quota=25000)
+    h4 = net.addHost('h4', ip='10.0.0.4/24')
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')

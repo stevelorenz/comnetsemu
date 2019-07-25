@@ -22,24 +22,24 @@ def run_benchmark_tests():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.11',
+    h1 = net.addDockerHost('h1_c', dimage='dev_test', ip='10.0.0.11/24',
                            cpuset_cpus="0", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.12',
+    h2 = net.addDockerHost('h2_c', dimage='dev_test', ip='10.0.0.12/24',
                            cpuset_cpus="0", cpu_quota=25000)
 
-    h3 = net.addHost('h3', ip='10.0.0.13', cls=CPULimitedHost,
+    h3 = net.addHost('h3', ip='10.0.0.13/24', cls=CPULimitedHost,
                      cores="1", cpu=0.25)
-    h4 = net.addHost('h4', ip='10.0.0.14', cls=CPULimitedHost,
+    h4 = net.addHost('h4', ip='10.0.0.14/24', cls=CPULimitedHost,
                      cores="1", cpu=0.25)
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=10, delay='20ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay='20ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h3, bw=10, delay='20ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h4, bw=10, delay='20ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h3, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h4, bw=10, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
