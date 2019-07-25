@@ -49,8 +49,8 @@ def testTopo():
     h3_private_key, h3_public_key = generate_key_pair_for_host(h3)
     h4_private_key, h4_public_key = generate_key_pair_for_host(h4)
 
-
     info('*** Create wg interfaces\n')
+
     h1.cmd("printf -- '[Interface]\nAddress = 192.168.0.1/24\nSaveConfig = true\nListenPort = 1337\nPrivateKey = " + h1_private_key + "\n[Peer]\nPublicKey = " + h2_public_key + "\nAllowedIPs = 192.168.0.2/32\nEndpoint = 10.0.0.2:1337\n\n[Peer]\nPublicKey = " + h3_public_key + "\nAllowedIPs = 192.168.0.3/32\nEndpoint = 10.0.0.3:1337\n\n[Peer]\nPublicKey = " + h4_public_key + "\nAllowedIPs = 192.168.0.4/32\nEndpoint = 10.0.0.4:1337\n\n' > /etc/wireguard/wg0.conf")
     h2.cmd("printf -- '[Interface]\nAddress = 192.168.0.2/24\nSaveConfig = true\nListenPort = 1337\nPrivateKey = " + h2_private_key + "\n[Peer]\nPublicKey = " + h1_public_key + "\nAllowedIPs = 192.168.0.0/24\nEndpoint = 10.0.0.1:1337\n' > /etc/wireguard/wg0.conf")
     h3.cmd("printf -- '[Interface]\nAddress = 192.168.0.3/24\nSaveConfig = true\nListenPort = 1337\nPrivateKey = " + h3_private_key + "\n[Peer]\nPublicKey = " + h1_public_key + "\nAllowedIPs = 192.168.0.0/24\nEndpoint = 10.0.0.1:1337\n' > /etc/wireguard/wg0.conf")
@@ -61,6 +61,7 @@ def testTopo():
     h3.cmd("wg-quick up wg0")
     h4.cmd("wg-quick up wg0")
 
+    info('*** Test the connection\n')
     test_connection(h2, "192.168.0.1")
     test_connection(h3, "192.168.0.1")
     test_connection(h4, "192.168.0.1")

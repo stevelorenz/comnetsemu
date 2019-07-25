@@ -29,61 +29,53 @@ def testTopo():
                            cpuset_cpus="1", cpu_quota=25000)
     h2 = net.addDockerHost('h2', dimage='nginx', ip='10.0.0.2',
                            cpuset_cpus="1", cpu_quota=25000)
-    h3 = net.addDockerHost('h3', dimage='sec_test', ip='10.0.0.3',
-                           cpuset_cpus="0", cpu_quota=25000)
-
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h3, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h2, bw=100, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
 
-    # TODO: IP is not assigned by mininet for some reason
-    h2.cmd("ip a a 10.0.0.2/24 dev h2-s1")
-
     info('** h1 -> h2\n')
     test_connection(h1, "10.0.0.2")
-    info('** h3 -> h2\n')
-    test_connection(h3, "10.0.0.2")
 
     info('\n')
 
-    # Create blacklist
-    info('*** Create blacklist\n')
-    h2.cmd("nft add table inet filter")
-    h2.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy accept \; }")
-    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.3 drop")
-
-    info('** h1 -> h2\n')
-    test_connection(h1, "10.0.0.2")
-    info('** h3 -> h2\n')
-    test_connection(h3, "10.0.0.2")
-
-    # Eve changes her ip address
-    info("*** Eve changes ip address\n")
-    h3.cmd("ip a f dev h3-s1")
-    h3.cmd("ip a a 10.0.0.10/24 dev h3-s1")
-
-    # Eva can connect again
-    info('** h3 -> h2\n')
-    test_connection(h3, "10.0.0.2")
-
-    info('\n')
-
-    # Change to whitelist
+    # Create whitelist
     info('*** Create whitelist\n')
-    h2.cmd("nft flush rule inet filter input")
-    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
+    h2.cmd("nft add table inet filter")
     h2.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
+    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
 
-    # The server can talk back to Bob
-    info('** h1 -> h2\n')
-    test_connection(h1, "10.0.0.2")
+    # The server can talk back to h1
+    info('** h2 -> h1\n')
+    test_connection(h2, "10.0.0.2")
+    # But he cannot talk to some other server on the internet, this is a problem
+    info('** h2 -> internet\n')
+    test_connection(h2, "8.8.8.8")
+
+    info('\n')
+
+
+    info('*** Enable connection tracking\n')
+    h2.cmd("nft add rule inet filter input ct state established,related accept")
+
+    info('** h2 -> internet\n')
+    test_connection(h2, "8.8.8.8")
+
+    # h1 is overdoing it a little and our server cannot handle all of its requests...
+    info('*** h1 is flodding h2 with too many requests!\n')
+    h2.cmd("iperf -s &")
+    print(h1.cmd("iperf -c 10.0.0.2"))
+
+    h2.cmd("nft insert rule inet filter input position 2 limit rate over 1 mbytes/second drop")
+
+    print(h1.cmd("iperf -c 10.0.0.2"))
+
+    info('\n')
 
     info('*** Stopping network')
     net.stop()

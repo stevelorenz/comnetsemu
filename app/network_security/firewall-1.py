@@ -12,6 +12,7 @@ from comnetsemu.net import Containernet
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
+import random
 
 PING_COUNT = 3
 
@@ -29,52 +30,57 @@ def testTopo():
                            cpuset_cpus="1", cpu_quota=25000)
     h2 = net.addDockerHost('h2', dimage='nginx', ip='10.0.0.2',
                            cpuset_cpus="1", cpu_quota=25000)
+    h3 = net.addDockerHost('h3', dimage='sec_test', ip='10.0.0.3',
+                           cpuset_cpus="0", cpu_quota=25000)
+
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h3, bw=10, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
 
     info('** h1 -> h2\n')
     test_connection(h1, "10.0.0.2")
+    info('** h3 -> h2\n')
+    test_connection(h3, "10.0.0.2")
 
     info('\n')
 
-    # Create whitelist
+    # Create blacklist
+    info('*** Create blacklist\n')
+    #TODO: Create a nftables filter table on h2 and drop all incoming traffic that is coming from h3 (10.0.0.3)
+
+    #  Check if h1 can connect and h3 can not.
+    info('** h1 -> h2\n')
+    test_connection(h1, "10.0.0.2")
+    info('** h3 -> h2\n')
+    test_connection(h3, "10.0.0.2")
+
+    # h3 changes her ip address
+    info("*** h3 changes ip address to a different one!\n")
+    h3.cmd("ip a f dev h3-s1")
+    h3.cmd("ip a a 10.0.0." + str(random.randint(3,250)) + "/24 dev h3-s1")
+
+    # h3 can connect again
+    info('** h3 -> h2\n')
+    test_connection(h3, "10.0.0.2")
+
+    info('\n')
+
+    # Change to whitelist
     info('*** Create whitelist\n')
-    h2.cmd("nft add table inet filter")
-    h2.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
-    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
+    #TODO: Create a whitelist that only allows incoming traffic from h1 (10.0.0.1)
 
-    # The server can talk back to h1
-    info('** h2 -> h1\n')
-    test_connection(h2, "10.0.0.2")
-    # But he cannot talk to some other server on the internet, this is a problem
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
-
-    info('\n')
-
-    info('*** Enable connection tracking\n')
-    #TODO: Create a rule that uses connection tracking to enable hosts on the internet to responde to requests of h2
-
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
-
-    # h1 is overdoing it a little and our server cannot handle all of its requests...
-    info('*** h1 is flodding h2 with too many requests!\n')
-    h2.cmd("iperf -s &")
-    print(h1.cmd("iperf -c 10.0.0.2"))
-
-    #TODO: Create a limit rule that allows h1 to only use a maximum of 10 Mbit/s
-
-    print(h1.cmd("iperf -c 10.0.0.2"))
-
-    info('\n')
+    # The server can talk back to h2
+    info('** h1 -> h2\n')
+    test_connection(h1, "10.0.0.2")
+    info('** h3 -> h2\n')
+    test_connection(h3, "10.0.0.2")
 
     info('*** Stopping network')
     net.stop()
