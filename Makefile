@@ -38,7 +38,7 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
 	@echo "**** Examples for security..."
-	$(PYTHON) ./examples/nftables.py	
+	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py
 
 ce_slowtest: $(COMNETSEMU) $(TEST)
