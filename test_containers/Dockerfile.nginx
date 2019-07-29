@@ -8,7 +8,8 @@ RUN apk update
 # For an interactive shell
 RUN apk add bash
 # For tc and interface CRUD
-RUN apk add --no-cache iproute2 nftables tcpdump ca-certificates curl wget busybox-extras
+RUN apk add --no-cache iproute2 nftables tcpdump ca-certificates curl wget busybox-extras iperf
+
 
 COPY nginx-content /usr/share/nginx/html
 

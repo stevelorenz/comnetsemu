@@ -50,9 +50,6 @@ def testTopo():
     h2.cmd("mkdir -p /var/run/vsftpd/empty")
     h2.cmd("vsftpd &")
 
-    # Setup a tunnel to protect the ftp request from the MitM attacker!
-    # You can use test_connection to verify that the tunnel was established.
-    '''
     info('*** Create wg key pairs\n')
     h1.cmd("umask 077; wg genkey > privatekey")
     h1.cmd("wg pubkey < privatekey > publickey")
@@ -74,10 +71,10 @@ def testTopo():
     h1.cmd("ip link set up dev wg0")
 
     h2.cmd("wg set wg0 listen-port 1337 private-key ./privatekey peer {} allowed-ips 192.168.0.0/24 endpoint 10.0.0.1:1337".format(h1_pubkey))
-    h2.cmd("ip link set up dev wg0")'''
+    h2.cmd("ip link set up dev wg0")
 
-    test_connection(h1, "10.0.0.2")
-    login_at_ftp_server(h1, "10.0.0.2")
+    test_connection(h1, "192.168.0.2")
+    login_at_ftp_server(h1, "192.168.0.2")
 
     info('*** Extract Passwords\n')
     sleep(20)
@@ -97,9 +94,7 @@ def testTopo():
 
 def login_at_ftp_server(client_container, ftp_server_ip):
     info('*** Login into ftp server\n')
-    # TODO: Do a correct login...
-    print(client_container.cmd(
-        "printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh"))
+    client_container.cmd("printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh")
 
 
 def test_connection(source_container, target_ip):
