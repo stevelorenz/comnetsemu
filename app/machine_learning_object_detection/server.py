@@ -244,6 +244,7 @@ class Server(object):
 
     def run(self):
         while True:
+            print("*** Wait for data from client.")
             mode, data = self.get_data()
             start = time.time()
             resp = self.get_resp(mode, data)
