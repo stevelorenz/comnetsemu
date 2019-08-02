@@ -50,7 +50,7 @@ def testTopo():
     h2.cmd("mkdir -p /var/run/vsftpd/empty")
     h2.cmd("vsftpd &")
 
-    # Setup a tunnel to protect the ftp request from the MitM attacker!
+    # TODO: Setup a tunnel to protect the ftp request from the MitM attacker!
     # You can use test_connection to verify that the tunnel was established.
     # Remember that you have to request the file through the tunnel and not via external IP of the server!
     # Generate the keys for wireguard and grep them from the host like this

@@ -53,7 +53,7 @@ def testTopo():
 
     # Create blacklist
     info('*** Create blacklist\n')
-    #TODO: Create a nftables filter table on h2 and drop all incoming traffic that is coming from h3 (10.0.0.3)
+    # TODO: Create a nftables filter table on h2 and drop all incoming traffic that is coming from h3 (10.0.0.3)
 
     #  Check if h1 can connect and h3 can not.
     info('** h1 -> h2\n')
@@ -74,7 +74,7 @@ def testTopo():
 
     # Change to whitelist
     info('*** Create whitelist\n')
-    #TODO: Create a whitelist that only allows incoming traffic from h1 (10.0.0.1)
+    # TODO: Create a whitelist that only allows incoming traffic from h1 (10.0.0.1)
 
     # The server can talk back to h2
     info('** h1 -> h2\n')
