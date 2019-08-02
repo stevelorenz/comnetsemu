@@ -41,9 +41,9 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py
 
-ce_slowtest: $(COMNETSEMU) $(TEST)
-	@echo "Running slower tests of ComNetsEmu python module."
-	$(PYTHON) ./comnetsemu/test/test_cleanup.py
+test: $(COMNETSEMU) $(TEST)
+	@echo "Running tests of ComNetsEmu python module."
+	$(PYTHON) ./comnetsemu/test/runner.py -v
 
 check_installer: ./util/install.sh
 	@ echo "*** Check installer"

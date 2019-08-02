@@ -65,6 +65,8 @@ def testTopo():
     test_connection(h2, "192.168.0.1")
     test_connection(h3, "192.168.0.1")
     test_connection(h4, "192.168.0.1")
+    test_connection(h4, "192.168.0.2")
+    test_connection(h4, "192.168.0.3")
 
     info('*** Stopping network\n')
     net.stop()

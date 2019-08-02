@@ -7,7 +7,8 @@
 ###############
 
 CPUS = 2
-RAM = 2048
+# - YOLOv2 object detection application requires 4GB RAM to run smoothly
+RAM = 4096
 
 # Bento: Packer templates for building minimal Vagrant baseboxes
 # The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
