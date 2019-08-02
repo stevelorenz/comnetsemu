@@ -31,6 +31,7 @@ PIP=pip3
 
 if [[ "$ARCH" = "i686" ]]; then
     error "[ARCH]" "i386 is not supported."
+    exit 1
 fi
 
 test -e /etc/debian_version && DIST="Debian"
@@ -48,6 +49,7 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     fi
 else
     error "[DIST]" "The installer currently ONLY supports Debian/Ubuntu"
+    exit 1
 fi
 
 
@@ -98,6 +100,15 @@ function usage() {
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
     exit 2
+}
+
+# MARK:
+function install_kernel_modules() {
+    echo "Install wireguard kernel module"
+    sudo add-apt-repository -y ppa:wireguard/wireguard
+    sudo apt-get update
+    sudo apt-get install -y linux-headers-$(uname -r)
+    sudo apt-get install -y wireguard
 }
 
 function install_docker() {
@@ -300,6 +311,7 @@ function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     echo "To be installed dependencies: mininet ryu docker docker-py"
     $update update
+    install_kernel_modules
     install_mininet
     install_ryu
     install_docker
@@ -310,6 +322,7 @@ function install_lightweight() {
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $update update
+    install_kernel_modules
     install_mininet
     install_ryu
     install_docker
