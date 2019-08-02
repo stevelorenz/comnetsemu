@@ -51,14 +51,14 @@ def testTopo():
 
     info('*** Create wg interfaces\n')
 
-    # Create a star topology with h1 as the center. Instead of using wg tool write a configuration for the interface
-    # and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.
+    # TODO: Create a star topology with h1 as the center. Instead of using wg tool write a configuration for the
+    # interface and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.
     # There is an example how to write a multiline configuration into a file below.
     # h1.cmd("printf -- 'first line\n second line\n' > /etc/wireguard/wg0.conf")
     # The documentation of the interface configuration can be found in the manpages of the wg and wg-quick tool.
 
     info('*** Test the connection\n')
-    # Test the connection via the test_connection method to see if you can connect via the tunnels to h1
+    # TODO: Test the connection via the test_connection method to see if you can connect via the tunnels to h1
     test_connection(h2, "10.0.0.1")
     test_connection(h3, "10.0.0.1")
     test_connection(h4, "10.0.0.1")
