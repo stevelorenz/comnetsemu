@@ -9,12 +9,10 @@ import os
 import time
 sys.path.append(os.getcwd())
 
-from app.mec.docker_cleanup import cleanup
-
-from mininet.net import Containernet, VNFManager
+from comnetsemu.net import Containernet, VNFManager
+from comnetsemu.cli import CLI
 from mininet.node import RemoteController, Controller, CPULimitedHost
 from mininet.log import setLogLevel, info
-from mininet.cli import CLI
 from mininet.link import TCLink
 
 
@@ -30,18 +28,17 @@ def start() -> None:
     controller1.start()
 
     info("*** Adding Hosts\n")
-    cleanup()
 
     client1 = net.addDockerHost(
         "client1",
-        dimage="dev_test",
+        dimage="mec_test",
         ip="10.0.0.10",
         mac="00:00:00:00:00:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
 
     server1 = net.addDockerHost(
         "server1",
-        dimage="dev_test",
+        dimage="mec_test",
         ip="10.0.0.21",
         mac="00:00:00:00:01:01",
         cpu_quota=25000,
@@ -49,7 +46,7 @@ def start() -> None:
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server2 = net.addDockerHost(
         "server2",
-        dimage="dev_test",
+        dimage="mec_test",
         ip="10.0.0.22",
         mac="00:00:00:00:01:02",
         cpu_quota=25000,
@@ -85,18 +82,18 @@ def start() -> None:
     client1_container = mgr.addContainer(
         name="client1_container",
         dhost="client1",
-        dimage="dev_test",
+        dimage="mec_test",
         dcmd="python3.6 /tmp/client.py")
 
     server1_container = mgr.addContainer(
         name="server1_container",
         dhost="server1",
-        dimage="dev_test",
+        dimage="mec_test",
         dcmd="python3.6 /tmp/server.py")
     server2_container = mgr.addContainer(
         name="server2_container",
         dhost="server2",
-        dimage="dev_test",
+        dimage="mec_test",
         dcmd="python3.6 /tmp/server.py")
 
     time.sleep(2)

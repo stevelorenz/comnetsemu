@@ -118,3 +118,4 @@ doc/latex
 .vagrant/*
 app/network_coding_transport/*.csv
 app/network_coding_transport/*.pcap
+app/mec/*.txt

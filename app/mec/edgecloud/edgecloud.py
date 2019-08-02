@@ -13,13 +13,13 @@ print(sys.path)
 import time
 from app.mec.docker_cleanup import cleanup
 
-from mininet.net import Mininet, Containernet, VNFManager
+from comnetsemu.net import Containernet, VNFManager
+from comnetsemu.cli import CLI
 from mininet.link import TCIntf, Intf
 from mininet.node import CPULimitedHost, Controller, RemoteController, Node
 from mininet.topolib import TreeTopo
 from mininet.util import custom, quietRun
 from mininet.log import setLogLevel, info
-from mininet.cli import CLI
 
 
 # def cleanup() -> bool:
@@ -30,8 +30,8 @@ from mininet.cli import CLI
 #         print(f"found {images.__len__()} images")
 #         for img in images:
 #             img = str(img)
-#             if "dev_test" in img:
-#                 print("found \"dev_test\"")
+#             if "mec_test" in img:
+#                 print("found \"mec_test\"")
 #                 break
 #         else:
 #             raise Exception
@@ -80,45 +80,45 @@ def start() -> None:
     info('*** Adding hosts\n')
     client1 = net.addDockerHost(
         "client1",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.10',
         mac="00:00:00:00:00:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
 
     server1_1 = net.addDockerHost(
         "server1_1",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.21',
         mac="00:00:00:00:01:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server1_2 = net.addDockerHost(
         "server1_2",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.22',
         mac="00:00:00:00:01:02",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server1_3 = net.addDockerHost(
         "server1_3",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.23',
         mac="00:00:00:00:01:03",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
 
     server2_1 = net.addDockerHost(
         "server2_1",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.41',
         mac="00:00:00:00:02:01",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server2_2 = net.addDockerHost(
         "server2_2",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.42',
         mac="00:00:00:00:02:02",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
     server2_3 = net.addDockerHost(
         "server2_3",
-        dimage='dev_test',
+        dimage='mec_test',
         ip='10.0.0.43',
         mac="00:00:00:00:02:03",
         volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
@@ -182,21 +182,21 @@ def start() -> None:
 
     info('*** Adding Containers\n')  # sudo docker exec -it mn.server1_1 python3.6 /tmp/server1_1.py
     server1_1_container = mgr.addContainer(
-        name="server1_1_container", dhost="server1_1", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server1_1_container", dhost="server1_1", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
     server1_2_container = mgr.addContainer(
-        name="server1_2_container", dhost="server1_2", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server1_2_container", dhost="server1_2", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
     server1_3_container = mgr.addContainer(
-        name="server1_3_container", dhost="server1_3", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server1_3_container", dhost="server1_3", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
 
     server2_1_container = mgr.addContainer(
-        name="server2_1_container", dhost="server2_1", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server2_1_container", dhost="server2_1", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
     server2_2_container = mgr.addContainer(
-        name="server2_2_container", dhost="server2_2", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server2_2_container", dhost="server2_2", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
     server2_3_container = mgr.addContainer(
-        name="server2_3_container", dhost="server2_3", dimage="dev_test", dcmd="python3.6 /tmp/server.py")
+        name="server2_3_container", dhost="server2_3", dimage="mec_test", dcmd="python3.6 /tmp/server.py")
 
     client1_container = mgr.addContainer(
-        name="client1_container", dhost="client1", dimage="dev_test", dcmd="python3.6 /tmp/client.py")
+        name="client1_container", dhost="client1", dimage="mec_test", dcmd="python3.6 /tmp/client.py")
 
     time.sleep(2)
 

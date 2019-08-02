@@ -79,15 +79,15 @@ Now it is possible to forward the requests only to the optimal Server, reducing 
 Before running, a dedicated docker image needs to be created with 
 
 ```sh
-sudo docker build -t dev_test -f ./Dockerfile.dev_test .
+sudo docker build -t mec_test -f ./Dockerfile.mec_test .
 ```
 
-... ,where `dev_test` is the image name used in both, `mec` and `mec_only_forwarding` and `Dockerfile.dev_test` is the dockerfile located in `/app/mec`.
+... ,where `mec_test` is the image name used in both, `mec` and `mec_only_forwarding` and `Dockerfile.mec_test` is the dockerfile located in `/app/mec`.
 
 In the next step the Controllers need to be started
 
 ```sh
-ryu-manager --verbose --log-file log.txt --ofp-tcp-listen-port 6633 ~/Documents/comnetsemu/app/mec/controller.py
+ryu-manager --verbose --log-file log.txt --ofp-tcp-listen-port 6633 $HOME/comnetsemu/app/mec/controller.py
 ```
 
 The `--log-file` option is optional, but `--ofp-tcp-listen-port` should match the one in `edgecloud.py` / `only_forwarding.py` (relevant when using multiple controllers).
@@ -95,7 +95,7 @@ The `--log-file` option is optional, but `--ofp-tcp-listen-port` should match th
 To launch the emulation 
 
 ```sh
-sudo python3.6 ~/Documents/comnetsemu/app/mec/only_forwarding/only_forwarding.py
+sudo python3.6 $HOME/comnetsemu/app/mec/only_forwarding/only_forwarding.py
 ```
 It is recommended to have a seperate terminal session for each controller and the application.
 
