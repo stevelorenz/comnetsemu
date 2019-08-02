@@ -108,7 +108,14 @@ class VNFManager(object):
     - It should communicate with SDN controller to manage internal containers
       adaptively.
 
+    Ref:
+        [1] https://docker-py.readthedocs.io/en/stable/containers.html
     """
+
+    docker_args = {
+        "tty": True,  # -t
+        "detach": True  # -d
+    }
 
     def __init__(self, net):
         """Init the VNFManager
@@ -125,7 +132,7 @@ class VNFManager(object):
         # mininet's internal containers -> mni
         self.dnameprefix = "mni"
 
-    def addContainer(self, name, dhost, dimage, dcmd, retry_cnt=3, wait=0.5,
+    def addContainer(self, name, dhost, dimage, dcmd, retry_cnt=5, wait=1,
                      **params):
         """Create and run a new container inside a Mininet DockerHost
 
@@ -148,20 +155,13 @@ class VNFManager(object):
             return None
 
         # Create container INSIDE Containernet host
-
-        # 1. Here exec the 'docker run' directly in DockerHost instance instead
-        # of using docker-py APIs is a workaround: The docker-py does not
-        # provide how to use --cgroup-parent API directly. Should be replace
-        # with docker-py APIs if cgroup-parent feature is supported.
-
-        # 2. Current version, the container inside share the network stack of
-        # the parent docker.
         name = ".".join((self.dnameprefix, name))
-        run_cmd = """docker run -idt --name {} --cgroup-parent=/docker/{} \
---network container:mn.{} {} {}
-        """.format(name, dhost.did, dhost.name, dimage, dcmd)
-        out = dhost.cmd(run_cmd)
-        debug("\n" + out + "\n")
+        self.docker_args["name"] = name
+        self.docker_args["image"] = dimage
+        self.docker_args["command"] = dcmd
+        self.docker_args["cgroup_parent"] = "/docker/{}".format(dhost.did)
+        self.docker_args["network_mode"] = "container:{}".format(dhost.did)
+        self.dclt.containers.run(**self.docker_args)
 
         cnt = 0
         while cnt < retry_cnt:

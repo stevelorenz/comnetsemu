@@ -5,11 +5,11 @@ This example demonstrates how to implement network slicing in an SDN to enable t
 
 ```text
 h1 ----                               ---- h3
-      |  |--10Mbps-- s3 --10Mbps--|  |
+      |  |--10Mbps-- s2 --10Mbps--|  |
       |  |                        |  |
        s1                          s4
       |  |                        |  |
-      |  |--1Mbps--  s2  --1Mbps--|  |
+      |  |--1Mbps--  s3  --1Mbps--|  |
 h2 ----                               ---- h4
 ```
 
@@ -17,7 +17,7 @@ This folder contains the following files:
 
 1. network.py: Script to build a network with four hosts and four switches, bandwidth is 1Mbps and 10Mbps.
 
-2. topology_slicing.py: Application to isolate the network topology into upper slice (h1 -> s1 -> s3 -> s4 -> h3, 10Mbps) and lower slice (h2 -> s1 -> s2 -> s4 -> h4, 1Mbps).
+2. topology_slicing.py: Application to isolate the network topology into upper slice (h1 -> s1 -> s2 -> s4 -> h3, 10Mbps) and lower slice (h2 -> s1 -> s3 -> s4 -> h4, 1Mbps).
 
 3. service_slicing.py: Application to isolate the service traffics into video traffic (UDP port 9999) obtaining 10Mbps and non-video traffic (the remaining services) obtaining 1Mbps.
 
@@ -26,7 +26,7 @@ The topology of network should be insolated into two slices:
 1. Upper slice:
     ```text
     h1 ----                               ---- h3
-          |  |--10Mbps-- s3 --10Mbps--|  |
+          |  |--10Mbps-- s2 --10Mbps--|  |
           |  |                        |  |
            s1                          s4
     ```
@@ -34,7 +34,7 @@ The topology of network should be insolated into two slices:
     ```text
            s1                          s4
           |  |                        |  |
-          |  |--1Mbps--  s2  --1Mbps--|  |
+          |  |--1Mbps--  s3  --1Mbps--|  |
     h2 ----                               ---- h4
     ```
 
