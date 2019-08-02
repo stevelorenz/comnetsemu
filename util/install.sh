@@ -131,9 +131,12 @@ function install_docker() {
     fi
 
     $update update
-    $install docker-ce
+    $install docker-ce criu
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
+    # Enable docker experimental features (incl. CRIU)
+    echo "{\"experimental\": true}" | sudo tee --append /etc/docker/daemon.json
+    sudo systemctl restart docker
 }
 
 function upgrade_docker() {
