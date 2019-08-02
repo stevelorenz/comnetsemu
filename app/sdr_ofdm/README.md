@@ -4,13 +4,16 @@ required the installation of the UHD driver, which ensure the communication betw
 radio transceivers through built-in C++ signal processing blocks. GNU Radio supports a large set of
 platforms, but for the purpose of this chapter the development platform is the Ettus Research N210.
 
+The details about the installation of the UHD drivers and the GNU can be found in the following link: 
+https://kb.ettus.com/Building_and_Installing_the_USRP_Open-Source_Toolchain_(UHD_and_GNU_Radio)_on_Linux
+
 The first application is an example about OFDM tunnel between two USRP connected to different
 host computers, as depicted.
 #Description of the setup
 ````Text
 
------------------                                ------------------- 
+------------------                           ------------------- 
 | HOST A | SDR A |  ---- OFDM tunnel  ----  | SDR B | HOST B |
------------------                                ------------------- 
+------------------                           ------------------- 
 ````
 This example
