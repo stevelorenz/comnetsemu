@@ -139,6 +139,7 @@ class DockerHost (Host):
             # network_disabled=True,  # docker stats breaks if we disable the default network
             host_config=hc,
             ports=defaults['ports'],
+            labels={"comnetsemu": "dockerhost"},
             volumes=[self._get_volume_mount_name(
                 v) for v in self.volumes if self._get_volume_mount_name(v) is not None],
             hostname=name

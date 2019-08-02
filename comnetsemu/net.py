@@ -114,7 +114,8 @@ class VNFManager(object):
 
     docker_args = {
         "tty": True,  # -t
-        "detach": True  # -d
+        "detach": True,  # -d
+        "labels": {"comnetsemu": "dockercontainer"}
     }
 
     def __init__(self, net):
@@ -128,9 +129,6 @@ class VNFManager(object):
 
         self.container_queue = list()
         self.name_container_map = dict()
-
-        # mininet's internal containers -> mni
-        self.dnameprefix = "mni"
 
     def addContainer(self, name, dhost, dimage, dcmd, retry_cnt=5, wait=1,
                      **params):
@@ -155,7 +153,6 @@ class VNFManager(object):
             return None
 
         # Create container INSIDE Containernet host
-        name = ".".join((self.dnameprefix, name))
         self.docker_args["name"] = name
         self.docker_args["image"] = dimage
         self.docker_args["command"] = dcmd

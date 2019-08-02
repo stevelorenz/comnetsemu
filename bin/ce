@@ -38,8 +38,16 @@ def cleanup_docker_containers():
     info("*** Run docker container cleanups\n")
     client = docker.from_env()
     containers = client.containers.list(all=True)
-    docker_hosts = [c for c in containers if c.name.startswith("mn.")]
-    internal_containers = [c for c in containers if c.name.startswith("mni.")]
+    docker_hosts = list()
+    internal_containers = list()
+    for c in containers:
+        _type = c.labels.get("comnetsemu", None)
+        if not _type:
+            continue
+        if _type == "dockerhost":
+            docker_hosts.append(c)
+        elif _type == "dockercontainer":
+            internal_containers.append(c)
 
     if docker_hosts:
         info("Force remove all running DockerHost instances: {}\n".format(
