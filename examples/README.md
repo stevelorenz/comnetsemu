@@ -129,6 +129,12 @@ using NAT. It also answers the eternal question "why can't I ping
 This example demonstrates how to create a network using a NAT node
 to connect hosts to the internet.
 
+### nftables.py:
+
+This examples shows the basic setup of a firewall with nftables. It first creates 
+a table and chain to filter on the netfilter input hook and then adds a rule to 
+filter the traffic of IP address '10.0.0.2'. In the end the table is listed. 
+
 #### numberedports.py:
 
 This example verifies the mininet ofport numbers match up to the ovs port numbers.
@@ -177,3 +183,8 @@ connectivity using `ping`, for different switch/datapath types.
 
 An example of how to subclass Host to use a VLAN on its primary interface.
 
+### wireguard.py:
+
+This example demonstrates how to setup a Wireguard network tunnel between two 
+hosts. First the required keys are generated and then the Wireguard interfaces 
+are created and configured.
