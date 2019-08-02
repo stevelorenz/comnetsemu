@@ -19,7 +19,7 @@ host computers, as depicted.
 | HOST A | SDR A |  ---- OFDM tunnel  ----  | SDR B | HOST B |
 ------------------                           ------------------- 
 ````
-An OFDM tunnel is basically a link between two 
+An OFDM tunnel provides a virtual ethernet interface between 2 USRP thoughout the PHY and MAC layers. Hence, various IP applications, which correspond to application in upper layers such the NET layer, can be inserted in the tunnel to transmitting data. 
 This example
 
 
