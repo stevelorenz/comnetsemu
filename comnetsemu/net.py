@@ -293,11 +293,12 @@ class VNFManager(object):
 
         c1_checkpoint_path = os.path.join(
             VNFMANGER_MOUNTED_DIR, "{}".format(c1.name))
-        # MARK: Docker-py does not provide API for checkpoint
+        # MARK: Docker-py does not provide API for checkpoint and restore,
+        # Docker CLI is used with subprocess as a temp workaround.
         subprocess.run(
             split("docker checkpoint create --checkpoint-dir={} {} "
                   "{}".format(VNFMANGER_MOUNTED_DIR, c1.name, c1.name)),
-            check=True
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         # TODO: Emulate copying checkpoint directory between h1 and h2
         sleep(0.17)
@@ -320,19 +321,24 @@ class VNFManager(object):
                 c1_checkpoint_path, dins.id
             )), check=True
         )
-        # BUG: Docker start with restore need to be performed by another docker
-        # daemon different from the checkpoint daemon.
-        subprocess.run(
-            split("docker start --checkpoint={} {}".format(
-                c1.name, dins.name
-            )), check=True
-        )
+        # MARK: Race condition of somewhat happens here...
+        sleep(0.01)
+        try:
+            subprocess.run(
+                split("docker start --checkpoint={} {}".format(
+                    c1.name, dins.name
+                )), check=True
+            )
+        except subprocess.CalledProcessError:
+            import pdb
+            pdb.set_trace()
+
         self.waitContainerStart(dins.name)
 
         container = DockerContainer(dins.name, h2, c1.dimage, dins)
         self.container_queue.append(container)
         self.name_container_map[container.name] = container
-        shutil.rmtree(c1_checkpoint_path)
+        shutil.rmtree(c1_checkpoint_path, ignore_errors=True)
 
         return container
 

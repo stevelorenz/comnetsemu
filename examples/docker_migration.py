@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-About: Example of internal container migration
+About: Example of internal Docker container stateful migration with CRIU (https://criu.org/Main_Page)
 
 Topo:  h1     h2     h3
         |      |      |
@@ -9,10 +9,8 @@ Topo:  h1     h2     h3
 """
 
 
-import argparse
 import time
 
-from comnetsemu.cli import CLI
 from comnetsemu.net import Containernet, VNFManager
 from comnetsemu.node import DockerHost
 from mininet.link import TCLink
@@ -32,12 +30,6 @@ class TestTopo(Topo):
             self.addLink(switch, host, bw=10, delay="100ms", use_htb=True)
 
 
-def runIperfServer(h):
-    ret = h.cmd("iperf -s -u -t 10 -i 1 -e")
-    print("*** Output of Iperf server running on the {}".format(h.name))
-    print(ret)
-
-
 def runContainerMigration():
 
     net = Containernet(controller=Controller, link=TCLink, switch=OVSBridge,
@@ -54,18 +46,26 @@ def runContainerMigration():
     h2 = net.get("h2")
     h3 = net.get("h3")
 
-    print("*** Deploy the Iperf client container on h2.")
-    iperf_client = mgr.addContainer(
-        "iperf_client", "h2", "dev_test", "iperf -c 10.0.0.1 -t 36000 -u")
-    runIperfServer(h1)
+    print("*** Deploy a looper container on h1")
+    looper = mgr.addContainer(
+        "looper", "h1", "dev_test", "/bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done'")
+    time.sleep(5)
+    print("*** Logs of the original looper \n" + looper.get_logs())
 
-    print("*** Migrate the Iperf client container from h2 to h3.")
-    iperf_client_migrated = mgr.migrateCRIU(h2, iperf_client, h3)
-    runIperfServer(h1)
+    print("*** Migrate the looper from h1 to h2.")
+    looper_h2 = mgr.migrateCRIU(h1, looper, h2)
+    time.sleep(5)
+    print(looper_h2.get_logs())
+
+    print("*** Migrate the looper from h2 to h3.")
+    looper_h3 = mgr.migrateCRIU(h2, looper_h2, h3)
+    time.sleep(5)
+    print(looper_h3.get_logs())
 
     info('*** Stopping network\n')
-    mgr.removeContainer(iperf_client)
-    mgr.removeContainer(iperf_client_migrated)
+    mgr.removeContainer(looper)
+    mgr.removeContainer(looper_h2)
+    mgr.removeContainer(looper_h3)
     net.stop()
     mgr.stop()
 
