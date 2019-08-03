@@ -584,7 +584,7 @@ class DockerHost (Host):
         return ret
 
 
-class DockerContainer(Host):
+class DockerContainer(object):
 
     """Docker container running INSIDE Docker host"""
 
@@ -595,7 +595,13 @@ class DockerContainer(Host):
         self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.dins = dins
 
+    def get_current_stats(self):
+        return self.dins.stats(decode=False, stream=False)
+
+    def get_logs(self):
+        """Get logs from this container."""
+        return self.dins.logs(timestamps=True).decode("utf-8")
+
     def terminate(self):
         """Internal container specific cleanup"""
-        # super(DockerContainer, self).terminate()
         pass

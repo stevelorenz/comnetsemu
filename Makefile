@@ -30,6 +30,7 @@ test_examples: $(COMNETSEMU)
 	@echo "*** Running basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
+	$(PYTHON) ./examples/docker_migration.py
 
 test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
@@ -37,6 +38,7 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "**** Basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
+	$(PYTHON) ./examples/docker_migration.py
 	@echo "**** Examples for security..."
 	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py

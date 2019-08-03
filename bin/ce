@@ -7,9 +7,11 @@ About: ComNetsEmu CLI utility
 import argparse
 import subprocess
 import sys
+import shutil
 
 import docker
 from mininet.log import LEVELS, debug, error, info, lg
+from comnetsemu.net import VNFMANGER_MOUNTED_DIR
 
 
 def run():
@@ -29,9 +31,11 @@ def run():
 def cleanup():
     info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" +
          "-" * 80 + "\n")
-    info("*** Run mininet's cleanups:\n")
+    info("*** Run mininet's cleanups\n")
     subprocess.run(["mn", "-c"], check=True)
     cleanup_docker_containers()
+    info("*** Remove temp directories\n")
+    shutil.rmtree(VNFMANGER_MOUNTED_DIR, ignore_errors=True)
 
 
 def cleanup_docker_containers():
