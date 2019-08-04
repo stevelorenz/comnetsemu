@@ -3,9 +3,11 @@
 # vim:fenc=utf-8
 
 """
-About: Basic example of using Docker as a Mininet host
+About: Basic example of using Docker as a Mininet host.
+       Like upstream Mininet, the network topology can be either created by
+       provide a topology class or directly using the network object.
 
-Topo: Two Docker hosts (h1, h2) connected directly to a single switch
+Topo: Two Docker hosts (h1, h2) connected directly to a single switch (s1).
 
 Tests:
 - Iperf UDP bandwidth test between h1 and h2.
@@ -14,14 +16,16 @@ Tests:
 
 import comnetsemu.tool as tool
 from comnetsemu.net import Containernet
+from comnetsemu.node import DockerHost
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
-from mininet.node import Controller
+from mininet.node import Controller, OVSBridge
+from mininet.topo import Topo
 
 PING_COUNT = 15
 
 
-def testTopo():
+def run_net():
 
     # To be tested parameters at runtime
     loss_rates = [30]
@@ -32,17 +36,18 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
+    # addDockerHost() is a simple wrapper to set cls to DockerHost.
     h1 = net.addDockerHost('h1', dimage='dev_test', ip='10.0.0.1/24',
                            cpuset_cpus="0", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='dev_test', ip='10.0.0.2/24',
-                           cpuset_cpus="1", cpu_quota=25000)
+    h2 = net.addHost('h2', cls=DockerHost, dimage='dev_test', ip='10.0.0.2/24',
+                     cpuset_cpus="1", cpu_quota=25000)
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay='100ms', use_htb=True)
+    net.addLinkNamedIfce(s1, h2, bw=10, delay='100ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
@@ -66,6 +71,35 @@ def testTopo():
     net.stop()
 
 
+class TestTopo(Topo):
+
+    def build(self, n):
+        switch = self.addSwitch('s1')
+        for h in range(1, n+1):
+            host = self.addHost('h%s' % h,
+                                cls=DockerHost, dimage="dev_test",
+                                ip="10.0.0.%s/24" % h, cpu_quota=int(50000/n))
+            self.addLink(switch, host, bw=10, delay="100ms", use_htb=True)
+
+
+def run_topo():
+    net = Containernet(controller=Controller, link=TCLink, switch=OVSBridge,
+                       topo=TestTopo(2))
+
+    info('*** Adding controller\n')
+    net.addController('c0')
+
+    info('*** Starting network\n')
+    net.start()
+    net.pingAll()
+    h1 = net.get("h1")
+    h2 = net.get("h2")
+    net.iperf((h1, h2), l4Type='UDP', udpBw="10M")
+    info('*** Stopping network')
+    net.stop()
+
+
 if __name__ == '__main__':
     setLogLevel('info')
-    testTopo()
+    run_net()
+    run_topo()
