@@ -92,6 +92,7 @@ function usage() {
     echo " -c: install (C)omNetsEmu Python module. Docker-Py and Mininet MUST be ALREADY installed."
     echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
     echo " -h: print usage"
+    echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     # echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
@@ -102,12 +103,11 @@ function usage() {
     exit 2
 }
 
-# MARK:
 function install_kernel_modules() {
     echo "Install wireguard kernel module"
     sudo add-apt-repository -y ppa:wireguard/wireguard
     sudo apt-get update
-    sudo apt-get install -y linux-headers-$(uname -r)
+    sudo apt-get install -y linux-headers-"$(uname -r)"
     sudo apt-get install -y wireguard
 }
 
@@ -135,8 +135,11 @@ function install_docker() {
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
     # Enable docker experimental features (incl. CRIU)
+    sudo mkdir -p /etc/docker
     echo "{\"experimental\": true}" | sudo tee --append /etc/docker/daemon.json
-    sudo systemctl restart docker
+    if pidof systemd; then
+        sudo systemctl restart docker
+    fi
 }
 
 function upgrade_docker() {
@@ -312,7 +315,6 @@ function remove_comnetsemu() {
 
 function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
-    echo "To be installed dependencies: mininet ryu docker docker-py"
     $update update
     install_kernel_modules
     install_mininet
@@ -353,7 +355,7 @@ if [ $# -eq 0 ]
 then
     usage
 else
-    while getopts 'abcdhlnoruvy' OPTION
+    while getopts 'abcdhklnoruvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -361,6 +363,7 @@ else
             c) install_comnetsemu;;
             d) install_docker;;
             h) usage;;
+            k) install_kernel_modules;;
             l) install_lightweight;;
             n) install_mininet;;
             o) install_ovx;;

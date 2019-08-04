@@ -14,7 +14,7 @@ supported) for them.
 
 This example demonstrate how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
 Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization. The Dockerhost with
-a internal Docker container deployed is used to **mimic** an actual physical host that runs Docker containers.
+internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
 
 #### docker_migration.py
 

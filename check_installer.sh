@@ -12,8 +12,8 @@ set -e
 set -o nounset
 
 # TODO:  <06-06-19, Zuo> Test installation on other distributions
-TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
-# TEST_IMAGES=("ubuntu:18.04")
+# TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
+TEST_IMAGES=("ubuntu:18.04")
 TEST_OPTIONS=("-a")
 COMNETSEMU_DIR="/root/comnetsemu"
 
@@ -26,10 +26,11 @@ FROM $img
 
 ENV COMNETSEMU_DIR=/root/comnetsemu
 
-RUN apt-get update && apt-get install -y sudo git make apt-utils
+RUN apt-get update && apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
 
     WORKDIR /root
 RUN mkdir -p $COMNETSEMU_DIR/comnetsemu -p $COMNETSEMU_DIR/util
+COPY ./bin/ $COMNETSEMU_DIR/bin
 COPY ./comnetsemu/ $COMNETSEMU_DIR/comnetsemu
 COPY ./Makefile $COMNETSEMU_DIR/Makefile
 COPY ./util/ $COMNETSEMU_DIR/util
