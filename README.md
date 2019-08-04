@@ -54,7 +54,7 @@ $ cd ./test_containers
 $ bash ./build.sh
 ```
 
-[Here](./doc/dependencies) is a list of dependencies required by ComNetsEmu, these tools can be installed and updated by
+[Here](./doc/dependencies.md) is a list of dependencies required by ComNetsEmu, these tools can be installed and updated by
 ComNetsEmu's [installer](./util/install.sh).
 
 #### Option 1: Install in a Vagrant managed VM (Highly Recommended)
@@ -96,9 +96,9 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Option 2: Install on Debian/Ubuntu (Only tested on Debian Jessie and Ubuntu Server 18.04 LTS (Bionic Beaver))
+#### Option 2: Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS (Bionic Beaver))
 
-INFO: Currently, the installer **ONLY** supports Debian-based Linux distributions. Support for more distributions is in
+INFO: Currently, the installer **ONLY** supports Ubuntu-based Linux distributions. Support for more distributions is in
 the TODO list.
 
 - Install essential packages required by the installer from your package management systems:
@@ -106,7 +106,7 @@ the TODO list.
 ```bash
 $ sudo apt update
 $ sudo apt upgrade
-$ sudo apt install python3 libpython3-dev python3-dev git pkg-config sudo make python3-pip
+$ sudo apt install git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
 ```
 
 - Install ComNetsEmu with all dependencies:
@@ -122,7 +122,7 @@ The **master** branch contains stable/tested sources for ComNetsEmu's python mod
 applications. It is recommended to upgraded to latest commit of the master branch.
 
 The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software
-automatically. This script **ONLY** supports Ubuntu/Debian (Tested on Ubuntu 18.04 LTS) and has some default variables:
+automatically. This script **ONLY** supports Ubuntu (Tested on Ubuntu 18.04 LTS) and has some default variables:
 
 1. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
 2. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
