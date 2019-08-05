@@ -12,12 +12,13 @@ import time
 from shlex import split
 from subprocess import check_output
 
-from common import SYMBOL_SIZE
+from common import *
 from comnetsemu.net import Containernet, VNFManager
 from mininet.log import error, info, setLogLevel
 from mininet.node import Controller, RemoteController
 from mininet.link import TCLink
 from mininet.term import makeTerm
+from mininet.cli import CLI
 
 # Just for prototyping...
 # Should be replaced with SDN controller application
@@ -33,37 +34,18 @@ def get_ofport(ifce):
 
 
 def add_ovs_flows(net, switch_num):
-    """Add OpenFlow rules for TCP/UDP traffic for dev tests, SHOULD be performed by the SDN controller"""
+    """Add OpenFlow rules for ARP/PING packets and other general traffic"""
 
-    for i in range(switch_num - 1):
-        check_output(
-            split("sudo ovs-ofctl del-flows s{}".format(i+1))
-        )
-        proto = "udp"
-        in_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
-        out_port = get_ofport("s{}-s{}".format((i+1), (i+2)))
-        check_output(
-            split(
-                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
-                       "proto": proto}
-                )
-            )
-        )
+    check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=1,actions=output=2\""))
+    check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=2,actions=output=3\""))
+    check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=2,actions=output=3\""))
+    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=2,actions=output=1\""))
 
-        if i == 0:
-            continue
+    check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=2,actions=output=1\""))
+    check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=3,actions=output=2\""))
+    check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=3,actions=output=2\""))
+    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=1,actions=output=2\""))
 
-        in_port = get_ofport("s{}-s{}".format((i+1), i))
-        out_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
-        check_output(
-            split(
-                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
-                       "proto": proto}
-                )
-            )
-        )
 
 
 def dump_ovs_flows(switch_num):
@@ -126,23 +108,17 @@ def deploy_coders(mgr, hosts):
         "encoder", hosts[1], "nc_coder",
         "sudo python3 ./encoder.py h2-s2", wait=3)
 
-    return (encoder, decoder, recoders)
+    return (encoder, decoder)
 
 
 def remove_coders(mgr, coders):
-    encoder, decoder, recoders = coders
+    encoder, decoder= coders
     mgr.removeContainer(encoder)
     mgr.removeContainer(decoder)
-    for r in recoders:
-        mgr.removeContainer(r)
 
 
 def print_coders_log(coders, coder_log_conf):
-    encoder, decoder, recoders = coders
-    if coder_log_conf.get("recoder", None):
-        info("*** Log of recoders: \n")
-        for r in recoders:
-            print(r.dins.logs().decode("utf-8"))
+    encoder, decoder = coders
 
     if coder_log_conf.get("decoder", None):
         info("*** Log of decoder: \n")
@@ -167,8 +143,8 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         ))
     iperf_client_para = {
         "server_ip": h_srv.IP(),
-        "port": 9999,
-        "bw": "0.5K",
+        "port": UDP_PORT_DATA,
+        "bw": "50K",
         "time": time,
         "interval": 1,
         "length": str(SYMBOL_SIZE - 60),
@@ -180,8 +156,8 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s {} -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
-            h_srv.IP(), iperf_client_para["proto"]))
+        "iperf -s {} -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
+            h_srv.IP(), UDP_PORT_DATA,iperf_client_para["proto"]))
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
         **iperf_client_para)
@@ -221,12 +197,13 @@ def create_topology(net, host_num):
             hosts.append(host)
             switch = net.addSwitch("s%s" % (i + 1))
             # MARK: The losses are emulated via netemu of host's interface
-            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms",
-                                 use_htb=True)
+            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms", use_htb=True)
             if last_sw:
                 # Connect switches
-                net.addLinkNamedIfce(switch, last_sw, use_htb=True,
-                                     bw=10, delay="1ms", loss=3)
+                if switch == "s3" and last_sw == "s2":
+                    net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms", loss=30)
+                else:
+                    net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms")
             last_sw = switch
 
         return hosts
@@ -244,9 +221,11 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
     :param coder_log_conf (dict): Configs for logs of coders
     """
 
-    net = Containernet(controller=Controller, link=TCLink, autoStaticArp=True)
+    net = Containernet(controller=RemoteController, link=TCLink, autoStaticArp=True)
     mgr = VNFManager(net)
     hosts = create_topology(net, host_num)
+
+
 
     try:
         info("*** Starting network\n")
@@ -254,19 +233,28 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
         # MARK: Use static ARP to avoid ping losses
         # info("*** Ping all to update ARP tables of each host\n")
         # net.pingAll()
-
         info("*** Adding OpenFlow rules\n")
         add_ovs_flows(net, host_num)
         info("*** Disable Checksum offloading\n")
         disable_cksum_offload(host_num)
 
-
+        info("*** Deploy coders\n")
         coders = deploy_coders(mgr, hosts)
-        c0 = net.get('c0').cmd("ryu-manager ")
-        makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py")
         # Wait for coders to be ready
-        time.sleep(3)
-        run_iperf_test(hosts[0], hosts[-1], "udp", 30)
+
+        info("*** Starting Ryu controller\n")
+        c0 = net.get('c0')
+        # makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py | less")
+        makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py ; read")
+
+        s2 = net.get('s2')
+        makeTerm(s2, cmd="watch -n 1 ovs-ofctl dump-flows s2")
+
+        s3 = net.get('s3')
+        makeTerm(s3, cmd="watch -n 1 ovs-ofctl dump-flows s3")
+
+        info("*** Run Iperf\n")
+        run_iperf_test(hosts[0], hosts[-1], "udp", 20)
         print_coders_log(coders, coder_log_conf)
         remove_coders(mgr, coders)
 
@@ -285,9 +273,11 @@ if __name__ == '__main__':
 
     setLogLevel('info')
     coder_log_conf = {
-        "encoder": 0,
-        "decoder": 0,
-        "recoder": 0
+        "encoder": 1,
+        "decoder": 1,
+        "recoder": 1
     }
 
     run_adaptive_redundancy(4, coder_log_conf)
+
+    check_output("../../util/emu_cleanup.sh")

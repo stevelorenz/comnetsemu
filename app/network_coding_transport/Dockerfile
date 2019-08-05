@@ -41,6 +41,6 @@ RUN chmod 700 /home/kodo/*.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
-USER kodo
+USER root
 # Define default command.
 CMD ["bash"]

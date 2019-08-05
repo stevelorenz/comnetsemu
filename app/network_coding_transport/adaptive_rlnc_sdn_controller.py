@@ -6,16 +6,18 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.dpid import str_to_dpid
 from ryu.lib.packet import ethernet, ipv4, udp
-# from ryu.lib.packet import *
+from ryu.lib.packet import in_proto
+from ryu.lib.packet import ether_types
 from ryu.app import simple_switch_13
 from ryu.app.wsgi import ControllerBase
 from ryu.app.wsgi import Response
 from ryu.app.wsgi import route
 from ryu.app.wsgi import WSGIApplication
 from ryu.lib.packet import packet
-
+from ryu.app.ofctl.api import get_datapath
 from ryu.lib import hub
-from operator import attrgetter, itemgetter
+
+from operator import attrgetter
 import copy
 import struct
 import sys
@@ -23,18 +25,12 @@ from functools import reduce
 import os
 import time
 import atexit
-import configparser
 import json
 import numpy as np
-from scipy.stats import norm
-from scipy.stats import nbinom
 from scipy.stats import t
 import math
-from fractions import Fraction
-
 import redundancy_calculator
 import common
-
 
 simple_switch_instance_name = 'simple_switch_api_app'
 url = '/simpleswitch/params/{obj}'
@@ -46,8 +42,6 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitchIgmp13, self).__init__(*args, **kwargs)
-        self.config = configparser.ConfigParser()
-        self.config.read('adapt_nc.cfg')
 
         self.mac_to_port = {}
 
@@ -63,23 +57,16 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         self.error_to_dpid = {}
         self.monitor_thread = hub.spawn(self._monitor)
         self.redundancy = 0
-
-        self.PROTOCOL = self.config.get("Coding", "PROTOCOL")
-        self.SYSTEMATIC = int(self.config.get("Coding", "SYSTEMATIC"))
-        self.CODED = int(self.config.get("Coding", "CODED"))
-        self.REDUNDANCY_MODE = self.config.get("Coding", "redundancy_mode")
-        self.FIXED = float(self.config.get("Coding", "fixed"))
-        self.TPPROTO = 17 # 6 TCP, 17 UDP
-
-        self.SYMBOLS = self.config.get("Coding", "SYMBOLS")  # used in cmds.py
-        self.PREDICTION_LEVEL = float(self.config.get("Measurement", "PREDICTION_LEVEL"))
-        self.QOS_LEVEL = float(self.config.get("Measurement", "QOS_LEVEL"))
+        self.TPPROTO = 17  # 6 TCP, 17 UDP
+        self.SYMBOLS = common.SYMBOLS
+        self.PREDICTION_LEVEL = 0.5
+        self.QOS_LEVEL = 0.5
         # Z = norm.ppf(PREDICTION_LEVEL)
-        self.hist_length = int(self.config.get("Measurement", "hist_length"))
+        self.hist_length = 5
         self.t_sn = t.ppf(self.PREDICTION_LEVEL, self.hist_length) / np.sqrt(self.hist_length)
         self.update_cycle = 1  # measurements per second
 
-        self.loss_log_file_name = self.config.get("Measurement", "loss_log_file")
+        self.loss_log_file_name = ""
         self.write_to_log = "False"  # flag for either writing to log file or not
         # Note: has to be a string, idk if string to bool cast is possible
         if not self.loss_log_file_name == "":
@@ -87,20 +74,20 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
             self.loss_log_file = open(self.loss_log_file_name, "a+")
             self.loss_log_file.write(
                 "#START,SYMBOLS={},QOS_LEVEL={},PREDICTION_LEVEL={}\n".format(self.SYMBOLS, self.QOS_LEVEL,
-                                                                       self.PREDICTION_LEVEL))
+                                                                              self.PREDICTION_LEVEL))
             # self.loss_log_file.write("time,last_measure,prediction\n")
             self.loss_log_file.flush()
         else:
             self.loss_log_file = False
 
-        self.config_pkt = packet.Packet()
-        self.config_pkt.add_protocol(ethernet.ethernet(ethertype=0x07c3,
-                                           dst='ff:ff:ff:ff:ff:ff',
-                                           src='00:00:00:00:00:0c'))
-        self.config_pkt.add_protocol(ipv4.ipv4(dst="255.255.255.255",
-                                   src="0.0.0.0",
-                                   proto=ipv4.udp))
-        self.config_pkt.add_protocol(udp.udp(dst_port=UDP_PORT_OAM))
+        # self.config_pkt = packet.Packet()
+        # self.config_pkt.add_protocol(ethernet.ethernet(ethertype=0x07c3,
+        #                                                dst='ff:ff:ff:ff:ff:ff',
+        #                                                src='00:00:00:00:00:0c'))
+        # self.config_pkt.add_protocol(ipv4.ipv4(dst="255.255.255.255",
+        #                                        src="0.0.0.0",
+        #                                        proto=ipv4.udp))
+        # self.config_pkt.add_protocol(udp.udp(dst_port=common.UDP_PORT_OAM))
 
         atexit.register(self.__del__)
 
@@ -109,7 +96,6 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
 
         self.logger.info("Connected to switch: Address {} ID {}".format(datapath.address, datapath.id))
 
@@ -121,43 +107,37 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         # Encode flows
 
         if self.TPPROTO == 17:
-            kwargs = {"udp_dst": 5001}
+            kwargs = {"udp_dst": common.UDP_PORT_DATA}
         elif self.TPPROTO == 6:
-            kwargs = {"tcp_dst": 5001}
+            kwargs = {"tcp_dst": common.UDP_PORT_DATA}
         else:
             self.logger.error("Unknown transport protocol")
             raise Exception
 
-        if str(datapath.id) == "1":  # Encoder
+        if str(datapath.id) == "2":  # Encoder
             match = parser.OFPMatch(in_port=2, eth_type=0x0800, ip_proto=self.TPPROTO, **kwargs)
-            actions = [parser.OFPActionOutput(3)]
-            self.add_flow(datapath, 65535, match, actions)
-
-            match = parser.OFPMatch(in_port=3, eth_type=0x0800, ip_proto=17, udp_dst=5001)
             actions = [parser.OFPActionOutput(1)]
             self.add_flow(datapath, 65535, match, actions)
 
-            match = parser.OFPMatch(in_port=1, eth_type=0x0800)
-            actions = [parser.OFPActionOutput(2)]
+            match = parser.OFPMatch(in_port=1, eth_type=0x0800, ip_proto=in_proto.IPPROTO_UDP, udp_dst=common.UDP_PORT_DATA)
+            actions = [parser.OFPActionOutput(3)]
             self.add_flow(datapath, 65535, match, actions)
+
             self.logger.info("added encode flow to switch %s", datapath.id)
 
 
         # Decode flows
-        else:
-            match = parser.OFPMatch(in_port=1, eth_type=0x0800, ip_proto=17, udp_dst=5001)
-            actions = [parser.OFPActionOutput(3)]
-            self.add_flow(datapath, 65535, match, actions)
-
-            match = parser.OFPMatch(in_port=3, eth_type=0x0800, ip_proto=self.TPPROTO, **kwargs)
-            actions = [parser.OFPActionOutput(2)]
-            self.add_flow(datapath, 65535, match, actions)
-
-            match = parser.OFPMatch(in_port=2, eth_type=0x0800, ip_proto=self.TPPROTO, **kwargs)
+        elif str(datapath.id) == "3":
+            match = parser.OFPMatch(in_port=2, eth_type=0x0800, ip_proto=in_proto.IPPROTO_UDP, udp_dst=common.UDP_PORT_DATA)
             actions = [parser.OFPActionOutput(1)]
             self.add_flow(datapath, 65535, match, actions)
 
-            link = 's1-s2'
+            match = parser.OFPMatch(in_port=1, eth_type=0x0800, ip_proto=self.TPPROTO, **kwargs)
+            actions = [parser.OFPActionOutput(3)]
+            self.add_flow(datapath, 65535, match, actions)
+
+
+            link = 's2-s3'
             self.loss_hist[link] = [0.0]
             self.logger.info("added decode flow to switch %s", datapath.id)
 
@@ -178,7 +158,7 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
 
-        self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
+        # self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
         return
 
         # learn a mac address to avoid FLOOD next time.
@@ -233,9 +213,7 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
             for dp in self.datapaths.values():
                 self._request_stats(dp)
             hub.sleep(self.update_cycle)
-            # TODO: count bytes instead of packets? (unequal packet sizes??)
-            # nc -U /run/nc3.sock       set redundancy=3
-            # /home/justus/Programs/ncnet/build/bin/ncctl -C run/nc{number}.sock set redundancy=3
+
             try:
                 # self.logger.info('stats: {}'.format(self.stats.items()))
                 # self.logger.info('diff_stats: {}'.format(self.diff_stats.items()))
@@ -246,8 +224,8 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
                                  '--------- ------------ '
                                  '------------ -------------- --------- --------- -------- ---------')
                 for dpid in self.stats:
-                    if dpid == str_to_dpid("0000000000000001"):
-                        link = 's1-s2'
+                    if dpid == str_to_dpid("0000000000000002"):
+                        link = 's2-s3'
 
                         # TODO: this should be dependent if with or without recoding
                         # self.logger.info("error_to_dpid: {}".format(self.error_to_dpid))
@@ -257,76 +235,39 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
                             # no value yet
                             continue
 
-                        if self.REDUNDANCY_MODE == "dynamic":
-                            pred_loss = float(str(pred_loss))  # problem with numpy
-                            if pred_loss == 0.0:
-                                pred_loss = 0.0000001
-                            elif pred_loss >= 0.95:
-                                pred_loss = 0.95
-                            if str(pred_loss) == "NaN" or pred_loss < 0.0:
-                                pred_loss = 0.0
+                        pred_loss = float(str(pred_loss))  # problem with numpy
+                        if pred_loss == 0.0:
+                            pred_loss = 0.0000001
+                        elif pred_loss >= 0.95:
+                            pred_loss = 0.95
+                        if str(pred_loss) == "NaN" or pred_loss < 0.0:
+                            pred_loss = 0.0
 
-                            self.redundancy = redundancy_calculator.systematic_redundancy(
-                                int(self.SYMBOLS), 1 - pred_loss,
-                                qos=self.QOS_LEVEL) - int(self.SYMBOLS)
+                        self.redundancy = redundancy_calculator.systematic_redundancy(
+                            int(self.SYMBOLS), 1 - pred_loss,
+                            qos=self.QOS_LEVEL) - int(self.SYMBOLS)
 
+                        # TODO:just for testing
+                        self.logger.info("pred_loss: {} qos_level: {}".format(pred_loss, self.QOS_LEVEL))
+                        self.logger.info(
+                            "SYMBOLS: {}  REDUNDANCY:  {}".format(self.SYMBOLS, self.redundancy))
 
-                            # TODO:just for testing
-                            self.logger.info("pred_loss: {} qos_level: {}".format(pred_loss, self.QOS_LEVEL))
-                            self.logger.info(
-                                "SYMBOLS: {}  REDUNDANCY:  {}".format(self.SYMBOLS, self.redundancy))
+                        if str(self.redundancy) == "nan":
+                            continue
+                        elif self.redundancy < 0:
+                            self.redundancy = 0
 
-                            if str(self.redundancy) == "nan":
-                                continue
-                            elif self.redundancy < 0:
-                                self.redundancy = 0
+                        self._set_redundancy(dpid, self.redundancy)
 
-                            self._set_redundancy(dpid, self.redundancy)
+                        if self.loss_log_file and self.write_to_log == "True":
+                            self._write_to_logfile(link, pred_loss)
 
-                            if self.loss_log_file and self.write_to_log == "True":
-                                self._write_to_logfile(link, pred_loss)
-
-
-                        elif self.REDUNDANCY_MODE == "fixed":
-                            if self.PROTOCOL == "noack" or self.PROTOCOL == "nocode":
-
-                                self.redundancy = int(round(int(self.SYMBOLS) * (float(self.FIXED) - 1)))
-
-                                # if self.redundancy == 0:
-                                #     self.redundancy = 1
-
-                                # TODO:just for testing
-                                self.logger.info("redundancy mode: {}".format(self.REDUNDANCY_MODE))
-                                self.logger.info(
-                                    "SYMBOLS: {}  REDUNDANCY:  {} FIXED: {}".format(self.SYMBOLS, self.redundancy,self.FIXED))
-
-                                nc = "enc"
-                                stdin, stdout, stderr = self.datapath_connections[dpid].exec_command(
-                                    '/home/justus/Programs/ncnet/build/bin/ncctl -C /run/nc{}.sock set redundancy={}'.format(
-                                        nc, self.redundancy))
-                                stdout.readlines()
-                                # self.logger.info("stdout: {} stderr: {}".format(stdout.read(), stderr.read()))
-
-                                stdin, stdout, stderr = self.datapath_connections[dpid].exec_command(
-                                    'echo \"set redundancy={}\" >> /tmp/nc{}.sock.txt'.format(
-                                        self.redundancy, nc))
-                                stdout.readlines()
-
-                                if self.loss_log_file and self.write_to_log == "True":
-                                    self._write_to_logfile(link, pred_loss)
-
-                            else:
-                                self.logger.error("Specify NC protocol")
-                        else:
-                            self.logger.error('Specify redundancy mode')
-                        continue
-
-                    elif "{:0>16}".format(str(dpid)) == '0000000000000002':
-                        link = 's1-s2'
-                        tx = self.stats[str_to_dpid('0000000000000001')][1]['tx-pkts']
-                        diff_tx = self.diff_stats[str_to_dpid('0000000000000001')][1]['tx-pkts']
-                        rx = self.stats[str_to_dpid('0000000000000002')][1]['rx-pkts']
-                        diff_rx = self.diff_stats[str_to_dpid('0000000000000002')][1]['rx-pkts']
+                    elif "{:0>16}".format(str(dpid)) == '0000000000000003':
+                        link = 's2-s3'
+                        tx = self.stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
+                        diff_tx = self.diff_stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
+                        rx = self.stats[str_to_dpid('0000000000000003')][2]['rx-pkts']
+                        diff_rx = self.diff_stats[str_to_dpid('0000000000000003')][2]['rx-pkts']
 
                         losses = diff_tx - diff_rx
                         if not diff_tx > 100:
@@ -371,20 +312,30 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 self.logger.info("Additional info: {} {} {}".format(exc_type, fname, exc_tb.tb_lineno))
 
-
-    def _set_redundancy(self, datapath, redundancy):
+    def _set_redundancy(self, dpid, redundancy):
+        self.logger.info("Setting redundancy to: {}".format(redundancy))
+        datapath = get_datapath(self, dpid)
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
 
-        pkt = copy.deepcopy(self.config_pkt)
-        pkt.add_protocol(struct.pack(">B", redundancy))
+        self.logger.info("Create OAM packet")
+        # pkt = copy.deepcopy(self.config_pkt)
+        pkt = packet.Packet()
+        pkt.add_protocol(ethernet.ethernet(ethertype=ether_types.ETH_TYPE_IP,
+                                           dst='ff:ff:ff:ff:ff:ff',
+                                           src='00:00:00:00:00:0c'))
+        pkt.add_protocol(ipv4.ipv4(dst="255.255.255.255",
+                                   src="0.0.0.0",
+                                   proto=in_proto.IPPROTO_UDP))
+        pkt.add_protocol(udp.udp(dst_port=common.UDP_PORT_OAM))
+        payload = struct.pack(">i", int(redundancy))
+        pkt.add_protocol(payload)
         pkt.serialize()
         data = pkt.data
-        buffer_id = 0xffffffff
-        in_port = 0xfffffffd
-        actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD, 0)]
-        req = ofp_parser.OFPPacketOut(datapath, buffer_id,
-                                      in_port, actions, data)
+        in_port = ofp.OFPP_CONTROLLER
+        actions = [ofp_parser.OFPActionOutput(1)]
+        req = ofp_parser.OFPPacketOut(datapath, ofp.OFP_NO_BUFFER, in_port, actions, data)
+        self.logger.info("Send OAM packet to encoder")
         datapath.send_msg(req)
 
     def _request_stats(self, datapath):
@@ -456,11 +407,11 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         timestamp = time.time()
         # Could save statistics per link
         self.logger.info("Error_log: {},{:7.5f},{:7.5f}\n".format(timestamp, self.loss_hist[link][0],
-                                                                        pred_loss))
+                                                                  pred_loss))
         if self.loss_log_file:
             self.loss_log_file.write(
                 "{},{:7.5f},{:7.5f}\n".format(timestamp, self.loss_hist[link][0],
-                                                    pred_loss))
+                                              pred_loss))
             self.loss_log_file.flush()
 
     def __del__(self):
