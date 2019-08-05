@@ -26,6 +26,7 @@ errcheck: $(PYSRC)
 	pyflakes $(PYSRC)
 	pylint -E --rcfile=.pylint $(PYSRC)
 
+#  TODO:  <05-08-19, Zuo> Add a runner to select examples #
 test_examples: $(COMNETSEMU)
 	@echo "*** Running basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
@@ -62,6 +63,10 @@ develop: $(MNEXEC) $(MANPAGES)
 
 doc: $(PYSRC)
 	doxygen doc/Doxyfile
+
+build-test-containers:
+	@echo "Build all test containers"
+	cd ./test_containers/ && ./build.sh
 
 ## Cleanup utilities
 

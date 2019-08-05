@@ -25,6 +25,10 @@ containers between different Docker hosts.
 
 This example shows how to run [FlowVisor](https://github.com/OPENNETWORKINGLAB/flowvisor/wiki) inside Docker container.
 
+#### mininet_demystify
+
+Demystify technologies used in Mininet for lightweight network emulation.
+
 ### nftables.py:
 
 This examples shows the basic setup of a firewall with nftables. It first creates

@@ -5,7 +5,9 @@ About: ComNetsEmu CLI utility
 """
 
 import argparse
+import re
 import subprocess
+from shlex import split
 import sys
 import shutil
 
@@ -28,12 +30,19 @@ def run():
         cleanup()
 
 
+def sh(cmd, check=True):
+    ret = subprocess.run(split(cmd), check=check,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return ret.stdout.decode('utf-8')
+
+
 def cleanup():
     info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" +
          "-" * 80 + "\n")
     info("*** Run mininet's cleanups\n")
     subprocess.run(["mn", "-c"], check=True)
     cleanup_docker_containers()
+    cleanup_netdevs()
     info("*** Remove temp directories\n")
     shutil.rmtree(VNFMANGER_MOUNTED_DIR, ignore_errors=True)
 
@@ -65,6 +74,19 @@ def cleanup_docker_containers():
         for c in internal_containers:
             c.remove(force=True)
 
+
+def cleanup_netdevs():
+    """ISSUE: Maybe too aggressive."""
+    info(
+        "*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n")
+    links = sh("ip link show")
+    ret = re.findall(r"[a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+", links)
+    if ret:
+        for link in ret:
+            sh("ip link delete {}".format(link), check=False)
+
+
+#  TODO:  <05-08-19, Zuo> Add helpers to setup Userspace network framework like DPDK #
 
 if __name__ == "__main__":
     try:
