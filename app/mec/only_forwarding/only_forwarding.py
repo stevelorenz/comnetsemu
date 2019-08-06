@@ -7,6 +7,7 @@ Description
 import sys
 import os
 import time
+
 sys.path.append(os.getcwd())
 
 from comnetsemu.net import Containernet, VNFManager
@@ -34,7 +35,7 @@ def start() -> None:
         dimage="mec_test",
         ip="10.0.0.10",
         mac="00:00:00:00:00:01",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
+        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw", "/tmp/:/tmp/log:rw"])
 
     server1 = net.addDockerHost(
         "server1",
@@ -78,7 +79,7 @@ def start() -> None:
     net.start()
     net.pingAll()  # optional
 
-    info("*** Adding Docker Containers")
+    info("*** Adding Docker Containers\n")
     client1_container = mgr.addContainer(
         name="client1_container",
         dhost="client1",
