@@ -6,19 +6,15 @@
 About: Test performance of features implemented in ComNetsEmu
 """
 
-import subprocess
 import unittest
+import sys
 
 import comnetsemu.tool as tool
 from comnetsemu.net import Containernet
-from comnetsemu.cli import CLI
+from comnetsemu.clean import cleanup
 from mininet.link import TCLink
+from mininet.log import setLogLevel
 from mininet.node import Controller
-
-
-def CLEANUP():
-    subprocess.run(["ce", "-c"], check=True, stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL)
 
 
 def create_network(host_num, host_sw_loss=0, sw_sw_loss=0):
@@ -42,21 +38,6 @@ def create_network(host_num, host_sw_loss=0, sw_sw_loss=0):
     return net
 
 
-class TestTCLink(unittest.TestCase):
-
-    LOSS_THR = 10
-
-    def test_link_loss(self):
-        host_num = 3
-
-        net = create_network(host_num, host_sw_loss=0, sw_sw_loss=10)
-        hosts = [net.get("h%s" % n) for n in range(1, host_num+1)]
-
-        net.start()
-        ret = hosts[0].cmd("ping -i 0.5 -c 20 %s" % hosts[1].IP())
-        sent, received = tool.parsePing(ret)
-        loss_rate = ((sent - received) / float(sent)) * 100.0
-        self.assertTrue(abs(loss_rate - 20.0) <= self.LOSS_THR)
-
-        net.stop()
-        CLEANUP()
+if __name__ == "__main__":
+    setLogLevel("warning")
+    unittest.main(verbosity=2)

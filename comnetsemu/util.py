@@ -2,5 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """
-About: ComNetsEmu Utilities/Helpers
+About: Utilities/Helpers for ComNetsEmu.
+       Should be used in ComNetsEmu's Python modules
 """

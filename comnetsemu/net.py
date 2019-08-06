@@ -13,7 +13,7 @@ import docker
 from comnetsemu.cli import spawnAttachedXterm
 from comnetsemu.node import DockerContainer, DockerHost
 from mininet.link import TCIntf
-from mininet.log import debug, error, info, output, warn
+from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.node import Switch
 from mininet.term import cleanUpScreens, makeTerms
@@ -32,10 +32,7 @@ class Containernet(Mininet):
         Mininet.__init__(self, **params)
 
     def addDockerHost(self, name, cls=DockerHost, **params):
-        """
-        Wrapper for addHost method that adds a
-        Docker container as a host.
-        """
+        """Wrapper for addHost method that adds a Docker container as a host."""
         return self.addHost(name, cls=cls, **params)
 
     def addLink(self, node1, node2, port1=None, port2=None,

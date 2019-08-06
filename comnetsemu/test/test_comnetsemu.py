@@ -7,22 +7,19 @@ About: Test core features implemented in ComNetsEmu
 """
 
 import functools
-import subprocess
+import sys
 import unittest
 
-from comnetsemu.net import VNFManager, Containernet
-from comnetsemu.node import DockerContainer, DockerHost
-from mininet.topo import Topo
+from comnetsemu.clean import cleanup
+from comnetsemu.net import Containernet, VNFManager
+from comnetsemu.node import DockerHost
 from mininet.node import OVSBridge
+from mininet.log import setLogLevel
+from mininet.topo import Topo
 
 # Measurement error threshold
 CPU_ERR_THR = 5  # %
 MEM_ERR_THR = 50  # MB
-
-
-def CLEANUP():
-    subprocess.run(["ce", "-c"], check=True, stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL)
 
 
 class TestTopo(Topo):
@@ -40,7 +37,6 @@ class TestVNFManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        CLEANUP()
         dargs = {
             "dimage": "dev_test",
             "dcmd": "bash"
@@ -60,7 +56,8 @@ class TestVNFManager(unittest.TestCase):
     def tearDownClass(cls):
         cls.net.stop()
         cls.mgr.stop()
-        CLEANUP()
+        if sys.exc_info() != (None, None, None):
+            cleanup()
 
     def test_ping(self):
         ret = self.net.pingAll()
@@ -96,3 +93,8 @@ class TestVNFManager(unittest.TestCase):
             clt_bw = float(self.net._parseIperf(ret).split(" ")[0])
             self.assertTrue(clt_bw > 0.0)
             self.mgr.removeContainer(c1)
+
+
+if __name__ == "__main__":
+    setLogLevel("warning")
+    unittest.main(verbosity=2)

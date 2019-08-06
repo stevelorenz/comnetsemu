@@ -46,6 +46,10 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 
 test: $(COMNETSEMU) $(TEST)
 	@echo "Running tests of ComNetsEmu python module."
+	$(PYTHON) ./comnetsemu/test/test_comnetsemu.py
+
+slowtest: $(COMNETSEMU) $(TEST)
+	@echo "Running tests of ComNetsEmu python module."
 	$(PYTHON) ./comnetsemu/test/runner.py -v
 
 check_installer: ./util/install.sh

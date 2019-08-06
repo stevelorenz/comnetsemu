@@ -291,6 +291,7 @@ class DockerHost (Host):
                 debug('waiting for', self.pid, 'to terminate\n')
                 self.shell.wait()
         self.shell = None
+        self.dclt.close()
 
     def terminate(self):
         """ Stop docker container """
