@@ -318,17 +318,20 @@ class VNFManager(object):
                 c1_checkpoint_path, dins.id
             )), check=True
         )
-        # MARK: Race condition of somewhat happens here...
-        sleep(0.01)
-        try:
-            subprocess.run(
-                split("docker start --checkpoint={} {}".format(
-                    c1.name, dins.name
-                )), check=True
-            )
-        except subprocess.CalledProcessError:
-            import pdb
-            pdb.set_trace()
+        # MARK: Race condition of somewhat happens here... Docker daemon shows a
+        # commit error.
+        while True:
+            try:
+                subprocess.run(
+                    split("docker start --checkpoint={} {}".format(
+                        c1.name, dins.name
+                    )), check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            except subprocess.CalledProcessError:
+                sleep(0.05)
+            else:
+                break
 
         self.waitContainerStart(dins.name)
 
