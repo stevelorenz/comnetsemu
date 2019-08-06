@@ -60,7 +60,7 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
         self.TPPROTO = 17  # 6 TCP, 17 UDP
         self.SYMBOLS = common.SYMBOLS
         self.PREDICTION_LEVEL = 0.5
-        self.QOS_LEVEL = 0.5
+        self.QOS_LEVEL = 0.95
         # Z = norm.ppf(PREDICTION_LEVEL)
         self.hist_length = 5
         self.t_sn = t.ppf(self.PREDICTION_LEVEL, self.hist_length) / np.sqrt(self.hist_length)
@@ -79,15 +79,6 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
             self.loss_log_file.flush()
         else:
             self.loss_log_file = False
-
-        # self.config_pkt = packet.Packet()
-        # self.config_pkt.add_protocol(ethernet.ethernet(ethertype=0x07c3,
-        #                                                dst='ff:ff:ff:ff:ff:ff',
-        #                                                src='00:00:00:00:00:0c'))
-        # self.config_pkt.add_protocol(ipv4.ipv4(dst="255.255.255.255",
-        #                                        src="0.0.0.0",
-        #                                        proto=ipv4.udp))
-        # self.config_pkt.add_protocol(udp.udp(dst_port=common.UDP_PORT_OAM))
 
         atexit.register(self.__del__)
 
@@ -127,7 +118,7 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
 
 
         # Decode flows
-        elif str(datapath.id) == "3":
+        elif str(datapath.id) == "4":
             match = parser.OFPMatch(in_port=2, eth_type=0x0800, ip_proto=in_proto.IPPROTO_UDP, udp_dst=common.UDP_PORT_DATA)
             actions = [parser.OFPActionOutput(1)]
             self.add_flow(datapath, 65535, match, actions)
@@ -215,7 +206,8 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
             hub.sleep(self.update_cycle)
 
             try:
-                # self.logger.info('stats: {}'.format(self.stats.items()))
+                self.logger.info('stats 2: {}\n'.format(self.stats[str_to_dpid('0000000000000002')].items()))
+                self.logger.info('\nstats 4: {}\n'.format(self.stats[str_to_dpid('0000000000000004')].items()))
                 # self.logger.info('diff_stats: {}'.format(self.diff_stats.items()))
                 self.logger.info('Link        tx-pkts '
                                  '  rx-pkts diff-tx-pkts '
@@ -223,86 +215,79 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
                 self.logger.info('--------- --------- '
                                  '--------- ------------ '
                                  '------------ -------------- --------- --------- -------- ---------')
-                for dpid in self.stats:
-                    if dpid == str_to_dpid("0000000000000002"):
-                        link = 's2-s3'
 
-                        # TODO: this should be dependent if with or without recoding
-                        # self.logger.info("error_to_dpid: {}".format(self.error_to_dpid))
-                        try:
-                            pred_loss = self.error_to_dpid[link]
-                        except KeyError:
-                            # no value yet
-                            continue
+                link = 's2-s3'
 
-                        pred_loss = float(str(pred_loss))  # problem with numpy
-                        if pred_loss == 0.0:
-                            pred_loss = 0.0000001
-                        elif pred_loss >= 0.95:
-                            pred_loss = 0.95
-                        if str(pred_loss) == "NaN" or pred_loss < 0.0:
-                            pred_loss = 0.0
+                tx = self.stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
+                diff_tx = self.diff_stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
+                rx = self.stats[str_to_dpid('0000000000000004')][2]['rx-pkts']
+                diff_rx = self.diff_stats[str_to_dpid('0000000000000004')][2]['rx-pkts']
 
-                        self.redundancy = redundancy_calculator.systematic_redundancy(
-                            int(self.SYMBOLS), 1 - pred_loss,
-                            qos=self.QOS_LEVEL) - int(self.SYMBOLS)
+                losses = diff_tx - diff_rx
+                if not diff_tx > 100:
+                    pass
+                else:
+                    loss_rate = float(losses) / diff_tx
+                    self.loss_hist[link].insert(0, loss_rate)  # TODO: truncate array
+                    del self.loss_hist[link][self.hist_length:]
 
-                        # TODO:just for testing
-                        self.logger.info("pred_loss: {} qos_level: {}".format(pred_loss, self.QOS_LEVEL))
-                        self.logger.info(
-                            "SYMBOLS: {}  REDUNDANCY:  {}".format(self.SYMBOLS, self.redundancy))
+                mean = np.mean(self.loss_hist[link])  # TODO: how many measurements?
+                if str(mean) == "nan":
+                    mean = 0.0
+                std = np.std(self.loss_hist[link], ddof=1)
+                if str(std) == "nan":
+                    std = 0.0
+                self.T_a = t.ppf(self.PREDICTION_LEVEL, self.hist_length - 1)  # for one-sided interval
+                pred_loss = mean + self.T_a * math.sqrt(1 + (1.0 / self.hist_length)) * std
+                self.error_to_dpid[link] = pred_loss
 
-                        if str(self.redundancy) == "nan":
-                            continue
-                        elif self.redundancy < 0:
-                            self.redundancy = 0
+                self.logger.info(
+                    '{:>9} {:>9} {:>9} {:>12} {:>12} {:>14} {:>9.3f} {:>9.3f} {:>8.3f} {:>9.3f}'.format(link,
+                                                                                                        tx,
+                                                                                                        rx,
+                                                                                                        diff_tx,
+                                                                                                        diff_rx,
+                                                                                                        losses,
+                                                                                                        self.loss_hist[
+                                                                                                            link][
+                                                                                                            -1],
+                                                                                                        mean,
+                                                                                                        std,
+                                                                                                        pred_loss))
 
-                        self._set_redundancy(dpid, self.redundancy)
+                # TODO: this should be dependent if with or without recoding
+                try:
+                    pred_loss = self.error_to_dpid[link]
+                except KeyError:
+                    # no value yet
+                    continue
 
-                        if self.loss_log_file and self.write_to_log == "True":
-                            self._write_to_logfile(link, pred_loss)
+                pred_loss = float(str(pred_loss))  # problem with numpy
+                if pred_loss == 0.0:
+                    pred_loss = 0.0000001
+                elif pred_loss >= 0.95:
+                    pred_loss = 0.95
+                if str(pred_loss) == "NaN" or pred_loss < 0.0:
+                    pred_loss = 0.0
 
-                    elif "{:0>16}".format(str(dpid)) == '0000000000000003':
-                        link = 's2-s3'
-                        tx = self.stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
-                        diff_tx = self.diff_stats[str_to_dpid('0000000000000002')][3]['tx-pkts']
-                        rx = self.stats[str_to_dpid('0000000000000003')][2]['rx-pkts']
-                        diff_rx = self.diff_stats[str_to_dpid('0000000000000003')][2]['rx-pkts']
+                self.redundancy = redundancy_calculator.systematic_redundancy(
+                    int(self.SYMBOLS), 1 - pred_loss,
+                    qos=self.QOS_LEVEL) - int(self.SYMBOLS)
 
-                        losses = diff_tx - diff_rx
-                        if not diff_tx > 100:
-                            pass
-                        else:
-                            loss_rate = float(losses) / diff_tx
-                            self.loss_hist[link].insert(0, loss_rate)  # TODO: truncate array
-                            del self.loss_hist[link][self.hist_length:]
+                # TODO:just for testing
+                self.logger.info("pred_loss: {} qos_level: {}".format(pred_loss, self.QOS_LEVEL))
+                self.logger.info(
+                    "SYMBOLS: {}  REDUNDANCY:  {}".format(self.SYMBOLS, self.redundancy))
 
-                        mean = np.mean(self.loss_hist[link])  # TODO: how many measurements?
-                        if str(mean) == "nan":
-                            mean = 0.0
-                        std = np.std(self.loss_hist[link], ddof=1)
-                        if str(std) == "nan":
-                            std = 0.0
-                        self.T_a = t.ppf(self.PREDICTION_LEVEL, self.hist_length - 1)  # for one-sided interval
-                        pred_loss = mean + self.T_a * math.sqrt(1 + (1.0 / self.hist_length)) * std
-                        self.error_to_dpid[link] = pred_loss
+                if str(self.redundancy) == "nan":
+                    continue
+                elif self.redundancy < 0:
+                    self.redundancy = 0
 
-                        self.logger.info(
-                            '{:>9} {:>9} {:>9} {:>12} {:>12} {:>14} {:>9.3f} {:>9.3f} {:>8.3f} {:>9.3f}'.format(link,
-                                                                                                                tx,
-                                                                                                                rx,
-                                                                                                                diff_tx,
-                                                                                                                diff_rx,
-                                                                                                                losses,
-                                                                                                                self.loss_hist[
-                                                                                                                    link][
-                                                                                                                    -1],
-                                                                                                                mean,
-                                                                                                                std,
-                                                                                                                pred_loss))
-                    else:
-                        continue
+                self._set_redundancy(str_to_dpid('0000000000000002'), self.redundancy)
 
+                if self.loss_log_file and self.write_to_log == "True":
+                    self._write_to_logfile(link, pred_loss)
 
             except Exception as e:
                 self.logger.info("Error in loss rate calculation: {}".format(e))

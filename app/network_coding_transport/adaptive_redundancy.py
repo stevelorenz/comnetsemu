@@ -39,12 +39,15 @@ def add_ovs_flows(net, switch_num):
     check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=1,actions=output=2\""))
     check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=2,actions=output=3\""))
     check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=2,actions=output=3\""))
-    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=2,actions=output=1\""))
+    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=2,actions=output=3\""))
+    check_output(split("sudo ovs-ofctl add-flow s5 \"priority=1,in_port=2,actions=output=1\""))
 
     check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=2,actions=output=1\""))
     check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=3,actions=output=2\""))
     check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=3,actions=output=2\""))
-    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=1,actions=output=2\""))
+    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=3,actions=output=2\""))
+    check_output(split("sudo ovs-ofctl add-flow s5 \"priority=1,in_port=1,actions=output=2\""))
+
 
 
 
@@ -200,8 +203,9 @@ def create_topology(net, host_num):
             net.addLinkNamedIfce(switch, host, bw=10, delay="1ms", use_htb=True)
             if last_sw:
                 # Connect switches
-                if switch == "s3" and last_sw == "s2":
+                if switch.name == "s4" and last_sw.name == "s3":
                     net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms", loss=30)
+                    # info('Add losses between Switches: {} {}\n'.format(switch, last_sw))
                 else:
                     net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms")
             last_sw = switch
@@ -244,17 +248,18 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
 
         info("*** Starting Ryu controller\n")
         c0 = net.get('c0')
-        # makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py | less")
         makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py ; read")
 
-        s2 = net.get('s2')
-        makeTerm(s2, cmd="watch -n 1 ovs-ofctl dump-flows s2")
+        # s2 = net.get('s2')
+        # makeTerm(s2, cmd="watch -n 1 ovs-ofctl dump-flows s2")
 
-        s3 = net.get('s3')
-        makeTerm(s3, cmd="watch -n 1 ovs-ofctl dump-flows s3")
+        # s4 = net.get('s4')
+        # makeTerm(s4, cmd="watch -n 1 ovs-ofctl dump-flows s4")
+
+        time.sleep(3)
 
         info("*** Run Iperf\n")
-        run_iperf_test(hosts[0], hosts[-1], "udp", 20)
+        run_iperf_test(hosts[0], hosts[-1], "udp", 30)
         print_coders_log(coders, coder_log_conf)
         remove_coders(mgr, coders)
 
@@ -278,6 +283,6 @@ if __name__ == '__main__':
         "recoder": 1
     }
 
-    run_adaptive_redundancy(4, coder_log_conf)
+    run_adaptive_redundancy(5, coder_log_conf)
 
     check_output("../../util/emu_cleanup.sh")
