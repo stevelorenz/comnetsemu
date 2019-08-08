@@ -66,12 +66,17 @@ COMNETSEMU_SRC_DIR="comnetsemu"
 DEP_DIR="$HOME/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
-# Tags/branch names of dependencies
+# - Installed from source, versions are tags or branch names of dependencies
+# TODO: Use git submodules to manage external sources
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
+# - Installed by package manager (apt, pip etc.)
+DOCKER_CE_VER="5:19.03.1~3-0~ubuntu-bionic"
 DOCKER_PY_VER="3.7.2"
+CRIU_VER="3.6-2"
+
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
 DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
 
@@ -131,7 +136,7 @@ function install_docker() {
     fi
 
     $update update
-    $install docker-ce criu
+    $install docker-ce="$DOCKER_CE_VER" criu="$CRIU_VER"
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
     # Enable docker experimental features (incl. CRIU)
@@ -144,7 +149,7 @@ function install_docker() {
 
 function upgrade_docker() {
     $update update
-    $install docker-ce
+    $install docker-ce="$DOCKER_CE_VER" criu="$CRIU_VER"
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 

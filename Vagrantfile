@@ -102,6 +102,14 @@ If there are any new commits in the dev branch in the remote repository, Please 
       # Build images for Docker hosts
       cd /home/vagrant/comnetsemu/test_containers || exit
       bash ./build.sh
+
+      # Run the customization shell script (for distribution $BOX) if it exits.
+      # e.g. Wiershark can be installed by adding "sudo apt install -y wireshark" in ./util/vm_customize.sh
+      cd /home/vagrant/comnetsemu/util || exit
+      if [ -f "./vm_customize.sh" ]; then
+        echo "*** Run VM customization script."
+        bash ./vm_customize.sh
+      fi
     SHELL
 
     # Always run this when use `vagrant up`

@@ -79,6 +79,17 @@ $ vagrant halt comnetsemu
 $ vagrant destory comnetsemu
 ```
 
+A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
+process.  This script can be used to add your customized tools (e.g. Wireshark, ZSH, Desktop environment etc) and
+configuration to the ComNetsEmu VM. Since the vagrant VM uses Ubuntu LTS, apt should be used to manage the packages.
+
+Example of `vm_customize.sh`:
+```bash
+sudo apt install -y zsh
+# Install oh-my-zsh framework
+sh -c "$(wget -O- https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+```
+
 The `vagrant up` should run correctly. If there are some "apt" or "dpkg" related error messages (like some packages can
 not be found or installed) during the `vagrant up`, it might due to the box you used to build the VM is outdated. It is
 configured in current ./Vagrantfile that the vagrant will check if there are any updates to the box used in the current
