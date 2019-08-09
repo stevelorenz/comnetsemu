@@ -89,8 +89,4 @@ gnuradio-companion
 ````
 
 Then, open the transmitter and the receiver files in the gnuradio_tx and the gnuradio_rx directories. The default configuration was set to transmit constantly the same message stored in
-<<<<<<< HEAD
-file_tx.tx in the transmitter side. By clicking on the button of ```bash generate flow graph ``` and ```bash execeute the flow graph ```
-=======
-file_tx.tx in the transmitter side. By clicking on the button of ```generate flow graph``` and ```execeute the flow graph```
->>>>>>> 1b384b9c04091041dc17e759b5bde99f9ac81b3a
+
