@@ -38,7 +38,7 @@ setup(
     keywords='networking emulator SDN NFV Docker',
     license='BSD',
     install_requires=[
-        'setuptools'
+        'setuptools', 'ryu'
     ],
     scripts=scripts,
 )

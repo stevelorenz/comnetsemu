@@ -37,4 +37,5 @@ CMD ["bash"]
 
 # Add Directories
 ADD client.py /tmp/
+ADD probe_agent.py /tmp/
 ADD server.py /tmp/

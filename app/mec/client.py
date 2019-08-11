@@ -1,6 +1,7 @@
 import socket
 import time
 import json
+import random
 # import subprocess
 
 # _ = subprocess.call("route add 10.255.255.255 dev client1-eth0", shell=True)
@@ -17,9 +18,12 @@ rx_socket.connect(("10.255.255.255", 8004))
 
 cnt: int = 0
 loop: int = 0
-
+data = []
+for i in range(0, 20):
+    data.append(random.randint(a=0, b=1000))
 _: str = ""
 file = None
+
 # try:
 #     file = open("/tmp/log/client.LOG", "w")
 #     file.write(f"Client started at {time.time()}")
@@ -32,7 +36,7 @@ print(f"starting client, {_}")
 while True:
     try:
         msg = json.dumps(
-            [{"message": f"packet{loop}", "time": f"{time.time()}", "data": (1, 2, 3)}],
+            [{"message": f"packet{loop}", "type": "DATA", "time": f"{time.time()}", "data": data}],
             sort_keys=True,
             # indent=4,
             separators=(",", ": "))

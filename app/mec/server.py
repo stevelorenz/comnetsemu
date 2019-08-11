@@ -11,7 +11,7 @@ rx_socket.bind(("", 8004))
 
 rng = 100000
 if random.randint(0, 1) == 1:
-    rng = 1000000
+    rng = 500000
 
 cnt = 0
 print("starting server")
@@ -21,7 +21,7 @@ while True:
         _ = str(data.decode())
         #@TODO : fft with data, use numpy.fft() for this
         msg = json.dumps(
-            [{"message": f"result{random.randint(0, 100)}\n{rng}", "time": f"{time.time()}", "data": (1, 2, 3)}],
+            [{"message": f"result{random.randint(0, 100)}\n{rng}", "time": f"{time.time()}", "data": "None"}],
             sort_keys=True,
             # indent=4,
             separators=(",", ": "))
