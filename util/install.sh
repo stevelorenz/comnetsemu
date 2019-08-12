@@ -31,6 +31,7 @@ PIP=pip3
 
 if [[ "$ARCH" = "i686" ]]; then
     error "[ARCH]" "i386 is not supported."
+    exit 1
 fi
 
 test -e /etc/debian_version && DIST="Debian"
@@ -48,6 +49,7 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     fi
 else
     error "[DIST]" "The installer currently ONLY supports Debian/Ubuntu"
+    exit 1
 fi
 
 
@@ -64,12 +66,17 @@ COMNETSEMU_SRC_DIR="comnetsemu"
 DEP_DIR="$HOME/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
-# Tags/branch names of dependencies
+# - Installed from source, versions are tags or branch names of dependencies
+# TODO: Use git submodules to manage external sources
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 OVX_VER="0.0-MAINT"
+# - Installed by package manager (apt, pip etc.)
+DOCKER_CE_VER="5:19.03.1~3-0~ubuntu-bionic"
 DOCKER_PY_VER="3.7.2"
+CRIU_VER="3.6-2"
+
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
 DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
 
@@ -90,6 +97,7 @@ function usage() {
     echo " -c: install (C)omNetsEmu Python module. Docker-Py and Mininet MUST be ALREADY installed."
     echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
     echo " -h: print usage"
+    echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     # echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
@@ -98,6 +106,14 @@ function usage() {
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
     exit 2
+}
+
+function install_kernel_modules() {
+    echo "Install wireguard kernel module"
+    sudo add-apt-repository -y ppa:wireguard/wireguard
+    sudo apt-get update
+    sudo apt-get install -y linux-headers-"$(uname -r)"
+    sudo apt-get install -y wireguard
 }
 
 function install_docker() {
@@ -120,14 +136,20 @@ function install_docker() {
     fi
 
     $update update
-    $install docker-ce
+    $install docker-ce="$DOCKER_CE_VER" criu="$CRIU_VER"
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
+    # Enable docker experimental features (incl. CRIU)
+    sudo mkdir -p /etc/docker
+    echo "{\"experimental\": true}" | sudo tee --append /etc/docker/daemon.json
+    if pidof systemd; then
+        sudo systemctl restart docker
+    fi
 }
 
 function upgrade_docker() {
     $update update
-    $install docker-ce
+    $install docker-ce="$DOCKER_CE_VER" criu="$CRIU_VER"
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
@@ -142,7 +164,7 @@ function install_mininet() {
     cd mininet || exit
     git checkout -b dev $MININET_VER
     cd util || exit
-    PYTHON=python3 ./install.sh -nfv
+    PYTHON=python3 ./install.sh -nfvw03
 }
 
 function install_comnetsemu() {
@@ -298,8 +320,8 @@ function remove_comnetsemu() {
 
 function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
-    echo "To be installed dependencies: mininet ryu docker docker-py"
     $update update
+    install_kernel_modules
     install_mininet
     install_ryu
     install_docker
@@ -310,6 +332,7 @@ function install_lightweight() {
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $update update
+    install_kernel_modules
     install_mininet
     install_ryu
     install_docker
@@ -337,7 +360,7 @@ if [ $# -eq 0 ]
 then
     usage
 else
-    while getopts 'abcdhlnoruvy' OPTION
+    while getopts 'abcdhklnoruvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -345,6 +368,7 @@ else
             c) install_comnetsemu;;
             d) install_docker;;
             h) usage;;
+            k) install_kernel_modules;;
             l) install_lightweight;;
             n) install_mininet;;
             o) install_ovx;;

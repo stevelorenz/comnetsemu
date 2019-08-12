@@ -2,22 +2,27 @@
 About: ComNetsEmu Network
 """
 
-import sys
-from time import sleep
 import os
+import shutil
+import subprocess
+import sys
+from shlex import split
+from time import sleep
 
 import docker
-from comnetsemu.node import DockerContainer, DockerHost
 from comnetsemu.cli import spawnAttachedXterm
+from comnetsemu.node import DockerContainer, DockerHost
 from mininet.link import TCIntf
-from mininet.log import debug, error, info, output, warn
+from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.node import Switch
+from mininet.term import cleanUpScreens, makeTerms
 from mininet.util import BaseString
-from mininet.term import makeTerms, cleanUpScreens
 
 # ComNetsEmu version: should be consistent with README and LICENSE
 VERSION = "0.1.3"
+
+VNFMANGER_MOUNTED_DIR = "/tmp/comnetsemu/vnfmanager"
 
 
 class Containernet(Mininet):
@@ -27,10 +32,7 @@ class Containernet(Mininet):
         Mininet.__init__(self, **params)
 
     def addDockerHost(self, name, cls=DockerHost, **params):
-        """
-        Wrapper for addHost method that adds a
-        Docker container as a host.
-        """
+        """Wrapper for addHost method that adds a Docker container as a host."""
         return self.addHost(name, cls=cls, **params)
 
     def addLink(self, node1, node2, port1=None, port2=None,
@@ -108,7 +110,19 @@ class VNFManager(object):
     - It should communicate with SDN controller to manage internal containers
       adaptively.
 
+    Ref:
+        [1] https://docker-py.readthedocs.io/en/stable/containers.html
     """
+
+    docker_args = {
+        "tty": True,  # -t
+        "detach": True,  # -d
+        "labels": {"comnetsemu": "dockercontainer"},
+        # Required for CRIU checkpoint
+        "security_opt": ["seccomp:unconfined"],
+        # Shared directory in host OS
+        "volumes": {VNFMANGER_MOUNTED_DIR: {'bind': VNFMANGER_MOUNTED_DIR, 'mode': 'rw'}}
+    }
 
     def __init__(self, net):
         """Init the VNFManager
@@ -122,11 +136,38 @@ class VNFManager(object):
         self.container_queue = list()
         self.name_container_map = dict()
 
-        # mininet's internal containers -> mni
-        self.dnameprefix = "mni"
+    def createContainer(self, name, dhost, dimage, dcmd):
+        """Create a container without starting it.
 
-    def addContainer(self, name, dhost, dimage, dcmd, retry_cnt=3, wait=0.5,
-                     **params):
+        :param name (str): Name of the container
+        :param dimage (str): The name of the docker image
+        :param dcmd (str): Command to run after the creation
+        """
+        self.docker_args["name"] = name
+        self.docker_args["image"] = dimage
+        self.docker_args["command"] = dcmd
+        self.docker_args["cgroup_parent"] = "/docker/{}".format(dhost.did)
+        self.docker_args["network_mode"] = "container:{}".format(dhost.did)
+
+        ret = self.dclt.containers.create(**self.docker_args)
+        return ret
+
+    def waitContainerStart(self, name):
+        """Wait for container to start up running"""
+        while True:
+            try:
+                dins = self.dclt.containers.get(name)
+            except docker.errors.NotFound:
+                print("Failed to get container:%s" % (name))
+                sleep(0.1)
+            else:
+                break
+
+        while not dins.attrs["State"]["Running"]:
+            sleep(0.1)
+            dins.reload()  # refresh information in 'attrs'
+
+    def addContainer(self, name, dhost, dimage, dcmd, **params):
         """Create and run a new container inside a Mininet DockerHost
 
         The manager retries with retry_cnt times to create the container if the
@@ -138,8 +179,8 @@ class VNFManager(object):
         :param dhost (str or Node): The name or instance of the to be deployed DockerHost instance
         :param dimage (str): The name of the docker image
         :param dcmd (str): Command to run after the creation
-        :param retry_cnt (int): Number of retries if failed to get the DockerHost
         """
+
         if isinstance(dhost, BaseString):
             dhost = self.net.get(dhost)
         if not dhost:
@@ -147,36 +188,10 @@ class VNFManager(object):
                 "The internal container must be deployed on a running DockerHost instance \n")
             return None
 
-        # Create container INSIDE Containernet host
-
-        # 1. Here exec the 'docker run' directly in DockerHost instance instead
-        # of using docker-py APIs is a workaround: The docker-py does not
-        # provide how to use --cgroup-parent API directly. Should be replace
-        # with docker-py APIs if cgroup-parent feature is supported.
-
-        # 2. Current version, the container inside share the network stack of
-        # the parent docker.
-        name = ".".join((self.dnameprefix, name))
-        run_cmd = """docker run -idt --name {} --cgroup-parent=/docker/{} \
---network container:mn.{} {} {}
-        """.format(name, dhost.did, dhost.name, dimage, dcmd)
-        out = dhost.cmd(run_cmd)
-        debug("\n" + out + "\n")
-
-        cnt = 0
-        while cnt < retry_cnt:
-            try:
-                dins = self.dclt.containers.get(name)
-            except docker.errors.NotFound:
-                error("Failed to get container:%s, try %d/%d times\n" % (
-                    name, cnt+1, retry_cnt))
-                cnt += 1
-                sleep(wait)
-            else:
-                break
-
+        dins = self.createContainer(name, dhost, dimage, dcmd)
+        dins.start()
+        self.waitContainerStart(name)
         container = DockerContainer(name, dhost, dimage, dins)
-
         self.container_queue.append(container)
         self.name_container_map[container.name] = container
         return container
@@ -184,8 +199,8 @@ class VNFManager(object):
     def removeContainer(self, container):
         """Remove the internal container
 
-        its name)
         :param container (str or DockerContainer): Internal container object (or
+        its name in string)
 
         :return: Return True/False for success/fail remove.
         """
@@ -243,7 +258,7 @@ class VNFManager(object):
         n = 0
         usages = list()
         while n < sample_num:
-            stats = container.dins.stats(decode=False, stream=False)
+            stats = container.get_current_stats()
             mem_stats = stats["memory_stats"]
             mem_usg = mem_stats["usage"] / (1024 ** 2)
             cpu_usg = self.calculate_cpu_percent(stats)
@@ -253,9 +268,79 @@ class VNFManager(object):
 
         return usages
 
-    #  TODO:  <collmann> Add migration methods with:
-    #  1. Docker built-in migration
-    #  2. Distributed storage based state-sync
+    def migrateCRIU(self, h1, c1, h2):
+        """Migrate Docker c1 running on the host h1 to host h2
+
+        Docker checkpoint is an experimental command.  To enable experimental
+        features on the Docker daemon, edit the /etc/docker/daemon.json and set
+        experimental to true.
+
+        :param h1 (str):
+        :param c1 (str):
+        :param h2 (str):
+
+        Ref: https://www.criu.org/Docker
+        """
+
+        if isinstance(c1, BaseString):
+            c1 = self.name_container_map.get(c1, None)
+        if isinstance(h1, BaseString):
+            h1 = self.net.get(h1)
+            h2 = self.net.get(h2)
+
+        c1_checkpoint_path = os.path.join(
+            VNFMANGER_MOUNTED_DIR, "{}".format(c1.name))
+        # MARK: Docker-py does not provide API for checkpoint and restore,
+        # Docker CLI is used with subprocess as a temp workaround.
+        subprocess.run(
+            split("docker checkpoint create --checkpoint-dir={} {} "
+                  "{}".format(VNFMANGER_MOUNTED_DIR, c1.name, c1.name)),
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        # TODO: Emulate copying checkpoint directory between h1 and h2
+        sleep(0.17)
+
+        debug("Create a new container on {} and restore it with {}\n".format(
+            h2, c1.name
+        ))
+        dins = self.createContainer(
+            "{}_clone".format(c1.name), h2, c1.dimage, c1.dcmd)
+        # BUG: Customized checkpoint dir is not supported in Docker...
+        # ISSUE: https://github.com/moby/moby/issues/37344
+        # subprocess.run(
+        #     split("docker start --checkpoint-dir={} --checkpoint={} {}".format(
+        #         VNFMANGER_MOUNTED_DIR, c1.name, dins.name
+        #     )),
+        #     check=True
+        # )
+        subprocess.run(
+            split("mv {} /var/lib/docker/containers/{}/checkpoints/".format(
+                c1_checkpoint_path, dins.id
+            )), check=True
+        )
+        # MARK: Race condition of somewhat happens here... Docker daemon shows a
+        # commit error.
+        while True:
+            try:
+                subprocess.run(
+                    split("docker start --checkpoint={} {}".format(
+                        c1.name, dins.name
+                    )), check=True,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            except subprocess.CalledProcessError:
+                sleep(0.05)
+            else:
+                break
+
+        self.waitContainerStart(dins.name)
+
+        container = DockerContainer(dins.name, h2, c1.dimage, dins)
+        self.container_queue.append(container)
+        self.name_container_map[container.name] = container
+        shutil.rmtree(c1_checkpoint_path, ignore_errors=True)
+
+        return container
 
     def stop(self):
         debug("STOP: {} containers in the VNF queue: {}\n".format(
@@ -269,3 +354,4 @@ class VNFManager(object):
             c.dins.remove(force=True)
 
         self.dclt.close()
+        shutil.rmtree(VNFMANGER_MOUNTED_DIR)

@@ -17,7 +17,7 @@ import rawsock_helpers as rsh
 from common import (BUFFER_SIZE, FIELD, IO_SLEEP, MD_TYPE_TCP_IN_UDP,
                     MD_TYPE_UDP, META_DATA_LEN, MTU, SYMBOL_SIZE, SYMBOLS)
 
-log.conf_logger("error")
+log.conf_logger("info")
 logger = log.logger
 
 
@@ -61,7 +61,7 @@ def run_decoder(ifce):
 
         if proto == rsh.IP_PROTO_UDP:
             udp_cnt += 1
-            logger.info(
+            logger.debug(
                 "Recv a UDP segment, total received UDP segments: %d "
                 "frame len: %d",
                 udp_cnt, frame_len)
@@ -81,6 +81,7 @@ def run_decoder(ifce):
             "Generation number in payload:%d, current decode generation:%d, md_pl_len:%d",
             cur_gen, generation, md_pl_len)
 
+        # logger.info("cur_gen: {}   generation: {}".format(cur_gen, generation))
         if cur_gen > generation:
             logger.debug("Cleanup decoder for new generation")
             decoder = decoder_factory.build()
@@ -88,6 +89,14 @@ def run_decoder(ifce):
             decoder.set_mutable_symbols(decode_buf)
             not_decoded_indces = list(range(decoder.symbols()))
             generation = cur_gen
+
+        elif cur_gen == 0 and generation == 255:
+            logger.debug("Cleanup decoder for new generation")
+            decoder = decoder_factory.build()
+            decode_buf = bytearray(decoder.block_size())
+            decoder.set_mutable_symbols(decode_buf)
+            not_decoded_indces = list(range(decoder.symbols()))
+            generation = 0
 
         head = udp_pl_offset + META_DATA_LEN
         tail = udp_pl_offset + META_DATA_LEN + udp_pl_len

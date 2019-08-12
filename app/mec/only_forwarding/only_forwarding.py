@@ -4,15 +4,12 @@
 Description
 """
 
-import sys
-import os
 import time
-
-sys.path.append(os.getcwd())
 
 from comnetsemu.net import Containernet, VNFManager
 from comnetsemu.cli import CLI
-from mininet.node import RemoteController, DockerContainer, DockerHost, OVSSwitch  # , Controller, CPULimitedHost
+from comnetsemu.node import DockerHost, DockerContainer
+from mininet.node import RemoteController, OVSSwitch  # , Controller, CPULimitedHost
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink
 

@@ -5,11 +5,10 @@ About: ComNetsEmu CLI utility
 """
 
 import argparse
-import subprocess
 import sys
 
-import docker
 from mininet.log import LEVELS, debug, error, info, lg
+from comnetsemu.clean import cleanup
 
 
 def run():
@@ -26,33 +25,7 @@ def run():
         cleanup()
 
 
-def cleanup():
-    info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" +
-         "-" * 80 + "\n")
-    info("*** Run mininet's cleanups:\n")
-    subprocess.run(["mn", "-c"], check=True)
-    cleanup_docker_containers()
-
-
-def cleanup_docker_containers():
-    info("*** Run docker container cleanups\n")
-    client = docker.from_env()
-    containers = client.containers.list(all=True)
-    docker_hosts = [c for c in containers if c.name.startswith("mn.")]
-    internal_containers = [c for c in containers if c.name.startswith("mni.")]
-
-    if docker_hosts:
-        info("Force remove all running DockerHost instances: {}\n".format(
-            ", ".join([c.name for c in docker_hosts])))
-        for c in docker_hosts:
-            c.remove(force=True)
-
-    if internal_containers:
-        info("Force remove all running internal Docker containers: {}\n".format(
-            ", ".join([c.name for c in internal_containers])))
-        for c in internal_containers:
-            c.remove(force=True)
-
+#  TODO:  <05-08-19, Zuo> Add helpers to setup Userspace network framework like DPDK #
 
 if __name__ == "__main__":
     try:

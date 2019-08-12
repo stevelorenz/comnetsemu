@@ -25,15 +25,11 @@ $bootstrap= <<-SCRIPT
 # Install dependencies
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y git pkg-config gdb tmux sudo make
-sudo apt-get install -y bash-completion htop dfc
+# Essential packages used by ./util/install.sh
+sudo apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
+# Test/Development utilities
+sudo apt-get install -y bash-completion htop dfc gdb tmux
 sudo apt-get install -y iperf iperf3
-sudo apt-get install -y python3-pip
-# Install wireguard kernel module
-sudo add-apt-repository -y ppa:wireguard/wireguard
-sudo apt-get update
-sudo apt-get install -y linux-headers-$(uname -r)
-sudo apt-get install -y wireguard
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
@@ -106,6 +102,13 @@ If there are any new commits in the dev branch in the remote repository, Please 
       # Build images for Docker hosts
       cd /home/vagrant/comnetsemu/test_containers || exit
       bash ./build.sh
+
+      # Run the customization shell script (for distribution $BOX) if it exits.
+      cd /home/vagrant/comnetsemu/util || exit
+      if [ -f "./vm_customize.sh" ]; then
+        echo "*** Run VM customization script."
+        bash ./vm_customize.sh
+      fi
     SHELL
 
     # Always run this when use `vagrant up`
@@ -113,7 +116,7 @@ If there are any new commits in the dev branch in the remote repository, Please 
     # ISSUE: The VM need to have Internet connection to boot up...
     #comnetsemu.vm.provision :shell, privileged: false, run: "always", inline: <<-SHELL
     #  cd /home/vagrant/comnetsemu/util || exit
-    #  PYTHON=python3 ./install.sh -p
+    #  PYTHON=python3 ./install.sh -u
     #SHELL
 
     # Enable X11 forwarding

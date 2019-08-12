@@ -139,6 +139,7 @@ class DockerHost (Host):
             # network_disabled=True,  # docker stats breaks if we disable the default network
             host_config=hc,
             ports=defaults['ports'],
+            labels={"comnetsemu": "dockerhost"},
             volumes=[self._get_volume_mount_name(
                 v) for v in self.volumes if self._get_volume_mount_name(v) is not None],
             hostname=name
@@ -290,6 +291,7 @@ class DockerHost (Host):
                 debug('waiting for', self.pid, 'to terminate\n')
                 self.shell.wait()
         self.shell = None
+        self.dclt.close()
 
     def terminate(self):
         """ Stop docker container """
@@ -565,7 +567,7 @@ class DockerHost (Host):
         ifce = self.intf(intf)
         ret = ifce.setIP(ip, prefixLen, **kwargs)
         if ret.startswith("ifconfig: bad"):
-            warn("\nFailed to set IP address with ifconfig\n")
+            # warn("\nFailed to set IP address with ifconfig\n")
             info("Use iproute2 instead of ifconfig (used by Mininet).\n")
             if '/' in ip:
                 ifce.ip, ifce.prefixLen = ip.split('/')
@@ -583,7 +585,7 @@ class DockerHost (Host):
         return ret
 
 
-class DockerContainer(Host):
+class DockerContainer(object):
 
     """Docker container running INSIDE Docker host"""
 
@@ -594,7 +596,13 @@ class DockerContainer(Host):
         self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.dins = dins
 
+    def get_current_stats(self):
+        return self.dins.stats(decode=False, stream=False)
+
+    def get_logs(self):
+        """Get logs from this container."""
+        return self.dins.logs(timestamps=True).decode("utf-8")
+
     def terminate(self):
         """Internal container specific cleanup"""
-        # super(DockerContainer, self).terminate()
         pass

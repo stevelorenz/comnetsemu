@@ -18,7 +18,7 @@ from common import (BUFFER_SIZE, FIELD, IO_SLEEP, MD_TYPE_TCP_IN_UDP,
                     MD_TYPE_UDP, META_DATA_LEN, MTU, SYMBOL_SIZE, SYMBOLS,
                     UDP_PORT_DATA, UDP_PORT_OAM)
 
-log.conf_logger("error")
+log.conf_logger("info")
 logger = log.logger
 
 
@@ -73,7 +73,7 @@ def run_encoder():
         elif proto == rsh.IP_PROTO_UDP:
             udp_cnt += 1
             md_type = MD_TYPE_UDP
-            logger.info(
+            logger.debug(
                 "Recv a UDP segment, total received UDP segments: %d "
                 "frame len: %d",
                 udp_cnt, frame_len)
@@ -85,7 +85,7 @@ def run_encoder():
 
             if udp_dst_port == UDP_PORT_OAM:
                 redundancy = struct.unpack_from(
-                    ">B", rx_tx_buf, udp_pl_offset)[0]
+                    ">i", rx_tx_buf, udp_pl_offset)[0]
                 logger.info("Recv an OAM packet, update redundancy to %d",
                             redundancy)
                 continue
@@ -154,7 +154,10 @@ def run_encoder():
             encoder = encoder_factory.build()
             assert(encoder.rank() == 0)
             encoder.set_systematic_on()
-            generation += 1
+            if generation < 255:
+                generation += 1
+            else:
+                generation = 0
 
 
 if __name__ == "__main__":

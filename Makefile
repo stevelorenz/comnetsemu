@@ -26,10 +26,12 @@ errcheck: $(PYSRC)
 	pyflakes $(PYSRC)
 	pylint -E --rcfile=.pylint $(PYSRC)
 
+#  TODO:  <05-08-19, Zuo> Add a runner to select examples #
 test_examples: $(COMNETSEMU)
 	@echo "*** Running basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
+	$(PYTHON) ./examples/docker_migration.py
 
 test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
@@ -37,11 +39,16 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "**** Basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
+	$(PYTHON) ./examples/docker_migration.py
 	@echo "**** Examples for security..."
 	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py
 
 test: $(COMNETSEMU) $(TEST)
+	@echo "Running tests of ComNetsEmu python module."
+	$(PYTHON) ./comnetsemu/test/test_comnetsemu.py
+
+slowtest: $(COMNETSEMU) $(TEST)
 	@echo "Running tests of ComNetsEmu python module."
 	$(PYTHON) ./comnetsemu/test/runner.py -v
 
@@ -60,6 +67,10 @@ develop: $(MNEXEC) $(MANPAGES)
 
 doc: $(PYSRC)
 	doxygen doc/Doxyfile
+
+build-test-containers:
+	@echo "Build all test containers"
+	cd ./test_containers/ && ./build.sh
 
 ## Cleanup utilities
 

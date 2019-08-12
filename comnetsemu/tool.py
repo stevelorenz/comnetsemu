@@ -1,8 +1,10 @@
 """
-About: ComNetsEmu Tools and Utilities
+About: Tools/Helpers for emulation scripts.
+       Should be used by ComNetEmu's users
 """
 
 import re
+
 from mininet.log import debug, error, info, output, warn
 
 
