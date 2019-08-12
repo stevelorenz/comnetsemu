@@ -22,6 +22,7 @@ class Controller(app_manager.RyuApp):
         self.latency = ({}, {})  # first is direct, second application traffic
         self.time: Tuple[float, float] = (0.0, 0.0)  # first is direct, second application traffic
         self.msg_cnt = 0
+        self.optimal_host = ""
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -33,6 +34,23 @@ class Controller(app_manager.RyuApp):
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
+
+    def remove_table_flows(self, datapath, table_id, match, instructions):
+        """remove flows with flow mod"""
+        ofproto = datapath.ofproto
+        flow_mod = datapath.ofproto_parser.OFPFlowMod(datapath,
+                                                      0,
+                                                      0,
+                                                      table_id,
+                                                      ofproto.OFPFC_DELETE,
+                                                      0,
+                                                      0,
+                                                      ofproto.OFPP_ANY,
+                                                      ofproto.OFPG_ANY,
+                                                      0,
+                                                      match,
+                                                      instructions)
+        return flow_mod
 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
         ofproto = datapath.ofproto
@@ -178,21 +196,30 @@ class Controller(app_manager.RyuApp):
                 # self.logger.info(f"updated entry[1] : {eth_src} ; {latency} msec")
                 # self.logger.critical(f"UDP_IN,{self.msg_cnt},{ip_src},{eth_src},0,0,{latency}")
 
-                if self.msg_cnt > 80:
-                    self.logger.info(f"{self.latency[1]}")
-                    list_1 = []
-                    list_2 = []
+                if self.msg_cnt > 80:  # @TODO before : wipe table entries (if necessary / change in optimal host)
+                    # empty_match = parser.OFPMatch()
+                    # instructions = []
+                    # flow_mod = self.remove_table_flows(datapath, 0, empty_match, instructions)
+                    # datapath.send_msg(flow_mod)
+                    # self.logger.info(f"{self.latency[1]}")
+                    mac_list = []
+                    latency_list = []
                     _ = ""  # optimal host
                     # self.logger.info(f"{list_1} {list_2}")
-                    for key, value in self.latency[1].items():
-                        list_1.append(key)
-                        list_2.append(value)
-                    if list_2[0] > list_2[1]:
-                        _ = list_1[1]
-                        self.logger.info(f"CHOOSING {list_1[1]} AS SERVER, LATENCY {list_2[1]} msec ")
+                    for key, value in self.latency[1].items():  # @TODO replace with parsing dict to list
+                        mac_list.append(key)
+                        latency_list.append(value)
+                        self.logger.info(f"{key} : {value}")
+                    if latency_list[0] > latency_list[1]:  # @TODO replace with find min -> index -> info
+                        _ = mac_list[1]
+                        if mac_list[1] != self.optimal_host:
+                            self.optimal_host = mac_list[1]
+                            self.logger.info(f"CHOOSING {mac_list[1]} AS SERVER, LATENCY {latency_list[1]} msec ")
                     else:
-                        _ = list_1[0]
-                        self.logger.info(f"CHOOSING {list_1[0]} AS SERVER, LATENCY {list_2[0]} msec ")
+                        _ = mac_list[0]
+                        if mac_list[0] != self.optimal_host:
+                            self.optimal_host = mac_list[0]
+                            self.logger.info(f"CHOOSING {mac_list[0]} AS SERVER, LATENCY {latency_list[0]} msec ")
                     # self.logger.info(f"CHOOSING {_} AS HOST")
                     actions = [parser.OFPActionOutput(self.mac_to_port[dpid][_])]
                     match = parser.OFPMatch(in_port=self.mac_to_port[dpid]["00:00:00:00:00:01"], eth_dst=_, eth_src="00:00:00:00:00:01")

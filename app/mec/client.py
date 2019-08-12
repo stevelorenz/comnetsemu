@@ -15,6 +15,7 @@ tx_socket.bind(("", 8000))  # only to prevent icmp "not reachable"
 
 rx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 rx_socket.connect(("10.255.255.255", 8004))
+# rx_socket.connect(("127.0.0.1", 8004))
 
 cnt: int = 0
 loop: int = 0
@@ -65,7 +66,7 @@ while True:
 
         time.sleep(5)
     except Exception:
-        file.close()
+        # file.close()
         cnt += 1
         if cnt > 5:
             print("abort client")
