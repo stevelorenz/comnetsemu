@@ -80,7 +80,7 @@ $ vagrant destory comnetsemu
 ```
 
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
-process.  This script can be used to add your customized tools (e.g. Wireshark, ZSH, Desktop environment etc) and
+process.  This script can be used to add your customized tools (e.g. ZSH, Desktop environment etc) and
 configuration to the ComNetsEmu VM. Since the vagrant VM uses Ubuntu LTS, apt should be used to manage the packages.
 
 Example of `vm_customize.sh`:

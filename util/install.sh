@@ -164,7 +164,7 @@ function install_mininet() {
     cd mininet || exit
     git checkout -b dev $MININET_VER
     cd util || exit
-    PYTHON=python3 ./install.sh -nfv
+    PYTHON=python3 ./install.sh -nfvw03
 }
 
 function install_comnetsemu() {
