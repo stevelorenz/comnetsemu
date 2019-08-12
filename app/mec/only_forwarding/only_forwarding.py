@@ -74,7 +74,7 @@ def start() -> None:
                 use_htb=True)
     net.addLink(node1=switch1,
                 node2=probe1,
-                delay="200ms",
+                delay="50ms",
                 use_htb=True)
     net.addLink(node1=switch1,
                 node2=server1,
@@ -82,7 +82,7 @@ def start() -> None:
                 use_htb=True)
     net.addLink(node1=switch1,
                 node2=server2,
-                delay="200ms",
+                delay="300ms",
                 use_htb=True)
 
     info("\n*** Starting Network\n")
@@ -121,7 +121,7 @@ def start() -> None:
 
     # time.sleep(2)
     # CLI(net)
-    time.sleep(30)
+    time.sleep(180)
 
     info("\n*** Removing Docker Containers\n")
     mgr.removeContainer(client1_container)
