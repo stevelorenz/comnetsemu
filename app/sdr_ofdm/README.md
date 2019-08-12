@@ -1,7 +1,7 @@
-
 # Data transmission using Ettus Research USRP #
+
 In this directory, you can find two examples that show the functionality of USRP systems in real
-data trasmission applications. Before being enable to exchange data between 2 SDR systems, it is
+data transmission applications. Before being enable to exchange data between 2 SDR systems, it is
 required the installation of the UHD driver, which ensures the communication between the host computer and the USRPs; GNURadio, which is a free and open-source SDK employed to implement software radio transceivers through built-in C++ signal processing blocks. GNU Radio supports a large set of platforms, but for the purpose of this chapter the development platform is the Ettus Research N210.
 
 The details about the installation of the UHD drivers and the GNU can be found in the following link: 
@@ -25,7 +25,7 @@ unmanaged TP-LINK switch, as depicted.
 | SDR A |  ---- OFDM tunnel  ----  | SDR B |
 ---------                           -------- 
 ````
-An OFDM tunnel provides a virtual ethernet interface between 2 USRPs throughout the physical (PHY) and medium access control (MAC) layers. Hence, several IP-based applications, which correspond to applications in upper layers, can be inserted in the tunnel to transmit and receive data. 
+An OFDM tunnel provides a virtual Ethernet interface between 2 USRPs throughout the physical (PHY) and medium access control (MAC) layers. Hence, several IP-based applications, which correspond to applications in upper layers, can be inserted in the tunnel to transmit and receive data. 
 
 The PHY layer is composed of: transmitter, receiver and sensors. 
 Bits are gathered on the USRP's buffers and transmitted and received using digital-to-analog and analog-to-digital converters to transform the information bits to baseband waveforms. 
@@ -47,13 +47,13 @@ sudo ./tunnel.py --freq 2.45G --args="192.168.10.3"
 
 as we dispose of two USRP, one identified with the IP address: 192.168.10.2 and the other with the 
 IP address: 192.168.10.3. The previous command is a python file that controls the signal processing blocks to configure the hardware. By following the code instructions, it then required
-to configure the virtual ethernet interface of each USRP with the following command:
+to configure the virtual Ethernet interface of each USRP with the following command:
 
 ````Text
 sudo ifconfig gr0 192.168.200.1
 ````
 
-And for the second USRP configure the virtual ethernet interface with:
+And for the second USRP configure the virtual Ethernet interface with:
 
 ````Text
 sudo ifconfig gr0 192.168.200.2
