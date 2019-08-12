@@ -17,6 +17,9 @@ RUN curl -sSL https://get.docker.com/ | sh
 # Install Python
 RUN apt-get -y install python-pip python3.6
 
+# Install Nano as Editor
+RUN apt-get -y install nano
+
 # Install numpy with pip3
 RUN pip install numpy
 
@@ -34,4 +37,5 @@ CMD ["bash"]
 
 # Add Directories
 ADD client.py /tmp/
+ADD probe_agent.py /tmp/
 ADD server.py /tmp/

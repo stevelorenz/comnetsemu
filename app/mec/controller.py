@@ -163,7 +163,7 @@ class Controller(app_manager.RyuApp):
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
             # self.logger.debug(f"out port {out_port}")
-            if ip_dst != "10.0.0.10":  # flood servers, not client
+            if ip_dst != "10.0.0.10":  # flood servers, not client, use condition to use out port from dict
                 # self.logger.info("flood")
                 out_port = ofproto.OFPP_FLOOD
         else:
@@ -172,6 +172,15 @@ class Controller(app_manager.RyuApp):
 
         # out_port = ofproto.OFPP_FLOOD
         actions = [parser.OFPActionOutput(out_port)]
+
+        # install a flow - condition to trigger after set ammount of messages
+        # if out_port != ofproto.OFPP_FLOOD:
+        #     match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
+        #     if msg.buffer_id != ofproto.OFP_NO_BUFFER:
+        #         self.add_flow(datapath, 1, match, actions, msg.buffer_id)
+        #         return
+        #     else:
+        #         self.add_flow(datapath, 1, match, actions)
 
         data = None
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
