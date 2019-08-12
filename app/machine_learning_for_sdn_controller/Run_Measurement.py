@@ -2,17 +2,11 @@ import subprocess
 import argparse
 
 
-def main(mn_file="Four_switches_two_ways.py"):
-    subprocess.Popen(['xterm', '-hold', '-e', 'python {}'.format(mn_file)])
-    subprocess.Popen(['xterm', '-hold', '-e', 'ryu-manager remote_controller.py'])
+parser = argparse.ArgumentParser(description='Starting Scenario')
+parser.add_argument('--mn_file', default= 'Four_switches_two_ways.py', type=str, help='Give path to desired MininetFile, example: Mininet/Four_switches_two_ways.py')
+args = parser.parse_args()
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mn', help='Specify the desired topology/scenario')
-    args = parser.parse_args()
-
-    if args.mn:
-        main(args.mn)
-    else:
-        main()
+subprocess.Popen(['xterm', '-hold', '-e',  'ryu-manager remote_controller.py'])
+p = subprocess.Popen(['xterm', '-hold', '-e', 'python3 {}'.format(args.mn_file)])
+p.communicate()
+subprocess.Popen(['mn', '-c'])

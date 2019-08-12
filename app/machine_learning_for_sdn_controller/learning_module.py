@@ -16,7 +16,7 @@ from config import Config
 
 # different possible modes
 class QMode(Enum):
-    NO_LEARNING = -1
+    SHORTEST_PATH = -1
     MULTI_ARMED_BANDIT_NO_WEIGHT = 1
     MULTI_ARMED_BANDIT_WITH_WEIGHT = 2
     Q_LEARNING = 3
@@ -29,23 +29,44 @@ MAX_LENGHT_DIFFSET = 2
 MAX_PAST_REWARDS = 5
 # modes:
 
-def f(connection, ):
+###############################################################
+########## Class for learning started by controller############
+###############################################################
+
+def learningModule(pipe, ):
     print('process id:', os.getpid())
-    # RL Parameters:
+    #### RL Parameters
+    # learning rate alpha
     alpha = Config.alpha
+    # discount factor gamma
     gamma = Config.gamma
+    # exploration probability epsilon (0-1.0)
     epsilon = Config.epsilon
+    # leanring mode: q-leanring, multiarmed bandit (constant )
     learning_mode = Config.qMode
+    # defines if the exploration is eps_greedy constant, with falling eps or softmax
     exploration_mode = Config.exploration_mode
-    generalIterator = 0
+
+    # time steps that need to be waited until reward can be gathered
+    # necessary because of the delayed reward
     delayedRewardCounter = 0
+    # list of currently installed flows
+    # necessary to check if new flows joined
     tempFlows = []
-    Q = []
-    actions = {}
+    # Q - Table
+    Q = {}
     # how many rewards are gathred before considering taking a new action
     measurements_for_reward = Config.measurements_for_reward
     # how long to wait until starting to gather new rewards
     delay_reward = Config.delay_reward
+    # running time per load level
+    duration_iperf_per_load_level_minutes = Config.duration_iperf_per_load_level_minutes
+    # load levels
+    load_levels = Config.loadLevels
+    # total running time
+    duration_per_minutes = (len(load_levels) * duration_iperf_per_load_level_minutes)
+    # if Q-tables should be merged
+    mergingQTableFlag = Config.mergingQTableFlag
 
     # fill-up-arrays / dicts
     averageLatencyList = []
@@ -56,67 +77,113 @@ def f(connection, ):
     previousAction = {}
     currentState = {}
 
+    # Iterators
     savingIterator = 0
-    ITERATOR_BEFORE_SAVING_REWARD = 10
+    generalIterator = 0
+    ITERATOR_BEFORE_SAVING_REWARD = 5
     HOW_MANY_TIMES_UNTIL_SAVE_Q = 500
 
-    # clean up the save file
-    clearingSaveFile('reward_controller')
-    clearingSaveFile('average_latency')
-    clearingSaveFile('Q_array')
-    clearingSaveFile('Q_array_best')
+    # read Load levels
+    loadLevels = Config.loadLevels
 
-    # maximum time
-    maxMinutes = Config.running_minutes  # 425
+    # if its a test with resetting Q values when changing load levels
+    resetQTest = Config.resetQTestFlag
+
+    # if splitting up load level files
+    splitUpLoadLevels = Config.splitUpLoadLevelsFlag
+
+    # log folder
+    logPath = Config.log_path
+
+    # changing load level flag
+    reset_flag = False
+
     startingTime = time.time()
-    print("STARTING LEARNING | Mode: {} | time: {}min | alpha: {} | epsilon: {}".format(learning_mode, maxMinutes, alpha, epsilon))
+
+    # load level difines how high the network capacity can be
+    loadLevel = loadLevels[0]
+
+    # clean up save files
+    clearingSaveFile(logPath, loadLevel, 'reward_controller', splitUpLoadLevels)
+    clearingSaveFile(logPath, loadLevel, 'average_latency', splitUpLoadLevels)
+
+    print("STARTING LEARNING | Mode: {} | time: {}min | alpha: {} | epsilon: {}".format(learning_mode,
+                                                                                        duration_per_minutes, alpha,
+                                                                                        epsilon))
+    # the load level that arrives from the controller, gathered from the pipe
+    loadLevelController = 0
 
     while True:
-        #time.sleep(0.1)
-        # TODO: take care that recv() BLOCKS the thread
-        elements = connection.recv()
+        # gathers the data from the pipe (controller <-> learning module)
+        elements = pipe.recv()
         # if recieved sth
         if len(elements) > 0:
-            # if recieved latency measurement values
+            # if received latency measurement values (init)
             if len(elements[0]) > 0:
+                # actual combination of flows
                 currentCombination = elements[0]
+                # possible paths per flow
                 paths_per_flow = elements[1]
+                # dictionary with latency values between the links
                 latencydict = elements[2]
-                #print("latencyMatrixNormal: {}".format(latencydict))
+                # wether load lvel changed
+                reset_flag = elements[3]
+                # load level gathered from  the mininet file (via the controller)
+                loadLevelController = elements[4]
+                # if it is the first flow
                 if len(tempFlows) < 1:
                     copied_paths_per_flow = copy.deepcopy(paths_per_flow)
-                    Q, actions, stateTransitions = update_Q_table_path_joined(Q, copied_paths_per_flow)
+                    Q, actions, stateTransitions = update_Q_table_path_joined(Q, copied_paths_per_flow, mergingQTableFlag)
                     currentState = currentCombination
                     tempFlows = list(elements[0].keys())
                 else:
-                    # print("Element Keys: {}".format(elements[0].keys()))
                     # new flow added -> update best route
                     setTempFlows = set(tempFlows)
                     setChosenPaths = set(list(currentCombination.keys()))
+                    # if reset flag is set -> changing of load level
+                    if reset_flag:
+                        loadLevel = loadLevelController
+                        print("change in load level. new laod level: {}".format(loadLevel))
+                        # if it should be saved in different files
+                        if splitUpLoadLevels:
+                            clearingSaveFile(logPath, loadLevel, 'reward_controller', splitUpLoadLevels)
+                            clearingSaveFile(logPath, loadLevel, 'average_latency', splitUpLoadLevels)
+                            generalIterator = 0
+                            savingIterator = 0
+                            tempSavedRewardBeforeSaving.clear()
+                            averageLatencyList.clear()
+                        # resetting the Q-Table (restart of leanring process)
+                        if resetQTest:
+                            Q, actions, stateTransitions = update_Q_table_path_joined({}, copied_paths_per_flow, mergingQTableFlag)
 
-                    # if flows were added/deleted etc
+                    # if flows are added/deleted etc
                     if abs(len(setChosenPaths) - len(setTempFlows)) > 0:
-                        # print("Updating route: {}".format(elements[0]))
                         copied_paths_per_flow = copy.deepcopy(paths_per_flow)
                         # pointer to combinations
                         differenceSet = setChosenPaths.difference(setTempFlows)
-                        Q, actions, stateTransitions = update_Q_table_path_joined(Q, copied_paths_per_flow, differenceSet)
+                        # if flows were added -> change q-table
+                        Q, actions, stateTransitions = update_Q_table_path_joined(Q, copied_paths_per_flow, mergingQTableFlag, differenceSet)
                         previousState = []
                         currentState = currentCombination
                         tempFlows = list(elements[0].keys())
                         tempSavedRewards.clear()
                     rewardsqroot, rewardList = calculateRewards(currentCombination, latencydict)
 
+                    # check if waited sufficient long time
                     if delayedRewardCounter >= delay_reward:
                         averageLatencyList.append(getAverageLatency(currentCombination, latencydict))
                         tempSavedRewards.append(rewardsqroot)
                         tempSavedRewardBeforeSaving.append(rewardsqroot)
-                    if (generalIterator % 100) < 1:
-                        if exploration_mode.value == ExplorationMode.FALLING_EPS.value:
-                            epsilon = calc_epsilon(generalIterator)
-                        print("-------number of batch: {} epsilon: {}".format(generalIterator, epsilon))
-                    if not len(tempSavedRewards) < measurements_for_reward:
-                        # calc qValuePrev
+
+                    # check if epsilon should be recalculated
+                    if exploration_mode.value == ExplorationMode.FALLING_EPS.value:
+                        epsilon = calc_epsilon(generalIterator)
+
+
+
+                    # if gathered sufficient reward mesaurements
+                    if len(tempSavedRewards) >= measurements_for_reward:
+                        # calc qValue
                         if len(previousState) > 0 and len(previousAction) > 0:
                             if (learning_mode.value ==  QMode.MULTI_ARMED_BANDIT_NO_WEIGHT.value or learning_mode.value == QMode.MULTI_ARMED_BANDIT_WITH_WEIGHT.value):
                                 Q = calc_new_Q_bandit(previousState, currentCombination, alpha, gamma, copy.deepcopy(Q),
@@ -124,41 +191,49 @@ def f(connection, ):
                             if learning_mode.value is QMode.Q_LEARNING.value:
                                 Q = calc_new_Q_QL(previousState, currentCombination, alpha, gamma, copy.deepcopy(Q),
                                            np.mean(tempSavedRewards), previousAction)
-                        if learning_mode.value != QMode.NO_LEARNING.value:
+
+                        # if not shotest path -> choose new action
+                        if learning_mode.value != QMode.SHORTEST_PATH.value:
                             # choose action
                             action = json.loads(choose_action(currentState, Q, epsilon))
                             # do the action (if it is a transition) (send it into the pipe):
                             if "_" in action[0]:
-                                connection.send(action)
+                                pipe.send(action)
                             previousAction = copy.deepcopy(action)
                             previousState = copy.deepcopy(currentState)
                             # find out next state:
                             currentState = getNextState(stateTransitions, currentState, action)
-                            print("Next State: {}".format(currentState))
+                            print("Next State: {} PrevReward: {}".format(currentState, np.mean(tempSavedRewards)))
+
+                        # log output
+                        if (generalIterator % 100) < 1:
+                            print("-------number of batch: {} epsilon: {}".format(generalIterator, epsilon))
+
+                        # saving the reward if enough gathered
+                        if not (savingIterator % ITERATOR_BEFORE_SAVING_REWARD) and savingIterator > 0:
+                            saveCsvFile(logPath, loadLevel, 'reward_controller', np.mean(tempSavedRewardBeforeSaving),
+                                        generalIterator // measurements_for_reward, splitUpLoadLevels)
+                            saveCsvFile(logPath, loadLevel, 'average_latency', np.mean(averageLatencyList),
+                                        generalIterator // measurements_for_reward, splitUpLoadLevels)
+                            tempSavedRewardBeforeSaving.clear()
+                            averageLatencyList.clear()
+
+                        # saving the q-table (for DEBUG or to approximate agent actions)
+                        if not (savingIterator % HOW_MANY_TIMES_UNTIL_SAVE_Q) and savingIterator > 0:
+                            # Q , savingIterator, averageReward
+                            savingValueArray.append((copy.deepcopy(Q), savingIterator // measurements_for_reward,
+                                                     np.mean(tempSavedRewardBeforeSaving)))
+
+                        generalIterator = generalIterator + 1
+                        savingIterator = savingIterator + 1
                         delayedRewardCounter = 0
                         tempSavedRewards.clear()
                     delayedRewardCounter += 1
 
-                # savingIterator
-                if ( not (savingIterator % ITERATOR_BEFORE_SAVING_REWARD) and savingIterator > 0):
-                    saveRewardCsv('reward_controller', np.mean(tempSavedRewardBeforeSaving), savingIterator // measurements_for_reward)
-                    saveRewardCsv('average_latency', np.mean(averageLatencyList), savingIterator // measurements_for_reward)
-                    # saving values of perfect path
-                    #perfectPath = '{"10.0.0.11_10.0.0.41": [1, 3, 4], "10.0.0.12_10.0.0.42": [1, 3, 4], "10.0.0.13_10.0.0.43": [1, 2, 4], "10.0.0.41_10.0.0.11": [4, 3, 1], "10.0.0.42_10.0.0.12": [4, 3, 1], "10.0.0.43_10.0.0.13": [4, 2, 1]}'
-                    #savedQPerfectPath.append([time.time(), Q[perfectPath]])
-                    tempSavedRewardBeforeSaving.clear()
-                    averageLatencyList.clear()
-                if( not(savingIterator % HOW_MANY_TIMES_UNTIL_SAVE_Q) and savingIterator > 0):
-                    # Q , savingIterator, averageReward
-                    savingValueArray.append((copy.deepcopy(Q), savingIterator // measurements_for_reward,
-                                             np.mean(tempSavedRewardBeforeSaving)))
-                savingIterator = savingIterator + 1
-                generalIterator = generalIterator + 1
-
                 # check if exit -> time.time are seconds
-                if int((time.time() - startingTime) / 60) > maxMinutes:
-                    saveQ(savingValueArray)
-                    print("Exited after {} episodes".format(generalIterator))
+                if int((time.time() - startingTime) / 60) > duration_per_minutes:
+                    #saveQ(savingValueArray)
+                    print("Exited after {} steps (last load level)".format(generalIterator))
                     break
 
 def getNextState(stateTransitions, currentState, action):
@@ -199,7 +274,7 @@ def calculateRewards (chosenPaths, latencyDict):
     sqrootLatency = math.sqrt(costBefore)
     return -sqrootLatency, rewardList
 
-def update_Q_table_path_joined(prevQ, paths_per_flow, diffSet={}):
+def update_Q_table_path_joined(prevQ, paths_per_flow, mergingQTableFlag, diffSet={}):
     t0 = time.time()
     paths_per_flow_copied = copy.deepcopy(paths_per_flow)
     paths_per_flow_filtered = filterStateSpacesByHOPS(paths_per_flow_copied, paths_per_flow, 1)
@@ -214,17 +289,18 @@ def update_Q_table_path_joined(prevQ, paths_per_flow, diffSet={}):
     # matching
     # create Q table
     Q = createNewQTable(actions)
-    if len(prevQ) > 0 and len(diffSet) and len(diffSet) == MAX_LENGHT_DIFFSET:
-        Q = mergingQtable(prevQ, Q, diffSet)
+
+    # if Q-Table should be merged
+    if mergingQTableFlag:
+        if len(prevQ) > 0 and len(diffSet) and len(diffSet) == MAX_LENGHT_DIFFSET:
+            Q = mergingQtable(prevQ, Q, diffSet)
 
     print("Time to merge: {} micro_sec".format((time.time() - t0) * 10 ** 6))
     print("Action Size: {}".format(len(actions)))
     return Q, actions, stateTransitions
 
-# merging operation
+# merging operation of the Q-Table
 def mergingQtable(oldQ, newQ, differenceSet):
-    # print("OldQ: {}".format(oldQ))
-    # print("NewQ: {}".format(newQ))
     newQCopy = copy.deepcopy(newQ)
     for state in newQ:
         for action in newQ[state]:
@@ -348,7 +424,6 @@ def getActionsForStates(combinations, paths_per_flows):
             for chosenPath in otherPaths[flowId]:
                 actions.append((combination, (flowId, chosenPath)))
         actions.append((combination, ('NoTrans', [])))
-    #print("Actions: {}".format(actions))
     return actions
 
 
@@ -369,7 +444,7 @@ def getActionsPerCurrentState(chosenPaths, paths_per_flow):
             actions.append((id, chosenPaths[id], possiblePath[0]))
     return actions
 
-
+# calculates the route with the lowest cost
 def getBestRoute(Q, startNode, endNode, maxHops):
     route = [startNode]
     # if last element not in end node, do not stop
@@ -421,7 +496,7 @@ def calc_new_Q_bandit(stateNow, nextState, alpha, gamma, Q, reward, action, lear
         print("StateNowStr: {}".format(stateNowStr))
     return Q
 
-# has to constuct
+# calculate new Q-Value via Q-learning
 def calc_new_Q_QL(stateNow, nextState, alpha, gamma, Q, reward, action):
     # cambiamos
     stateNowStr = json.dumps(stateNow, sort_keys=True)
@@ -440,10 +515,8 @@ def calc_new_Q_QL(stateNow, nextState, alpha, gamma, Q, reward, action):
     else:
         qMax_t_plus_1 = copy.deepcopy(Q[nextStateStr][keyMaxValue][1])
     try:
-
         Q[stateNowStr][actionStr][1] = qAction + alpha * (reward + gamma * qMax_t_plus_1 - qAction)
         Q[stateNowStr][actionStr][0] = Q[stateNowStr][actionStr][0] + 1
-        #Q[stateNowStr][actionStr][1] = Q[stateNowStr][actionStr][1] + (1/(Q[stateNowStr][actionStr][0])) * (reward - Q[stateNowStr][actionStr][1])
     except KeyError:
         print("Q: {}".format(Q))
         print("StateNowStr: {}".format(stateNowStr))
@@ -498,6 +571,7 @@ def get_link_cost(latencyDict, s1, s2):
     return ew
 
 
+# get the cost of a path
 def get_path_cost(latencyDict, path):
     cost = 0
     for i in range(len(path) - 1):
@@ -505,7 +579,6 @@ def get_path_cost(latencyDict, path):
     return cost
 
 
-# TODO: max function always gets last key!
 def keywithmaxActionval(actions):
     """ a) create a list of the dict's keys and values;
         b) return the key with the max value"""
@@ -513,13 +586,16 @@ def keywithmaxActionval(actions):
     k = list(actions.keys())
     return k[v.index(max(v, key=scndElement))]
 
+
 def scndElement(e):
     return e[1]
 
+
 def calc_epsilon(steps, mode):
-    #return 0.507928 - 0.08 * math.log(steps)
+    return 0.507928 - 0.08 * math.log(steps)
     #return  0.507928 - 0.05993925*math.log(steps)
-    return 0.15
+    #return 0.15
+
 
 # TODO: not ready
 def calc_UCB(Q, currentState):
@@ -532,21 +608,35 @@ def calc_UCB(Q, currentState):
     if Q[currentStateStr][keywithmaxActionval][0] == 0:
         t=0
 
-#def overWritingFile():
-#    with open('Q_array.json', 'w') as file:
 
 def saveQ(Q):
     with open('../Q_array.json', 'w') as file:
         json.dump(Q, file)  # use `json.loads` to do the reverse
 
+
 def saveQBest(Q):
     with open('../Q_array_best.json', 'a') as file:
         json.dump(Q, file)  # use `json.loads` to do the reverse
 
-def saveRewardCsv(fileName, reward, timepoint):
-    with open('../{}.csv'.format(fileName), 'a') as csvfile:
+
+def saveCsvFile(logPath, loadLevel, fileName,  reward, timepoint, splitUpLoadLevels):
+    if splitUpLoadLevels:
+        loadLevelStr = '/'+str(loadLevel)
+    else:
+        loadLevelStr = ''
+    dirStr = '{}{}'.format(logPath, loadLevelStr)
+    with open('{}/{}.csv'.format(dirStr, fileName), 'a') as csvfile:
         fileWriter = csv.writer(csvfile, delimiter=',')
         fileWriter.writerow([timepoint, reward, time.time()])
 
-def clearingSaveFile(fileName):
-    open('../{}.csv'.format(fileName), 'w').close()
+
+def clearingSaveFile(logPath, loadLevel, fileName, splitUpLoadLevels):
+    if splitUpLoadLevels:
+        loadLevelStr = '/'+str(loadLevel)
+    else:
+        loadLevelStr = ''
+    dirStr = '{}{}'.format(logPath, loadLevelStr)
+    if not os.path.exists(dirStr):
+        os.makedirs(dirStr)
+    with open('{}/{}.csv'.format(dirStr, fileName), 'w') as file:
+        file.write("# iterator, reward, timestamp \n")

@@ -58,6 +58,10 @@ DEFAULT_BW = 10000000
 simple_switch_instance_name = 'simple_switch_api_app'
 url = '/simpleswitch/params/{obj}'
 
+
+###############################################################
+########## Remote controller ##################################
+###############################################################
 class ControllerMain(simple_switch_13.SimpleSwitch13):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {'wsgi': WSGIApplication}
@@ -124,11 +128,17 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
         self.alreadyRouted = []
         # Matrix Creation
 
+        # load levels (for leanring Module)
+        self.reset_flag = False
+        self.loadLevel = 0
+        # iteration levels
+        self.iteration_flag = False
+        self.iteration = 0
         # rerouting
         # hub.spawn(self.reroutingSimulator)
         self.parent_conn, self.child_conn = Pipe()
         # starting learning process
-        p = Process(target=learning_module.f, args=[self.child_conn])
+        p = Process(target=learning_module.learningModule, args=[self.child_conn])
         p.start()
         # p.join()
         hub.spawn(self.checkingUpdates)
@@ -150,8 +160,7 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
         match = parser.OFPMatch(
                 eth_type=0x0800,
                 ip_proto=1,
-                icmpv4_type=3#,
-                #icmpv4_code=0x0
+                icmpv4_type=3
               )
         actions = []
         self.add_flow(datapath, 1, match, actions)
@@ -184,8 +193,10 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
             # self.latencyDict = functions.convertMatrixToDict(self.latencyMatrix)
             self.latencyDict = functions.convertDataMapToDict(self.data_map, 'latencyRTT')
             if i > 3:
-                sendingTuple = (self.chosen_path_per_flow, self.paths_per_flows, self.latencyDict)
+                sendingTuple = (self.chosen_path_per_flow, self.paths_per_flows, self.latencyDict, self.reset_flag, self.loadLevel)
                 self.parent_conn.send(sendingTuple)
+                # if sent once, set resetflag to False
+                self.reset_flag = False
             i = i + 1
             hub.sleep(UPDATE_INTERVAL_PROCESS_COMMUNICATION)
 
@@ -200,7 +211,6 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
                                 flags=ofproto.OFPFC_ADD,
                                 priority=priority,
                                 match=match, instructions=inst)
-        #print("Adding Flow: {}, dp_id: {}".format(mod, datapath.id))
         datapath.send_msg(mod)
 
     def mod_flow(self, datapath, priority, match, actions):
@@ -226,7 +236,6 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-
         timestampRecieve = time.time()
         msg = ev.msg
         datapath = msg.datapath
@@ -306,7 +315,6 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
                 h2 = self.hosts[dst_mac]
                 if (h1, h2) not in self.alreadyRouted:
                     self.routingAfterARP(h1, h2, src_ip, dst_ip)
-                print("CALCED WITH REPLY h1: {} h2: {}".format(dst_ip, src_ip))
                 return
             elif arp_pkt.opcode == arp.ARP_REQUEST:
                 if dst_ip in self.arp_table:
@@ -509,25 +517,11 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
                 break
 
     def routingAfterARP(self, h1, h2, src_ip, dst_ip):
-        #if (type == RoutingType.RL_GRAPH):
-        #    q_matrix = np.where(self.latencyMatrix < 0.1, self.latencyMatrix, 100.0)
-        #    q_dict = functions.convertMatrixToDict(q_matrix)
-        #    bestPathQ = routingRL.greedy_q_routing(self.nEpisodes, h1[0], [h2[0]], q_dict, self.latencyDict,
-        #                                           self.alpha, self.epsilon)
-        #    self.logger.info("bestQPath {}".format(bestPathQ))
-        #    functions.installingPaths(self, bestPathQ, h1[1], h2[1], src_ip, dst_ip)
-
 
         self.logger.info("Routing ARP DFS")
         idForward = functions.buildConnectionBetweenHostsId(src_ip, dst_ip)
         pathOptimal, paths = self.routingDFS.get_optimal_path(self, h1[0], h2[0])
         self.routingDFS.install_path(self, pathOptimal, h1[1], h2[1], src_ip, dst_ip, 'arp')
-
-            # if also backward
-            # idBackward = functions.buildConnectionBetweenHostsId(dst_ip, src_ip)
-            #if len(chosenFlowBackward) > 1:
-            #    self.paths_per_flows[idBackward] = pathsWithCostBackward
-            #    self.chosen_path_per_flow[idBackward] = chosenFlowBackward
 
     def routingAfterIP(self, h1, h2, src_ip, dst_ip):
         if (ROUTING_TYPE == RoutingType.DFS):
@@ -634,7 +628,6 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
             arp_tpa=ip_dst
         )
         self.add_flow(dp, 32768, match_ip, actions)
-        #self.add_flow(dp, 1, match_arp, actions)
 
     def modFlowSpecificSwitch(self, switch, ip_src, ip_dst, outPort):
         dp = self.dpidToDatapath[switch]
@@ -652,7 +645,6 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
             arp_tpa=ip_dst
         )
         self.mod_flow(dp, 32768, match_ip, actions)
-        #self.mod_flow(dp, 1, match_arp, actions)
 
     def delFlowSpecificSwitch(self, switch, ip_src, ip_dst):
         dp = self.dpidToDatapath[switch]
@@ -669,7 +661,33 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
             arp_tpa=ip_dst
         )
         self.del_flow(dp, match_ip)
-        #self.del_flow(dp, match_arp)
+
+
+
+    ################################ just for testing###################################################
+    def reroutingSimulator(self):
+        hub.sleep(20)
+        self.rerouteNonLV('10.0.0.1', '10.0.0.4')
+        while True:
+            hub.sleep(10)
+            self.rerouteNonLV('10.0.0.1', '10.0.0.4')
+            hub.sleep(10)
+            self.rerouteNonLV('10.0.0.4', '10.0.0.1')
+
+    def getRandomPath(self, pathsWithCostForward, chosenflowPrev):
+        pathsCleaned = copy.deepcopy(pathsWithCostForward)
+        # comment: iteration via index -> so no ValueError possible
+        i = 0
+        # ignore already chosen flow
+        for path in pathsCleaned:
+            if (path[0] == chosenflowPrev):
+                pathsCleaned.pop(i)
+                # self.logger.info("Kicked Out: {}".format(path))
+            i += 1
+        # choose new flow randomly
+        newChoice = random.choice(pathsCleaned)
+        newPath = newChoice[0]
+        return newPath
 
     def rerouteLV(self, src_ip, dst_ip):
         self.logger.info("Rerouting started")
@@ -699,33 +717,7 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
         self.logger.info("Delete Operations: {}".format(deleteOperation))
 
 
-    ################################ just for testing###################################################
-    def reroutingSimulator(self):
-        hub.sleep(20)
-        self.rerouteNonLV('10.0.0.1', '10.0.0.4')
-        while True:
-            hub.sleep(10)
-            self.rerouteNonLV('10.0.0.1', '10.0.0.4')
-            hub.sleep(10)
-            self.rerouteNonLV('10.0.0.4', '10.0.0.1')
-
-    def getRandomPath(self, pathsWithCostForward, chosenflowPrev):
-        pathsCleaned = copy.deepcopy(pathsWithCostForward)
-        # comment: iteration via index -> so no ValueError possible
-        i = 0
-        # ignore already chosen flow
-        for path in pathsCleaned:
-            if (path[0] == chosenflowPrev):
-                pathsCleaned.pop(i)
-                # self.logger.info("Kicked Out: {}".format(path))
-            i += 1
-        # choose new flow randomly
-        newChoice = random.choice(pathsCleaned)
-        newPath = newChoice[0]
-        return newPath
-
-
-############### REST API
+############### REST API ###################################################
 
 class SimpleSwitchController(ControllerBase):
     def __init__(self, req, link, data, **config):

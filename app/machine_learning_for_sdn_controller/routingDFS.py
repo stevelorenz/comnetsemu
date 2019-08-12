@@ -1,17 +1,19 @@
 import time
 from collections import defaultdict
 import random
-#from remote_controller_RL import ControllerMain
+
+# from remote_controller_RL import ControllerMain
 REFERENCE_BW = 10000000
 # maximum possible paths to choose from, IMPORTANT!!! can control how useful paths are
 MAX_PATHS = 100
+
 
 class RoutingDFS():
     def __init__(self):
         print("")
 
     # gives back paths and optimal path
-    def get_optimal_path (self, controller, src, dst):
+    def get_optimal_path(self, controller, src, dst):
         pathsOptimal, paths = self.get_optimal_paths(controller, src, dst)
         pathOptimal = pathsOptimal[0]
         return pathOptimal, paths
@@ -19,7 +21,7 @@ class RoutingDFS():
     def install_path(self, controller, chosenPath, first_port, last_port, ip_src, ip_dst, type):
 
         path = self.add_ports_to_path(controller, chosenPath, first_port, last_port)
-        #switches_in_paths = set().union(*chosenPath)
+        # switches_in_paths = set().union(*chosenPath)
 
         for node in chosenPath:
             dp = controller.dpidToDatapath[node]
@@ -37,7 +39,8 @@ class RoutingDFS():
             for in_port in ports:
                 out_ports = ports[in_port]
                 actions = [ofp_parser.OFPActionOutput(out_ports[0])]
-                controller.add_flow(dp, self.get_priority(type), self.get_match(type, ofp_parser, ip_src, ip_dst), actions)
+                controller.add_flow(dp, self.get_priority(type), self.get_match(type, ofp_parser, ip_src, ip_dst),
+                                    actions)
 
     def get_match(self, type, ofp_parser, ip_src, ip_dst):
         if type == 'ipv4':
@@ -63,22 +66,22 @@ class RoutingDFS():
         return 32768
 
     def get_paths(self, controller, src, dst):
-            '''
-            Get all paths from src to dst using DFS algorithm
-            '''
-            if src == dst:
-                # host target is on the same switch
-                return [[src]]
-            paths = []
-            stack = [(src, [src])]
-            while stack:
-                (node, path) = stack.pop()
-                for next in set(controller.latencyDict[node].keys()) - set(path):
-                    if next is dst:
-                        paths.append(path + [next])
-                    else:
-                        stack.append((next, path + [next]))
-            return paths
+        '''
+        Get all paths from src to dst using DFS algorithm
+        '''
+        if src == dst:
+            # host target is on the same switch
+            return [[src]]
+        paths = []
+        stack = [(src, [src])]
+        while stack:
+            (node, path) = stack.pop()
+            for next in set(controller.latencyDict[node].keys()) - set(path):
+                if next is dst:
+                    paths.append(path + [next])
+                else:
+                    stack.append((next, path + [next]))
+        return paths
 
     # can also be changed to BWs, or to hops
     def get_link_cost(self, controller, s1, s2):
@@ -89,7 +92,7 @@ class RoutingDFS():
     def get_path_cost(self, controller, path):
         cost = 0
         for i in range(len(path) - 1):
-            cost += self.get_link_cost(controller, path[i], path[i+1])
+            cost += self.get_link_cost(controller, path[i], path[i + 1])
         return cost
 
     # Add the ports that connects the switches for all paths
@@ -166,6 +169,6 @@ class RoutingDFS():
                       controller.add_flow(dp, 32768, match_ip, actions)
                   controller.add_flow(dp, 1, match_arp, actions)
       return paths_with_ports[0][src][1], paths, pathOptimal[0]
-      
-          
+
+
       '''

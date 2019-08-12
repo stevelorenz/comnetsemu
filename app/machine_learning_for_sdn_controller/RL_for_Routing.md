@@ -2,15 +2,17 @@
 ### Motivation and Setup ###
 
 ```text
-                 s2 (10MBits/s)
-   h11    10ms/     \10ms h41
+                s2 (10MBits/s)
+   h11    10ms/    \10ms  h41
    h12 -- s1        s4 -- h42
-   h13    14ms\     /14ms h43
-                s3 (7MBits/s)
+          14ms\    /14ms
+                s3 (8MBits/s)
 ```
 
 ### How to run ###
 
 ```bash
-sudo python3 Run_Measurement.py
+sudo python3 Run_Measurement.py --mn_file Scenario_Four_switches_two_ways_4_hosts.py
 ```
+
+### ###
