@@ -318,6 +318,15 @@ function remove_comnetsemu() {
 
 }
 
+function test_install() {
+    echo "*** Test installation. Used by ../check_installer.sh script."
+    install_mininet
+    install_ryu
+    install_docker
+    install_devs
+    install_comnetsemu
+}
+
 function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     $update update
@@ -360,7 +369,7 @@ if [ $# -eq 0 ]
 then
     usage
 else
-    while getopts 'abcdhklnoruvy' OPTION
+    while getopts 'abcdhklnortuvy' OPTION
     do
         case $OPTION in
             a) all;;
@@ -372,10 +381,11 @@ else
             l) install_lightweight;;
             n) install_mininet;;
             o) install_ovx;;
+            # r) remove_comnetsemu;;
+            t) test_install;;
             u) upgrade_comnetsemu_deps;;
             v) install_devs;;
             y) install_ryu;;
-            # r) remove_comnetsemu;;
             *) usage;;
         esac
     done

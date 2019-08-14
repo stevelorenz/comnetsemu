@@ -37,6 +37,23 @@ sudo apt-get install -y xorg
 sudo apt-get install -y openbox
 SCRIPT
 
+# Use v4.19 LTS, EOL: Dec, 2020
+# For AF_XDP, EROFS etc.
+$install_kernel= <<-SCRIPT
+# Install libssl1.1 from https://packages.ubuntu.com/bionic/amd64/libssl1.1/download
+echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list > /dev/null
+sudo apt update
+sudo apt install -y libssl1.1
+cd /tmp || exit
+wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-headers-4.19.0-041900_4.19.0-041900.201810221809_all.deb
+wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-headers-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
+wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-image-unsigned-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
+wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-modules-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
+sudo dpkg -i *.deb
+sudo update-initramfs -u -k 4.19.0-041900-generic
+sudo update-grub
+SCRIPT
+
 ####################
 #  Vagrant Config  #
 ####################
@@ -86,6 +103,7 @@ If there are any new commits in the dev branch in the remote repository, Please 
     WORKAROUND
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: false
+    comnetsemu.vm.provision :shell, inline: $install_kernel, privileged: false
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: false
 
     comnetsemu.vm.provision "shell",privileged: false,inline: <<-SHELL
