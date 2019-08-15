@@ -17,22 +17,6 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 import time
 
-import random
-import string
-import os
-
-def generate_big_random_letters(filename,size):
-    """
-    generate empty file and return it 
-    :param filename: the filename
-    :param size: the size in bytes
-    :return: void
-    """
-
-
-    chars = ''.join([random.choice(string.letters) for i in range(size)]) #1
-
-    return os.path.join(os.getcwd(),filename)
 
 class rx_ofdm(gr.top_block):
 
@@ -80,7 +64,8 @@ class rx_ofdm(gr.top_block):
         	  debug_log=False,
         	  scramble_bits=False
         	 )
-        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char*1, generate_big_random_letters("filename.txt",1000) , True)
+        self.blocks_tag_debug_0_0 = blocks.tag_debug(gr.sizeof_char*1, '', ""); self.blocks_tag_debug_0_0.set_display(True)
+        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char*1, '/home/GNURadio-Files/file_rx.txt', True)
         self.blocks_file_sink_0.set_unbuffered(True)
 
 
@@ -89,6 +74,7 @@ class rx_ofdm(gr.top_block):
         # Connections
         ##################################################
         self.connect((self.digital_ofdm_rx_0, 0), (self.blocks_file_sink_0, 0))
+        self.connect((self.digital_ofdm_rx_0, 0), (self.blocks_tag_debug_0_0, 0))
         self.connect((self.rational_resampler_xxx_0_0, 0), (self.digital_ofdm_rx_0, 0))
         self.connect((self.uhd_usrp_source_0, 0), (self.rational_resampler_xxx_0_0, 0))
 
