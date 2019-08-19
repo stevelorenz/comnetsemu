@@ -28,6 +28,10 @@ This example shows how to run [FlowVisor](https://github.com/OPENNETWORKINGLAB/f
 #### mininet_demystify
 
 Demystify technologies used in Mininet for lightweight network emulation.
+Run two bash scripts inside the folder with root privilege:
+- [run.sh](./mininet_demystify/run.sh): Build a topology with three hosts connected to a single switch and run basic
+    ping, iperf and Openflow tests.
+- [clean.sh](./mininet_demystify/clean.sh): Cleanup all network resources and processes created by run.sh.
 
 ### nftables.py:
 
