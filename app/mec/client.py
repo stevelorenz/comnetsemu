@@ -11,10 +11,10 @@ import random
 tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 rx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-tx_socket.bind(("", 8000))  # only to prevent icmp "not reachable"
+tx_socket.bind(("", 8008))  # only to prevent icmp "not reachable"
 
 rx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-rx_socket.connect(("10.255.255.255", 8004))
+rx_socket.connect(("10.255.255.255", 8016))
 # rx_socket.connect(("127.0.0.1", 8004))
 
 cnt: int = 0

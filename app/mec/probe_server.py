@@ -4,26 +4,11 @@ import json
 import random
 import cmath
 from typing import List
-# import select
-# try:
-#     import numpy as np
-# except:
-#     pass
-
-
-# def fft(x=None):  # @TODO : check if ledgit
-#     """perform dft"""
-#     N = x.size
-#     n = np.arange(N)
-#     k = n.reshape((N, 1))
-#     e = np.exp(-2j * np.pi * k * n / N)
-#     return np.dot(e, x)
-
 
 rx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 rx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 rx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-rx_socket.bind(("", 8016))
+rx_socket.bind(("", 8004))
 
 rng = 100000
 if random.randint(0, 1) == 1:
@@ -56,7 +41,7 @@ while True:
             separators=(",", ": "))
         for i in range(0, rng):
             i += 1
-        rx_socket.sendto(msg.encode(), (addr[0], 8008))
+        rx_socket.sendto(msg.encode(), (addr[0], 8000))
         loop += 1
     except Exception:
         cnt += 1

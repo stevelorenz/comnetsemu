@@ -1,5 +1,6 @@
 import time
 from typing import Tuple, Dict
+import socket
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -23,6 +24,9 @@ class Controller(app_manager.RyuApp):
         self.time: Tuple[float, float] = (0.0, 0.0)  # first is direct, second application traffic
         self.msg_cnt = 0
         self.optimal_host = ""
+        self.tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.tx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.tx_socket.connect(("127.0.0.1", 8016))
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -190,7 +194,8 @@ class Controller(app_manager.RyuApp):
                 del out
                 # self.logger.critical(f"UDP_OUT:Client,{self.msg_cnt},{ip_src},{eth_src},0,{999},0")
                 return
-            elif ip_dst == "10.0.0.40":
+
+            elif ip_dst == "10.0.0.40":  # incoming probing packet
                 latency: float = (time.time() - self.time[1]) * 1e3
                 self.latency[1].update({eth_src: latency})
                 # self.logger.info(f"updated entry[1] : {eth_src} ; {latency} msec")
@@ -206,21 +211,32 @@ class Controller(app_manager.RyuApp):
                     latency_list = []
                     _ = ""  # optimal host
                     # self.logger.info(f"{list_1} {list_2}")
-                    for key, value in self.latency[1].items():  # @TODO replace with parsing dict to list
+                    for key, value in self.latency[1].items():  # @TODO replace with more elegant parsing dict to list
                         mac_list.append(key)
                         latency_list.append(value)
                         self.logger.info(f"{key} : {value}")
-                    if latency_list[0] > latency_list[1]:  # @TODO replace with find min -> index -> info
-                        _ = mac_list[1]
-                        if mac_list[1] != self.optimal_host:
-                            self.optimal_host = mac_list[1]
-                            self.logger.info(f"CHOOSING {mac_list[1]} AS SERVER, LATENCY {latency_list[1]} msec ")
-                    else:
-                        _ = mac_list[0]
-                        if mac_list[0] != self.optimal_host:
-                            self.optimal_host = mac_list[0]
-                            self.logger.info(f"CHOOSING {mac_list[0]} AS SERVER, LATENCY {latency_list[0]} msec ")
-                    # self.logger.info(f"CHOOSING {_} AS HOST")
+                    min_ = latency_list.index(min(latency_list))
+                    _ = mac_list[min_]
+                    self.logger.info(f"minimal item : {mac_list[min_]} {latency_list[min_]} {min_}")
+                    if self.optimal_host != mac_list[min_]:
+                        self.optimal_host = mac_list[min_]
+                        self.logger.info(f"CHOOSING {mac_list[min_]} AS SERVER, LATENCY {latency_list[min_]} msec")
+                        self.tx_socket.sendall(f"NEW SERVER {mac_list[min_]}".encode())
+
+                    # if latency_list[0] > latency_list[1]:  # @TODO replace with find min -> index -> info
+                    #     _ = mac_list[1]
+                    #     if mac_list[1] != self.optimal_host:  # only update on change
+                    #         self.optimal_host = mac_list[1]
+                    #         self.logger.info(f"CHOOSING {mac_list[1]} AS SERVER, LATENCY {latency_list[1]} msec ")
+                    #         self.tx_socket.sendall(f"NEW SERVER {mac_list[1]}".encode())
+                    # else:
+                    #     _ = mac_list[0]
+                    #     if mac_list[0] != self.optimal_host:  # only update on change
+                    #         self.optimal_host = mac_list[0]
+                    #         self.logger.info(f"CHOOSING {mac_list[0]} AS SERVER, LATENCY {latency_list[0]} msec ")
+                    #         self.tx_socket.sendall(f"NEW SERVER {mac_list[0]}".encode())
+                    # # self.logger.info(f"CHOOSING {_} AS HOST")
+
                     actions = [parser.OFPActionOutput(self.mac_to_port[dpid][_])]
                     match = parser.OFPMatch(in_port=self.mac_to_port[dpid]["00:00:00:00:00:01"], eth_dst=_, eth_src="00:00:00:00:00:01")
                     # self.logger.info(f"ADDING FLOW")
