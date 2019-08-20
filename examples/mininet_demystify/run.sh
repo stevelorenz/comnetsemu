@@ -59,17 +59,36 @@ ip netns exec h1 tc qdisc add dev h1-s1 parent 1:1 handle 10: netem delay 100ms 
 
 echo "# Run tests between hosts"
 # Warm up
-ip netns exec h1 ping -q -c 3 10.0.0.2 > /dev/null
+ip netns exec h1 ping -q -c 3 10.0.0.2 >/dev/null
 echo "* h1 ping h2 (quite mode, summary is printed)"
 ip netns exec h1 ping -q -c 10 -i 0.5 10.0.0.2
 echo "* Run iperf test between h1 and h2"
-ip netns exec h2 iperf -s -u > /dev/null 2>&1 &
+ip netns exec h2 iperf -s -u >/dev/null 2>&1 &
 ip netns exec h1 iperf -c 10.0.0.2 -u -t 10 -b 100M
 
 echo "* Add a OpenFlow entry to forward all ICMP packets from h1 with destination IP 10.0.0.2 to h3 (10.0.0.3)"
 ovs-ofctl add-flow s1 "icmp,in_port=1,actions=output=3"
-ip netns exec h1 ping -q -c 17 -i 1 10.0.0.2 > /dev/null 2>&1 &
+ip netns exec h1 ping -q -c 17 -i 1 10.0.0.2 >/dev/null 2>&1 &
 echo "* Run tcpdump on host h3 to capture 3 packets"
 echo "Dump all flow entries in s1's tables"
 ip netns exec h3 tcpdump -i h3-s1 -c 3 -e -vv
 ovs-ofctl dump-flows s1
+killall iperf ping > /dev/null 2>&1
+
+echo "* Create a cgroup named testgroup0 for CPU resource."
+echo "- Run only on core 0"
+echo "- The maximal usage is limited to 10%"
+mkdir /sys/fs/cgroup/cpu,cpuacct/testgroup0
+mkdir /sys/fs/cgroup/cpuset/testgroup0
+echo 0 >/sys/fs/cgroup/cpuset/testgroup0/cpuset.cpus
+# The default cfs_period_us = 100,000 us
+# For CFS scheduler, CPU percentage ~= (cfs_quota_us/cfs_period_us)
+echo 10000 >/sys/fs/cgroup/cpu/testgroup0/cpu.cfs_quota_us
+echo "* Run a process aiming to eating 100% CPU in testgroup0 and in network namespace h1."
+cgexec -g cpu,cpuacct:testgroup0 ip netns exec h1 dd if=/dev/zero of=/dev/null &
+sleep 3
+echo "* Check the CPU usage of this process. Format: (PID, CPU usage (%), command)"
+ps ax -o pid,%cpu,comm | grep -w "dd"
+killall dd
+
+echo "* Tests finished."
