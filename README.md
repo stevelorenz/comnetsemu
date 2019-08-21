@@ -59,11 +59,15 @@ ComNetsEmu's [installer](./util/install.sh).
 
 #### Option 1: Install in a Vagrant managed VM (Highly Recommended)
 
-The comfortable way to setup the test and development environment is to run a pre-configured VM managed by
-[Vagrant](https://www.vagrantup.com/). If the Vagrant (Supports GNU/Linux, Windows and macOS) and the VM hypervisor (
-[Virtualbox](https://www.virtualbox.org/wiki/Downloads) is used in the default [Vagrantfile](./Vagrantfile) ) are
-installed properly. You can create and manage the VM with (cd to the same directory of the
-[Vagrantfile](./Vagrantfile)):
+The comfortable way to setup the test and development environment is to run a pre-configured VM managed by [Vagrant](https://www.vagrantup.com/).
+It supports different VM hypervisor and [Virtualbox](https://www.virtualbox.org/) is used in project's [Vagrantfile](./Vagrantfile).
+
+Recommended setup:
+
+- Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
+- Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+
+You can create and manage the VM with (cd to the same directory of the [Vagrantfile](./Vagrantfile)):
 
 ```bash
 # This will create the VM at the first time (takes around 20 minutes)

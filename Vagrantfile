@@ -106,13 +106,13 @@ If there are any new commits in the dev branch in the remote repository, Please 
     comnetsemu.vm.provision :shell, inline: $install_kernel, privileged: false
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: false
 
-    comnetsemu.vm.provision "shell",privileged: false,inline: <<-SHELL
+    comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
 
       cd /home/vagrant/comnetsemu/ || exit
       # setup.py develop installs the package (typically just a source folder)
-      # in a way that allows you to conveniently edit your code after it’s
+      # in a way that allows you to conveniently edit your code after it is
       # installed to the (virtual) environment, and have the changes take
       # effect immediately. Convinient for development
       sudo make develop
@@ -173,7 +173,7 @@ If there are any new commits in the dev branch in the remote repository, Please 
     vm2testinstall.vm.provision :shell, inline: $install_kernel, privileged: false
     vm2testinstall.vm.provision :shell, inline: $setup_x11_server, privileged: false
 
-    vm2testinstall.vm.provision "shell",privileged: false,inline: <<-SHELL
+    vm2testinstall.vm.provision "shell", privileged: false, inline: <<-SHELL
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
 
