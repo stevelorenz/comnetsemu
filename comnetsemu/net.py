@@ -35,6 +35,8 @@ class Containernet(Mininet):
         """Wrapper for addHost method that adds a Docker container as a host."""
         return self.addHost(name, cls=cls, **params)
 
+    # MARK: Already add fix by patching mininet, keep it for un-updated setups
+    #       Remove it when Mininet has a new release
     def addLink(self, node1, node2, port1=None, port2=None,
                 cls=None, **params):
         # MARK: Node1 should be the switch for DockerHost

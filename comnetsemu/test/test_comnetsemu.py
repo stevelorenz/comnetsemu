@@ -28,7 +28,7 @@ class TestTopo(Topo):
         switch = self.addSwitch('s1')
         for h in range(1, n+1):
             host = self.addHost('h%s' % h)
-            self.addLink(switch, host)
+            self.addLink(host, switch)
 
 #  TODO:  <02-08-19, Zuo> Add testcase for DockerHost #
 
