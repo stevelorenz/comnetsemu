@@ -65,7 +65,7 @@ def cleanup_docker_containers():
 def cleanup_netdevs():
     """ISSUE: Maybe too aggressive."""
     info(
-        "*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n")
+        r"*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n")
     links = sh("ip link show")
     ret = re.findall(r"[a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+", links)
     if ret:

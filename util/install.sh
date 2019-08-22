@@ -10,11 +10,15 @@ set -e
 # Fail on unset var usage
 set -o nounset
 
+####################
+#  Util Functions  #
+####################
+
 msg() {
     printf '%b\n' "$1" >&2
 }
 
-warning(){
+warning() {
     declare _type=$1 text=$2
     msg "\033[33mWarning:\033[0m ${_type} ${text}"
 }
@@ -24,27 +28,51 @@ error() {
     msg "\033[31m[✘]\033[0m ${_type} ${text}"
 }
 
+function no_dir_exit() {
+    declare dir=$1
+    if [ ! -d "$dir" ]; then
+        error "[INSTALL]" "Directory: $dir does not exit! Exit."
+        exit 1
+    fi
+}
+
+function check_patch() {
+    declare patch_path=$1
+    declare prefix_num=$2
+
+    if patch -p"$prefix_num" --dry-run <"$patch_path"; then
+        patch -p"$prefix_num" <"$patch_path"
+    else
+        error "[PATCH]" "Failed to apply the path file: $patch_path ."
+        exit 1
+    fi
+}
+
+####################
+#  Main Installer  #
+####################
+
 DIST=Unknown
 ARCH=$(uname -m)
 PYTHON=python3
 PIP=pip3
 
-if [[ "$ARCH" = "i686" ]]; then
+if [[ "$ARCH" == "i686" ]]; then
     error "[ARCH]" "i386 is not supported."
     exit 1
 fi
 
 test -e /etc/debian_version && DIST="Debian"
-grep Ubuntu /etc/lsb-release &> /dev/null && DIST="Ubuntu"
+grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
 if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     # Truly non-interactive apt-get installation
     install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install'
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-    pkginst='sudo dpkg -i'
+    # pkginst='sudo dpkg -i'
     update='sudo apt-get'
     addrepo='sudo add-apt-repository'
     # Prereqs for this script
-    if ! lsb_release -v &> /dev/null; then
+    if ! lsb_release -v &>/dev/null; then
         $install lsb-release
     fi
 else
@@ -52,13 +80,12 @@ else
     exit 1
 fi
 
-
 echo "*** ComNetsEmu Installer ***"
 
 DEFAULT_REMOTE="origin"
 
 # Get the directory containing comnetsemu source code folder
-COMNETSEMU_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd -P )"
+COMNETSEMU_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 # The name of the comnetsemu source code folder
 COMNETSEMU_SRC_DIR="comnetsemu"
 
@@ -71,19 +98,17 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
-OVX_VER="0.0-MAINT"
 # - Installed by package manager (apt, pip etc.)
 DOCKER_CE_VER="5:19.03.1~3-0~ubuntu-bionic"
 DOCKER_PY_VER="3.7.2"
 CRIU_VER="3.6-2"
 
-DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
-DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
+DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
+DEP_INSTALL_FUNCS=(install_mininet install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
 echo " - The path to install all dependencies: $DEP_DIR"
-
 
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
@@ -100,8 +125,7 @@ function usage() {
     echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
-    # echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
-    # echo " -r: try to (R)emove installed dependencies - good luck!"
+    echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
@@ -155,6 +179,9 @@ function upgrade_docker() {
 
 function install_mininet() {
     local mininet_dir="$DEP_DIR/mininet-$MININET_VER"
+    local mininet_patch_dir="$COMNETSEMU_DIR/comnetsemu/patch/mininet"
+
+    no_dir_exit "$mininet_patch_dir"
     mkdir -p "$mininet_dir"
 
     echo "*** Install Mininet"
@@ -163,6 +190,8 @@ function install_mininet() {
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
     git checkout -b dev $MININET_VER
+    echo "*** Apply patches to Mininet."
+    check_patch "$mininet_patch_dir/util.patch" 1
     cd util || exit
     PYTHON=python3 ./install.sh -nfvw03
 }
@@ -174,7 +203,6 @@ function install_comnetsemu() {
     cd "$COMNETSEMU_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
 }
-
 
 function install_ryu() {
     local ryu_dir="$DEP_DIR/ryu-$RYU_VER"
@@ -205,40 +233,11 @@ function install_bcc() {
     git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
     cd "$bcc_dir/bcc" || exit
     git checkout -b dev $BCC_VER
-    mkdir -p build; cd build
+    mkdir -p build
+    cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3
     make
     sudo make install
-}
-
-function install_ovx() {
-    local ovx_dir="$DEP_DIR/ovx-$OVX_VER"
-    mkdir -p "$ovx_dir"
-
-    echo "*** Install OpenVirtex"
-    echo "Install Apache Maven"
-    $install maven wget git
-    cd "$ovx_dir" || exit
-    echo "Install OpenJDK7 from deb packages"
-    # MARK: Use the FTP server in Germany, students can change URL based on their location
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jdk_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre-headless_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_1.5.2-2+b1_amd64.deb
-    # ISSUE: Failed to exit due to dependency problems. Issues are fixed with
-    # apt install -f. So force the error status to zero.
-    $pkginst ./*.deb || true
-    # Resolve potential dependency issues
-    $install -f -y
-    # Update java alternatives
-    # - IcedTeaPlugin.so plugin is unavailable
-    sudo update-java-alternatives -s java-1.7.0-openjdk-amd64
-    echo "Clone OpenVirteX source code"
-    git clone https://github.com/os-libera/OpenVirteX
-    cd OpenVirteX || exit
-    git checkout -b "$OVX_VER"
-    echo "*** OpenVirtex's dependencies installed finished."
-    echo "*** Please run: 'sh $ovx_dir/OpenVirteX/scripts/ovx.sh' to start OpenVirtex"
 }
 
 function upgrade_comnetsemu_deps() {
@@ -251,11 +250,10 @@ function upgrade_comnetsemu_deps() {
     warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
     echo ""
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
-    read -r -n 1;
+    read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
         echo ""
         echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
-
 
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
@@ -264,7 +262,7 @@ function upgrade_comnetsemu_deps() {
         echo "  The upgrade script checks the version flag (format tool_name-version) in $DEP_DIR"
         echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
 
-        for (( i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++ )); do
+        for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
             # TODO: Replace ls | grep with glob or for loop
@@ -283,6 +281,17 @@ function upgrade_comnetsemu_deps() {
     fi
 }
 
+function reinstall_comnetsemu_deps() {
+    echo ""
+    echo "*** Reinstall ComNetsEmu dependencies."
+    sudo rm -r "$DEP_DIR"
+    install_kernel_modules
+    install_mininet
+    install_ryu
+    install_docker
+    install_devs
+}
+
 # TODO: Extend remove function for all installed packages
 function remove_comnetsemu() {
     echo "*** Remove function currently under development"
@@ -294,7 +303,7 @@ function remove_comnetsemu() {
 
     echo "Remove Docker and docker-py"
     $remove docker-ce
-    sudo -H $PIP uninstall -y docker  || true
+    sudo -H $PIP uninstall -y docker || true
 
     echo "Remove Mininet"
     sudo -H $PIP uninstall -y mininet || true
@@ -308,8 +317,8 @@ function remove_comnetsemu() {
     echo "Remove OVS"
     mininet_dir="$DEP_DIR/mininet-$MININET_VER"
     mkdir -p "$mininet_dir"
-    cd "$mininet_dir/mininet/util" || exit
     ./install.sh -r
+    cd "$mininet_dir/mininet/util" || exit
 
     # TODO: Remove BCC properly
 
@@ -345,7 +354,6 @@ function all() {
     install_mininet
     install_ryu
     install_docker
-    # install_ovx
     install_devs
     # MUST run at the end!
     install_comnetsemu
@@ -365,28 +373,25 @@ if [[ ! -d "$DEP_DIR" ]]; then
     mkdir -p "$DEP_DIR"
 fi
 
-if [ $# -eq 0 ]
-then
+if [ $# -eq 0 ]; then
     usage
 else
-    while getopts 'abcdhklnortuvy' OPTION
-    do
+    while getopts 'abcdhklnrtuvy' OPTION; do
         case $OPTION in
-            a) all;;
-            b) install_bcc;;
-            c) install_comnetsemu;;
-            d) install_docker;;
-            h) usage;;
-            k) install_kernel_modules;;
-            l) install_lightweight;;
-            n) install_mininet;;
-            o) install_ovx;;
-            # r) remove_comnetsemu;;
-            t) test_install;;
-            u) upgrade_comnetsemu_deps;;
-            v) install_devs;;
-            y) install_ryu;;
-            *) usage;;
+        a) all ;;
+        b) install_bcc ;;
+        c) install_comnetsemu ;;
+        d) install_docker ;;
+        h) usage ;;
+        k) install_kernel_modules ;;
+        l) install_lightweight ;;
+        n) install_mininet ;;
+        r) reinstall_comnetsemu_deps ;;
+        t) test_install ;;
+        u) upgrade_comnetsemu_deps ;;
+        v) install_devs ;;
+        y) install_ryu ;;
+        *) usage ;;
         esac
     done
     shift $(($OPTIND - 1))

@@ -37,7 +37,7 @@ $ sudo python3 ./topology.py
 interactively in these terminals. Following steps are marked with a "(node name 1, node name 2, ...) description"
 format. The commands of this step should be executed **inside the corresponded terminal(s)**.
 
-## Test 1: The VNF can forwards infinite packets ##
+## Test 1: The VNF can forward infinite packets ##
 
 In this test, the VNF can forward infinite packets. The client runs the preprocessor.py firstly in raw mode and then in
 processed mode.
@@ -90,7 +90,7 @@ $ python ./preprocessor.py 1
 The client can get the detection result from the server and the total delay (including transmission and image processing
 for detection) is 5.56 second.
 
-## Test 2: The VNF can forwards maximal 200 packets ##
+## Test 2: The VNF can forward maximal 200 packets ##
 
 In this test, the VNF can forward maximal 200 packets. The client runs the preprocessor.py firstly in raw mode and then
 in processed mode. The 200 is chosen based on the required number of data packets to send to the server in two modes

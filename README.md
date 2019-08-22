@@ -18,13 +18,21 @@ feature requirement of the tested. It will be answered more quickly than Emails.
 ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks:
 From Theory to Practice".  The design focus on emulating all examples and applications on a single computer, e.g. on a
 single laptop. ComNetsEmu extends the famous [Mininet](http://mininet.org/) emulator to support better emulation of
-versatile NFV/SDN network applications. See the comparison between upstream Mininet [here](./doc/comparison.md).
+versatile NFV/SDN network **applications**.
+See the comparison between upstream Mininet [here](./doc/comparison.md).
 
-ComNetsEmu is developed with **Python3**(3.6).
+Common facts about ComNetsEmu:
+
+- Emulation performance is considered but not the main focus. All emulated nodes (processes) share the same underlying
+    compute, storage and network resources when running it on a single system. ComNetsEmu is heavier than vanilla
+    Mininet due to complete host isolation. Chose a reasonable performance limitation is recommended for better
+    emulation results. For example, use e.g. 100ms as link delay instead of 1ms for large scale topology.
+
+- ComNetsEmu is developed with **Python3**(3.6).
 
 #### Main Features
 
-- Use Docker hosts in Mininet topologies
+- Use Docker hosts in Mininet topologies.
 
 - Manage application Docker containers deployed INSIDE Docker hosts. Docker-in-Docker(dind) is used by ComNetsEmu as an
     lightweight emulation for nested-virtualization. The Docker host with internal Docker containers deployed is used to

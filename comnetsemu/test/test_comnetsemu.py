@@ -28,10 +28,7 @@ class TestTopo(Topo):
         switch = self.addSwitch('s1')
         for h in range(1, n+1):
             host = self.addHost('h%s' % h)
-            self.addLink(switch, host)
-
-#  TODO:  <02-08-19, Zuo> Add testcase for DockerHost #
-
+            self.addLink(host, switch)
 
 class TestVNFManager(unittest.TestCase):
 
@@ -64,7 +61,15 @@ class TestVNFManager(unittest.TestCase):
         self.assertEqual(ret, 0.0)
 
     def test_container_crud(self):
-        c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash")
+        c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
+                                   wait=True)
+        self.mgr.removeContainer(c1, wait=True)
+        c1 = self.mgr.getContainer("c1")
+        self.assertTrue(c1 is None)
+
+        c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
+                                   wait=True, docker_args={"cpu_quota": 1000})
+        self.assertEqual(c1.dins.attrs["HostConfig"]["CpuQuota"], 1000)
         self.mgr.removeContainer(c1)
 
     def test_container_isolation(self):
