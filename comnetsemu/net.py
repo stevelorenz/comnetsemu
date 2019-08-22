@@ -17,7 +17,7 @@ from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.node import Switch
 from mininet.term import cleanUpScreens, makeTerms
-from mininet.util import BaseString
+from mininet.util import BaseString, checkRun
 
 # ComNetsEmu version: should be consistent with README and LICENSE
 VERSION = "0.1.3"
@@ -37,16 +37,16 @@ class Containernet(Mininet):
 
     # MARK: Already add fix by patching mininet, keep it for un-updated setups
     #       Remove it when Mininet has a new release
-    def addLink(self, node1, node2, port1=None, port2=None,
-                cls=None, **params):
+    def addLink(self, node1, node2, port1=None, port2=None, cls=None, **params):
         # MARK: Node1 should be the switch for DockerHost
         if isinstance(node1, DockerHost) and isinstance(node2, Switch):
             error("Switch should be the node1 to connect a DockerHost\n")
             self.stop()
+            checkRun("ce -c")
             sys.exit(1)
         else:
-            super(Containernet, self).addLink(node1, node2, port1, port2, cls,
-                                              **params)
+            super(Containernet, self).addLink(
+                node1, node2, port1, port2, cls, **params)
 
     def startTerms(self):
         "Start a terminal for each node."
@@ -64,19 +64,26 @@ class Containernet(Mininet):
         self.terms += makeTerms(rest, 'host')
 
     def addLinkNamedIfce(self, src, dst, *args, **kwargs):
-        """Add a link with named two interfaces
+        """Add a link with two named interfaces.
            - Name of interface 1: src-dst
            - Name of interface 2: dst-src
         """
         # Accept node objects or names
         src = src if not isinstance(src, BaseString) else self[src]
         dst = dst if not isinstance(dst, BaseString) else self[dst]
-        self.addLink(src, dst,
-                     intfName1="-".join((src.name, dst.name)),
-                     intfName2="-".join((dst.name, src.name)),
-                     *args, **kwargs)
+        self.addLink(
+            src, dst,
+            intfName1="-".join((src.name, dst.name)), intfName2="-".join((dst.name, src.name)),
+            *args, **kwargs)
 
     def change_host_ifce_loss(self, host, ifce, loss, parent=" parent 5:1"):
+        """Change the loss rate of a TC interface.
+
+        :param host (str,node): Name of the host
+        :param ifce (str): Name of the TC interface
+        :param loss: Loss rate in %
+        :param parent (str): Handle of parent tc qdisc. Mininet uses 5:1 in a HTB
+        """
         if isinstance(host, BaseString):
             host = self.net.get(host)
         if not host:
@@ -90,8 +97,7 @@ class Containernet(Mininet):
         # WARN: The parent number is defined in mininet/link.py
         ret = host.cmd(
             "tc qdisc change dev {} {} handle 10: netem loss {}%".format(
-                ifce, parent, loss
-            ))
+                ifce, parent, loss))
         if ret != "":
             error("Failed to change loss. Error:%s\n", ret)
             return False
@@ -103,7 +109,6 @@ class Containernet(Mininet):
 
 
 class VNFManager(object):
-
     """Manager for VNFs deployed on Mininet hosts (Docker in Docker)
 
     - To make is simple. It uses docker-py APIs to manage internal containers
@@ -116,15 +121,25 @@ class VNFManager(object):
         [1] https://docker-py.readthedocs.io/en/stable/containers.html
     """
 
-    docker_args = {
+    docker_args_default = {
         "tty": True,  # -t
         "detach": True,  # -d
-        "labels": {"comnetsemu": "dockercontainer"},
+        "labels": {
+            "comnetsemu": "dockercontainer"
+        },
         # Required for CRIU checkpoint
         "security_opt": ["seccomp:unconfined"],
         # Shared directory in host OS
-        "volumes": {VNFMANGER_MOUNTED_DIR: {'bind': VNFMANGER_MOUNTED_DIR, 'mode': 'rw'}}
+        "volumes": {
+            VNFMANGER_MOUNTED_DIR: {
+                'bind': VNFMANGER_MOUNTED_DIR,
+                'mode': 'rw'
+            }
+        }
     }
+
+    # Default delay between tries for Docker API
+    retry_delay_secs = 0.1
 
     def __init__(self, net):
         """Init the VNFManager
@@ -137,40 +152,54 @@ class VNFManager(object):
 
         self.container_queue = list()
         self.name_container_map = dict()
+        self.host_container_map = dict()
 
-    def createContainer(self, name, dhost, dimage, dcmd):
-        """Create a container without starting it.
+    def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
+        """Create a container without starting it."""
+        docker_args_used = dict()
+        if docker_args:
+            docker_args_used.update(docker_args)
+        # Override the essential parameters
+        docker_args_used.update(self.docker_args_default)
+        docker_args_used["name"] = name
+        docker_args_used["image"] = dimage
+        docker_args_used["cgroup_parent"] = "/docker/{}".format(dhost.did)
+        docker_args_used["command"] = dcmd
+        docker_args_used["network_mode"] = "container:{}".format(dhost.did)
 
-        :param name (str): Name of the container
-        :param dimage (str): The name of the docker image
-        :param dcmd (str): Command to run after the creation
-        """
-        self.docker_args["name"] = name
-        self.docker_args["image"] = dimage
-        self.docker_args["command"] = dcmd
-        self.docker_args["cgroup_parent"] = "/docker/{}".format(dhost.did)
-        self.docker_args["network_mode"] = "container:{}".format(dhost.did)
-
-        ret = self.dclt.containers.create(**self.docker_args)
+        ret = self.dclt.containers.create(**docker_args_used)
         return ret
 
-    def waitContainerStart(self, name):
+    def _waitContainerStart(self, name):
         """Wait for container to start up running"""
-        while True:
-            try:
-                dins = self.dclt.containers.get(name)
-            except docker.errors.NotFound:
-                print("Failed to get container:%s" % (name))
-                sleep(0.1)
-            else:
-                break
+        while not self.getContainer(name):
+            debug("Failed to get container:%s" % (name))
+            sleep(self.retry_delay_secs)
+        dins = self.getContainer(name)
 
         while not dins.attrs["State"]["Running"]:
-            sleep(0.1)
+            sleep(self.retry_delay_secs)
             dins.reload()  # refresh information in 'attrs'
 
-    def addContainer(self, name, dhost, dimage, dcmd, **params):
-        """Create and run a new container inside a Mininet DockerHost
+    def _waitContainerRemoved(self, name):
+        """Wait for container to be removed"""
+        while self.getContainer(name):
+            sleep(self.retry_delay_secs)
+
+    def getContainer(self, name):
+        """Get the DockerContainer instance by name.
+
+        :param name (str): Name of the container
+        """
+        try:
+            dins = self.dclt.containers.get(name)
+        except docker.errors.NotFound:
+            return None
+        return dins
+
+    def addContainer(self, name, dhost, dimage, dcmd,
+                     wait=True, docker_args=None):
+        """Create and run a new container inside a Mininet DockerHost.
 
         The manager retries with retry_cnt times to create the container if the
         dhost can not be found via docker-py API, but can be found in the
@@ -181,28 +210,36 @@ class VNFManager(object):
         :param dhost (str or Node): The name or instance of the to be deployed DockerHost instance
         :param dimage (str): The name of the docker image
         :param dcmd (str): Command to run after the creation
+        :param wait (Bool): Wait until the container has the running state if True.
+        :param docker_args (dict): All other keyword arguments supported by
+        Docker-py.  e.g. CPU and memory related limitations. Some parameters are
+        overriden for VNFManager's functionalities. Check self.docker_args_default.
+
+        :return: Added DockerContainer instance
         """
 
         if isinstance(dhost, BaseString):
             dhost = self.net.get(dhost)
         if not dhost:
             error(
-                "The internal container must be deployed on a running DockerHost instance \n")
+                "The internal container must be deployed on a running DockerHost instance \n"
+            )
             return None
 
-        dins = self.createContainer(name, dhost, dimage, dcmd)
+        dins = self._createContainer(name, dhost, dimage, dcmd, docker_args)
         dins.start()
-        self.waitContainerStart(name)
+        if wait:
+            self._waitContainerStart(name)
         container = DockerContainer(name, dhost, dimage, dins)
         self.container_queue.append(container)
         self.name_container_map[container.name] = container
         return container
 
-    def removeContainer(self, container):
-        """Remove the internal container
+    def removeContainer(self, container, wait=True):
+        """Remove the given internal container.
 
-        :param container (str or DockerContainer): Internal container object (or
-        its name in string)
+        :param container (str or DockerContainer): Internal container object (or its name in string)
+        :param wait (Bool): Wait until the container is fully removed if True.
 
         :return: Return True/False for success/fail remove.
         """
@@ -220,15 +257,14 @@ class VNFManager(object):
             return False
         else:
             container.dins.remove(force=True)
+            if wait:
+                self._waitContainerRemoved(container.name)
             del self.name_container_map[container.name]
             return True
 
     @staticmethod
-    def calculate_cpu_percent(stats):
-        """Calculate the CPU usage in percent with given stats JSON data.
-
-        :param stats (json):
-        """
+    def _calculate_cpu_percent(stats):
+        """Calculate the CPU usage in percent with given stats JSON data"""
         cpu_count = len(stats["cpu_stats"]["cpu_usage"]["percpu_usage"])
         cpu_percent = 0.0
         cpu_delta = float(stats["cpu_stats"]["cpu_usage"]["total_usage"]) - \
@@ -262,8 +298,8 @@ class VNFManager(object):
         while n < sample_num:
             stats = container.get_current_stats()
             mem_stats = stats["memory_stats"]
-            mem_usg = mem_stats["usage"] / (1024 ** 2)
-            cpu_usg = self.calculate_cpu_percent(stats)
+            mem_usg = mem_stats["usage"] / (1024**2)
+            cpu_usg = self._calculate_cpu_percent(stats)
             usages.append((cpu_usg, mem_usg))
             sleep(sample_period)
             n += 1
@@ -277,9 +313,9 @@ class VNFManager(object):
         features on the Docker daemon, edit the /etc/docker/daemon.json and set
         experimental to true.
 
-        :param h1 (str):
-        :param c1 (str):
-        :param h2 (str):
+        :param h1: Name or instance of the source host.
+        :param c1: Name of instance of the to be migrated container.
+        :param h2: Name or instance of the destination host.
 
         Ref: https://www.criu.org/Docker
         """
@@ -290,23 +326,24 @@ class VNFManager(object):
             h1 = self.net.get(h1)
             h2 = self.net.get(h2)
 
-        c1_checkpoint_path = os.path.join(
-            VNFMANGER_MOUNTED_DIR, "{}".format(c1.name))
+        c1_checkpoint_path = os.path.join(VNFMANGER_MOUNTED_DIR,
+                                          "{}".format(c1.name))
         # MARK: Docker-py does not provide API for checkpoint and restore,
         # Docker CLI is used with subprocess as a temp workaround.
-        subprocess.run(
-            split("docker checkpoint create --checkpoint-dir={} {} "
-                  "{}".format(VNFMANGER_MOUNTED_DIR, c1.name, c1.name)),
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
+        subprocess.run(split("docker checkpoint create --checkpoint-dir={} {} "
+                             "{}".format(VNFMANGER_MOUNTED_DIR, c1.name,
+                                         c1.name)),
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
         # TODO: Emulate copying checkpoint directory between h1 and h2
         sleep(0.17)
 
         debug("Create a new container on {} and restore it with {}\n".format(
-            h2, c1.name
-        ))
-        dins = self.createContainer(
-            "{}_clone".format(c1.name), h2, c1.dimage, c1.dcmd)
+            h2, c1.name))
+        dins = self._createContainer("{}_clone".format(c1.name), h2, c1.dimage,
+                                     c1.dcmd, docker_args=None)
         # BUG: Customized checkpoint dir is not supported in Docker...
         # ISSUE: https://github.com/moby/moby/issues/37344
         # subprocess.run(
@@ -315,27 +352,22 @@ class VNFManager(object):
         #     )),
         #     check=True
         # )
-        subprocess.run(
-            split("mv {} /var/lib/docker/containers/{}/checkpoints/".format(
-                c1_checkpoint_path, dins.id
-            )), check=True
-        )
+        checkRun("mv {} /var/lib/docker/containers/{}/checkpoints/".format(
+            c1_checkpoint_path, dins.id))
         # MARK: Race condition of somewhat happens here... Docker daemon shows a
         # commit error.
         while True:
             try:
                 subprocess.run(
-                    split("docker start --checkpoint={} {}".format(
-                        c1.name, dins.name
-                    )), check=True,
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    split("docker start --checkpoint={} {}".format(c1.name, dins.name)),
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
                 )
             except subprocess.CalledProcessError:
                 sleep(0.05)
             else:
                 break
 
-        self.waitContainerStart(dins.name)
+        self._waitContainerStart(dins.name)
 
         container = DockerContainer(dins.name, h2, c1.dimage, dins)
         self.container_queue.append(container)
@@ -346,9 +378,8 @@ class VNFManager(object):
 
     def stop(self):
         debug("STOP: {} containers in the VNF queue: {}\n".format(
-            len(self.container_queue),
-            ", ".join((c.name for c in self.container_queue))
-        ))
+            len(self.container_queue), ", ".join(
+                (c.name for c in self.container_queue))))
 
         # Avoid missing delete internal containers manually before stop
         for c in self.container_queue:

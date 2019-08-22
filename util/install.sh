@@ -68,7 +68,7 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     # Truly non-interactive apt-get installation
     install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install'
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-    pkginst='sudo dpkg -i'
+    # pkginst='sudo dpkg -i'
     update='sudo apt-get'
     addrepo='sudo add-apt-repository'
     # Prereqs for this script
@@ -98,14 +98,13 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
-OVX_VER="0.0-MAINT"
 # - Installed by package manager (apt, pip etc.)
 DOCKER_CE_VER="5:19.03.1~3-0~ubuntu-bionic"
 DOCKER_PY_VER="3.7.2"
 CRIU_VER="3.6-2"
 
-DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
-DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
+DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
+DEP_INSTALL_FUNCS=(install_mininet install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
@@ -126,7 +125,7 @@ function usage() {
     echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
-    # echo " -r: try to (R)emove installed dependencies - good luck!"
+    echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
@@ -282,6 +281,17 @@ function upgrade_comnetsemu_deps() {
     fi
 }
 
+function reinstall_comnetsemu_deps() {
+    echo ""
+    echo "*** Reinstall ComNetsEmu dependencies."
+    sudo rm -r "$DEP_DIR"
+    install_kernel_modules
+    install_mininet
+    install_ryu
+    install_docker
+    install_devs
+}
+
 # TODO: Extend remove function for all installed packages
 function remove_comnetsemu() {
     echo "*** Remove function currently under development"
@@ -307,8 +317,8 @@ function remove_comnetsemu() {
     echo "Remove OVS"
     mininet_dir="$DEP_DIR/mininet-$MININET_VER"
     mkdir -p "$mininet_dir"
-    cd "$mininet_dir/mininet/util" || exit
     ./install.sh -r
+    cd "$mininet_dir/mininet/util" || exit
 
     # TODO: Remove BCC properly
 
@@ -344,7 +354,6 @@ function all() {
     install_mininet
     install_ryu
     install_docker
-    # install_ovx
     install_devs
     # MUST run at the end!
     install_comnetsemu
@@ -367,7 +376,7 @@ fi
 if [ $# -eq 0 ]; then
     usage
 else
-    while getopts 'abcdhklntuvy' OPTION; do
+    while getopts 'abcdhklnrtuvy' OPTION; do
         case $OPTION in
         a) all ;;
         b) install_bcc ;;
@@ -377,7 +386,7 @@ else
         k) install_kernel_modules ;;
         l) install_lightweight ;;
         n) install_mininet ;;
-        # r) remove_comnetsemu;;
+        r) reinstall_comnetsemu_deps ;;
         t) test_install ;;
         u) upgrade_comnetsemu_deps ;;
         v) install_devs ;;

@@ -43,6 +43,10 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	@echo "**** Examples for security..."
 	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py
+	@echo "*** Examples for Mininet with bash..."
+	bash ./examples/mininet_demystify/run.sh
+	sleep 3
+	bash ./examples/mininet_demystify/clean.sh
 
 test: $(COMNETSEMU) $(TEST)
 	@echo "Running tests of ComNetsEmu python module."

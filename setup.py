@@ -37,8 +37,11 @@ setup(
     ],
     keywords='networking emulator SDN NFV Docker',
     license='BSD',
+    # MARK: MINIMAL requirements
     install_requires=[
-        'setuptools', 'ryu'
+        'setuptools',
+        'mininet>=2.3.0d6',
+        'docker>=3.7.2'
     ],
     scripts=scripts,
 )
