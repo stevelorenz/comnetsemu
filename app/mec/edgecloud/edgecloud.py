@@ -221,15 +221,15 @@ def start() -> None:
     time.sleep(5)
 
     info('*** Removing Containers\n')
-    mgr.removeContainer(client1_container)
+    mgr.removeContainer(client1_container.name)
 
-    mgr.removeContainer(server1_1_container)
-    mgr.removeContainer(server1_2_container)
-    mgr.removeContainer(server1_3_container)
+    mgr.removeContainer(server1_1_container.name)
+    mgr.removeContainer(server1_2_container.name)
+    mgr.removeContainer(server1_3_container.name)
 
-    mgr.removeContainer(server2_1_container)
-    mgr.removeContainer(server2_2_container)
-    mgr.removeContainer(server2_3_container)
+    mgr.removeContainer(server2_1_container.name)
+    mgr.removeContainer(server2_2_container.name)
+    mgr.removeContainer(server2_3_container.name)
 
     info('*** Stopping network\n')
     # local_controller.stop()

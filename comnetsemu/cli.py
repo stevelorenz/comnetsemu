@@ -20,7 +20,7 @@ from mininet.term import makeTerms
 from mininet.util import quietRun
 
 
-class CLI(CLI):
+class CLI(CLI):  # pylint: disable=function-redefined
 
     helpStr = (
         "You can send commands to Docker hosts with the same method of Mininet.\n"

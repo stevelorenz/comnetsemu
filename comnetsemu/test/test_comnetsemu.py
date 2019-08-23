@@ -65,14 +65,14 @@ class TestVNFManager(unittest.TestCase):
         c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
                                    wait=True)
         self.assertTrue(c1.dhost, "h1")
-        self.mgr.removeContainer(c1, wait=True)
+        self.mgr.removeContainer(c1.name, wait=True)
         c1 = self.mgr._getContainerIns("c1")
         self.assertTrue(c1 is None)
 
         c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
                                    wait=True, docker_args={"cpu_quota": 1000})
         self.assertEqual(c1.dins.attrs["HostConfig"]["CpuQuota"], 1000)
-        self.mgr.removeContainer(c1)
+        self.mgr.removeContainer(c1.name)
 
     def test_container_isolation(self):
         h1 = self.net.get("h1")
@@ -84,22 +84,22 @@ class TestVNFManager(unittest.TestCase):
         h1.updateMemoryLimit(mem_limit=10 * (1024**2))  # in bytes
         c1 = self.mgr.addContainer(
             "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M")
-        usages = self.mgr.monResourceStats(c1)
+        usages = self.mgr.monResourceStats(c1.name, sample_period=0.1)
         cpu = sum(u[0] for u in usages) / len(usages)
         mem = sum(u[1] for u in usages) / len(usages)
         self.assertTrue(abs(cpu - 10.0) <= CPU_ERR_THR)
         self.assertTrue(abs(mem - 10.0) <= MEM_ERR_THR)
-        self.mgr.removeContainer(c1)
+        self.mgr.removeContainer(c1.name)
         h1.updateCpuLimit(cpu_quota=-1)
         h1.updateMemoryLimit(mem_limit=100 * (1024**3))
 
         # Network
         for r in [h2, h3]:
-            c1 = self.mgr.addContainer("c1", r, "dev_test", "iperf -s")
+            c1 = self.mgr.addContainer("c1", r.name, "dev_test", "iperf -s")
             ret = h1.cmd("iperf -c {} -u -b 10M -t 3".format(r.IP()))
             clt_bw = float(self.net._parseIperf(ret).split(" ")[0])
             self.assertTrue(clt_bw > 0.0)
-            self.mgr.removeContainer(c1)
+            self.mgr.removeContainer(c1.name)
 
 
 if __name__ == "__main__":

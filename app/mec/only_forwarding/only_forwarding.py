@@ -121,10 +121,10 @@ def start() -> None:
     time.sleep(180)
 
     info("\n*** Removing Docker Containers\n")
-    mgr.removeContainer(client1_container)
-    mgr.removeContainer(probe1_container)
-    mgr.removeContainer(server1_container)
-    mgr.removeContainer(server2_container)
+    mgr.removeContainer(client1_container.name)
+    mgr.removeContainer(probe1_container.name)
+    mgr.removeContainer(server1_container.name)
+    mgr.removeContainer(server2_container.name)
 
     info("\n*** Stopping Network\n")
     net.stop()

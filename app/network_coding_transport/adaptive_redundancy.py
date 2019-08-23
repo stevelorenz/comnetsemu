@@ -103,12 +103,12 @@ def deploy_coders(mgr, hosts):
 
     info("*** Run NC decoder on host %s\n" % hosts[-2].name)
     decoder = mgr.addContainer(
-        "decoder", hosts[-2], "nc_coder",
+        "decoder", hosts[-2].name, "nc_coder",
         "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
         wait=3)
     info("*** Run NC encoder on host %s\n" % hosts[1].name)
     encoder = mgr.addContainer(
-        "encoder", hosts[1], "nc_coder",
+        "encoder", hosts[1].name, "nc_coder",
         "sudo python3 ./encoder.py h2-s2", wait=3)
 
     return (encoder, decoder)
@@ -116,8 +116,8 @@ def deploy_coders(mgr, hosts):
 
 def remove_coders(mgr, coders):
     encoder, decoder= coders
-    mgr.removeContainer(encoder)
-    mgr.removeContainer(decoder)
+    mgr.removeContainer(encoder.name)
+    mgr.removeContainer(decoder.name)
 
 
 def print_coders_log(coders, coder_log_conf):

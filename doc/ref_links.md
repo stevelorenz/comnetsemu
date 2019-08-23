@@ -20,3 +20,7 @@
 
 - [Introduction to Open vSwitch (Video)](https://www.youtube.com/watch?v=rYW7kQRyUvA)
 - [Ryu SDN Framework (Free eBook)](https://osrg.github.io/ryu-book/en/html/)
+
+## Dev Style Guide ##
+
+- [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)

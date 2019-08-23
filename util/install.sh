@@ -219,7 +219,7 @@ function install_ryu() {
 function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage pyflakes pylint
+    sudo -H $PIP install pytest ipdb coverage pyflakes pylint pytype
 }
 
 function install_bcc() {

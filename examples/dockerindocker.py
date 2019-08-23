@@ -70,8 +70,8 @@ def testDockerInDocker(n):
     time.sleep(5)
     info("\nThe ping result of tail to head: \n")
     print(tail.dins.logs().decode('utf-8'))
-    mgr.removeContainer(head)
-    mgr.removeContainer("tail")
+    mgr.removeContainer(head.name)
+    mgr.removeContainer(tail.name)
 
     time.sleep(3)
 
@@ -93,7 +93,7 @@ def testDockerInDocker(n):
     info("Start monitoring resource usage of internal containers"
          "with default sample count: 3 and sample period: 1 sec\n")
     for c in containers:
-        usages = mgr.monResourceStats(c)
+        usages = mgr.monResourceStats(c.name)
         if usages:
             print(
                 " The average CPU and Memory usage of container:{} is {:.2f}%, {:.2f}MB".format(
@@ -105,7 +105,7 @@ def testDockerInDocker(n):
             print("[ERROR] Failed to get resource usages from manager")
 
     for c in containers:
-        mgr.removeContainer(c)
+        mgr.removeContainer(c.name)
 
     info('*** Stopping network\n')
     net.stop()

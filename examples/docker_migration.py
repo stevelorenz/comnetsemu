@@ -63,9 +63,9 @@ def runContainerMigration():
     print(looper_h3.getLogs())
 
     info('*** Stopping network\n')
-    mgr.removeContainer(looper)
-    mgr.removeContainer(looper_h2)
-    mgr.removeContainer(looper_h3)
+    mgr.removeContainer(looper.name)
+    mgr.removeContainer(looper_h2.name)
+    mgr.removeContainer(looper_h3.name)
     net.stop()
     mgr.stop()
 

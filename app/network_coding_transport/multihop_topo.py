@@ -123,19 +123,19 @@ def deploy_coders(mgr, hosts, rec_st_idx, rec_num, action_map):
         name = "recoder_on_h%d" % (i+1)
         rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
         recoder = mgr.addContainer(
-            name, hosts[i], "nc_coder",
+            name, hosts[i].name, "nc_coder",
             " ".join(("sudo python3 ./recoder.py", rec_cli)), wait=3
         )
         recoders.append(recoder)
     time.sleep(rec_num)
     info("*** Run NC decoder on host %s\n" % hosts[-2].name)
     decoder = mgr.addContainer(
-        "decoder", hosts[-2], "nc_coder",
+        "decoder", hosts[-2].name, "nc_coder",
         "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
         wait=3)
     info("*** Run NC encoder on host %s\n" % hosts[1].name)
     encoder = mgr.addContainer(
-        "encoder", hosts[1], "nc_coder",
+        "encoder", hosts[1].name, "nc_coder",
         "sudo python3 ./encoder.py h2-s2", wait=3)
 
     return (encoder, decoder, recoders)
@@ -143,10 +143,10 @@ def deploy_coders(mgr, hosts, rec_st_idx, rec_num, action_map):
 
 def remove_coders(mgr, coders):
     encoder, decoder, recoders = coders
-    mgr.removeContainer(encoder)
-    mgr.removeContainer(decoder)
+    mgr.removeContainer(encoder.name)
+    mgr.removeContainer(decoder.name)
     for r in recoders:
-        mgr.removeContainer(r)
+        mgr.removeContainer(r.name)
 
 
 def print_coders_log(coders, coder_log_conf):
