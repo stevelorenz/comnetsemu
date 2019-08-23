@@ -12,7 +12,8 @@ from shlex import split
 import shutil
 
 import docker
-from mininet.log import LEVELS, debug, error, info
+from mininet.log import info
+from mininet.clean import cleanup as mn_cleanup
 from comnetsemu.net import VNFMANGER_MOUNTED_DIR
 
 
@@ -25,7 +26,7 @@ def sh(cmd, check=True):
 def cleanup():
     info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" + "-" * 80 + "\n")
     info("*** Run mininet's cleanups\n")
-    subprocess.run(["mn", "-c"], check=True)
+    mn_cleanup()
     cleanup_docker_containers()
     cleanup_netdevs()
     info("*** Remove temp directories\n")

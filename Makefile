@@ -16,15 +16,15 @@ clean:
 	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
 
 codecheck: $(PYSRC)
-	@echo "*** Running code check"
-	pyflakes $(PYSRC)
-	pylint --rcfile=.pylint $(PYSRC)
-	pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
+	@echo "*** Running checks for code quality"
+	$(PYTHON) -m pyflakes $(PYSRC)
+	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
+	$(PYTHON) -m pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
 
 errcheck: $(PYSRC)
-	@echo "*** Running check for errors only"
-	pyflakes $(PYSRC)
-	pylint -E --rcfile=.pylint $(PYSRC)
+	@echo "*** Running checks for errors only"
+	$(PYTHON) -m pyflakes $(PYSRC)
+	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
 
 #  TODO:  <05-08-19, Zuo> Add a runner to select examples #
 test_examples: $(COMNETSEMU)
@@ -56,6 +56,11 @@ slowtest: $(COMNETSEMU) $(TEST)
 	@echo "Running tests of ComNetsEmu python module."
 	$(PYTHON) ./comnetsemu/test/runner.py -v
 
+coverage: $(COMNETSEMU) $(TEST)
+	@echo "Running coverage tests of ComNetsEmu core functions."
+	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/test_comnetsemu.py
+	$(PYTHON) -m coverage report -m
+
 check_installer: ./util/install.sh
 	@ echo "*** Check installer"
 	bash ./check_installer.sh
@@ -74,7 +79,7 @@ doc: $(PYSRC)
 
 build-test-containers:
 	@echo "Build all test containers"
-	cd ./test_containers/ && ./build.sh
+	cd ./test_containers/ && ./build.sh -a
 
 ## Cleanup utilities
 

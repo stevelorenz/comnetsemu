@@ -218,9 +218,8 @@ function install_ryu() {
 
 function install_devs() {
     echo "*** Install tools for development"
-    echo "- Install pytest for unit tests"
-    $install gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
-    sudo -H $PIP install pytest ipdb
+    echo "- Install dev python packages via PIP."
+    sudo -H $PIP install pytest ipdb coverage pyflakes pylint
 }
 
 function install_bcc() {

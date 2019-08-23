@@ -5,7 +5,7 @@ About: Tools/Helpers for emulation scripts.
 
 import re
 
-from mininet.log import debug, error, info, output, warn
+from mininet.log import error
 
 
 def parsePing(pingOutput):

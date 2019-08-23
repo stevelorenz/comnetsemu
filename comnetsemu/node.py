@@ -585,6 +585,7 @@ class DockerHost (Host):
         return ret
 
 
+# TODO(Zuo): Rename this to AppContainer when other developers finish app examples.
 class DockerContainer(object):
 
     """Docker container running INSIDE Docker host"""
@@ -596,10 +597,10 @@ class DockerContainer(object):
         self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.dins = dins
 
-    def get_current_stats(self):
+    def getCurrentStats(self):
         return self.dins.stats(decode=False, stream=False)
 
-    def get_logs(self):
+    def getLogs(self):
         """Get logs from this container."""
         return self.dins.logs(timestamps=True).decode("utf-8")
 

@@ -76,7 +76,7 @@ class Containernet(Mininet):
             intfName1="-".join((src.name, dst.name)), intfName2="-".join((dst.name, src.name)),
             *args, **kwargs)
 
-    def change_host_ifce_loss(self, host, ifce, loss, parent=" parent 5:1"):
+    def ChangeHostIfceLoss(self, host, ifce, loss, parent=" parent 5:1"):
         """Change the loss rate of a TC interface.
 
         :param host (str,node): Name of the host
@@ -85,7 +85,7 @@ class Containernet(Mininet):
         :param parent (str): Handle of parent tc qdisc. Mininet uses 5:1 in a HTB
         """
         if isinstance(host, BaseString):
-            host = self.net.get(host)
+            host = self.get(host)
         if not host:
             error("Can not find the running host\n")
             return False
@@ -108,6 +108,9 @@ class Containernet(Mininet):
         super(Containernet, self).stop()
 
 
+# MARK(Zuo): Maybe "AppContainerManager" is a better name.
+#            So we have DockerHost emulating physicall machines and AppContainer
+#            for applications. So Docker-In-Docker. Naming is difficult...
 class VNFManager(object):
     """Manager for VNFs deployed on Mininet hosts (Docker in Docker)
 
@@ -145,14 +148,13 @@ class VNFManager(object):
         """Init the VNFManager
 
         :param net (Mininet): The mininet object, used to manage hosts via
-        Mininet's API
+        Mininet's API.
         """
         self.net = net
         self.dclt = docker.from_env()
 
         self.container_queue = list()
         self.name_container_map = dict()
-        self.host_container_map = dict()
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
         """Create a container without starting it."""
@@ -170,23 +172,23 @@ class VNFManager(object):
         ret = self.dclt.containers.create(**docker_args_used)
         return ret
 
-    def _waitContainerStart(self, name):
+    def _waitContainerStart(self, name):  # pragma: no cover
         """Wait for container to start up running"""
-        while not self.getContainer(name):
+        while not self._getContainerIns(name):
             debug("Failed to get container:%s" % (name))
             sleep(self.retry_delay_secs)
-        dins = self.getContainer(name)
+        dins = self._getContainerIns(name)
 
         while not dins.attrs["State"]["Running"]:
             sleep(self.retry_delay_secs)
             dins.reload()  # refresh information in 'attrs'
 
-    def _waitContainerRemoved(self, name):
+    def _waitContainerRemoved(self, name):  # pragma: no cover
         """Wait for container to be removed"""
-        while self.getContainer(name):
+        while self._getContainerIns(name):
             sleep(self.retry_delay_secs)
 
-    def getContainer(self, name):
+    def _getContainerIns(self, name):
         """Get the DockerContainer instance by name.
 
         :param name (str): Name of the container
@@ -207,7 +209,7 @@ class VNFManager(object):
         of a running DockerHost instance.
 
         :param name (str): Name of the container
-        :param dhost (str or Node): The name or instance of the to be deployed DockerHost instance
+        :param dhost (str): The name or instance of the to be deployed DockerHost instance
         :param dimage (str): The name of the docker image
         :param dcmd (str): Command to run after the creation
         :param wait (Bool): Wait until the container has the running state if True.
@@ -230,7 +232,7 @@ class VNFManager(object):
         dins.start()
         if wait:
             self._waitContainerStart(name)
-        container = DockerContainer(name, dhost, dimage, dins)
+        container = DockerContainer(name, dhost.name, dimage, dins)
         self.container_queue.append(container)
         self.name_container_map[container.name] = container
         return container
@@ -238,7 +240,7 @@ class VNFManager(object):
     def removeContainer(self, container, wait=True):
         """Remove the given internal container.
 
-        :param container (str or DockerContainer): Internal container object (or its name in string)
+        :param container (str): Internal container object (or its name in string)
         :param wait (Bool): Wait until the container is fully removed if True.
 
         :return: Return True/False for success/fail remove.
@@ -282,8 +284,7 @@ class VNFManager(object):
     def monResourceStats(self, container, sample_num=3, sample_period=1):
         """Monitor the resource stats of a container within a given time
 
-        :param container (str or DockerContainer): Internal container object (or
-        its name)
+        :param container (DockerContainer): Internal container object (or its name)
         :param mon_time (float): Monitoring time in seconds
         """
 
@@ -296,7 +297,7 @@ class VNFManager(object):
         n = 0
         usages = list()
         while n < sample_num:
-            stats = container.get_current_stats()
+            stats = container.getCurrentStats()
             mem_stats = stats["memory_stats"]
             mem_usg = mem_stats["usage"] / (1024**2)
             cpu_usg = self._calculate_cpu_percent(stats)
@@ -306,16 +307,17 @@ class VNFManager(object):
 
         return usages
 
+    # MARK: Prototype, should be split into checkpoint and restore.
     def migrateCRIU(self, h1, c1, h2):
         """Migrate Docker c1 running on the host h1 to host h2
 
         Docker checkpoint is an experimental command.  To enable experimental
-        features on the Docker daemon, edit the /etc/docker/daemon.json and set
+
         experimental to true.
 
-        :param h1: Name or instance of the source host.
-        :param c1: Name of instance of the to be migrated container.
-        :param h2: Name or instance of the destination host.
+        :param h1 (str): Name or instance of the source host.
+        :param c1 (str): Name of instance of the to be migrated container.
+        :param h2 (str): Name or instance of the destination host.
 
         Ref: https://www.criu.org/Docker
         """
@@ -324,6 +326,7 @@ class VNFManager(object):
             c1 = self.name_container_map.get(c1, None)
         if isinstance(h1, BaseString):
             h1 = self.net.get(h1)
+        if isinstance(h2, BaseString):
             h2 = self.net.get(h2)
 
         c1_checkpoint_path = os.path.join(VNFMANGER_MOUNTED_DIR,
@@ -369,7 +372,7 @@ class VNFManager(object):
 
         self._waitContainerStart(dins.name)
 
-        container = DockerContainer(dins.name, h2, c1.dimage, dins)
+        container = DockerContainer(dins.name, h2.name, c1.dimage, dins)
         self.container_queue.append(container)
         self.name_container_map[container.name] = container
         shutil.rmtree(c1_checkpoint_path, ignore_errors=True)

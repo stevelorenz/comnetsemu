@@ -107,7 +107,7 @@ class CLI(CLI):
                     errno_, errmsg = e.args
                     # pylint: enable=unpacking-non-sequence
                     if errno_ != errno.EINTR:
-                        error("select.error: %d, %s" % (errno_, errmsg))
+                        error("select.error: %s, %s" % (errno_, errmsg))
                         error(
                             "The command is not terminated. Please kill it manually\n")
                         node.sendInt()

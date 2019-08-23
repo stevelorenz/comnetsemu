@@ -50,17 +50,17 @@ def runContainerMigration():
     looper = mgr.addContainer(
         "looper", "h1", "dev_test", "/bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done'")
     time.sleep(5)
-    print("*** Logs of the original looper \n" + looper.get_logs())
+    print("*** Logs of the original looper \n" + looper.getLogs())
 
     print("*** Migrate the looper from h1 to h2.")
     looper_h2 = mgr.migrateCRIU(h1, looper, h2)
     time.sleep(5)
-    print(looper_h2.get_logs())
+    print(looper_h2.getLogs())
 
     print("*** Migrate the looper from h2 to h3.")
     looper_h3 = mgr.migrateCRIU(h2, looper_h2, h3)
     time.sleep(5)
-    print(looper_h3.get_logs())
+    print(looper_h3.getLogs())
 
     info('*** Stopping network\n')
     mgr.removeContainer(looper)

@@ -30,6 +30,7 @@ class TestTopo(Topo):
             host = self.addHost('h%s' % h)
             self.addLink(host, switch)
 
+
 class TestVNFManager(unittest.TestCase):
 
     @classmethod
@@ -63,8 +64,9 @@ class TestVNFManager(unittest.TestCase):
     def test_container_crud(self):
         c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
                                    wait=True)
+        self.assertTrue(c1.dhost, "h1")
         self.mgr.removeContainer(c1, wait=True)
-        c1 = self.mgr.getContainer("c1")
+        c1 = self.mgr._getContainerIns("c1")
         self.assertTrue(c1 is None)
 
         c1 = self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash",
