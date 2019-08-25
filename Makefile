@@ -34,19 +34,17 @@ typecheck: $(PYSRC)
 	$(PYTYPE) ./comnetsemu/net.py
 
 #  TODO:  <05-08-19, Zuo> Add a runner to select examples #
-test_examples: $(COMNETSEMU)
+test-examples: $(COMNETSEMU)
 	@echo "*** Running basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
-	$(PYTHON) ./examples/docker_migration.py
 
-test_examples_full: $(COMNETSEMU) $(EXAMPLES)
+test-examples-all: $(COMNETSEMU) $(EXAMPLES)
 	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
 	@echo "*** WARN: It takes time..."
 	@echo "**** Basic functional examples of the emulator"
 	$(PYTHON) ./examples/dockerhost.py
 	$(PYTHON) ./examples/dockerindocker.py
-	$(PYTHON) ./examples/docker_migration.py
 	@echo "**** Examples for security..."
 	$(PYTHON) ./examples/nftables.py
 	$(PYTHON) ./examples/wireguard.py
@@ -56,11 +54,11 @@ test_examples_full: $(COMNETSEMU) $(EXAMPLES)
 	bash ./examples/mininet_demystify/clean.sh
 
 test: $(COMNETSEMU) $(TEST)
-	@echo "Running tests of ComNetsEmu python module."
+	@echo "Running core tests of ComNetsEmu python module."
 	$(PYTHON) ./comnetsemu/test/test_comnetsemu.py
 
-slowtest: $(COMNETSEMU) $(TEST)
-	@echo "Running tests of ComNetsEmu python module."
+test-all: $(COMNETSEMU) $(TEST)
+	@echo "Running all tests of ComNetsEmu python module."
 	$(PYTHON) ./comnetsemu/test/runner.py -v
 
 coverage: $(COMNETSEMU) $(TEST)
@@ -68,7 +66,7 @@ coverage: $(COMNETSEMU) $(TEST)
 	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/test_comnetsemu.py
 	$(PYTHON) -m coverage report -m
 
-check_installer: ./util/install.sh
+installercheck: ./util/install.sh
 	@ echo "*** Check installer"
 	bash ./check_installer.sh
 

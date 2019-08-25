@@ -28,7 +28,7 @@ Common facts about ComNetsEmu:
     Mininet due to complete host isolation. Chose a reasonable performance limitation is recommended for better
     emulation results. For example, use e.g. 100ms as link delay instead of 1ms for large scale topology.
 
-- ComNetsEmu is developed with **Python3**(3.6).
+- ComNetsEmu is developed with **Python3.6**.
 
 #### Main Features
 
