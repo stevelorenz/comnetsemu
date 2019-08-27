@@ -40,6 +40,11 @@ Common facts about ComNetsEmu:
 
 ### Installation
 
+**Supported/Tested distributions**:
+
+1. Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
+1. GNU/Debian 10 (Buster)
+
 For development and using it as a playground, it is recommended to run ComNetsEmu INSIDE a VM. Run ComNetsEmu/Mininet
 application requires **root privilege**, hacking it inside a VM is also safer. ComNetsEmu's [install
 script](./util/install.sh) uses Mininet's install script to install Mininet natively from source. As described in
@@ -119,10 +124,7 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python modules are installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Option 2: Install on Ubuntu (Only tested on Ubuntu Server 18.04 LTS (Bionic Beaver))
-
-INFO: Currently, the installer **ONLY** supports Ubuntu-based Linux distributions. Support for more distributions is in
-the TODO list.
+#### Option 2: Bare-mental Installation
 
 - Install essential packages required by the installer from your package management systems:
 
@@ -144,8 +146,8 @@ $ PYTHON=python3 bash ./install.sh -a
 The **master** branch contains stable/tested sources for ComNetsEmu's python module, utility scripts, examples and
 applications. It is recommended to upgraded to latest commit of the master branch.
 
-The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software
-automatically. This script **ONLY** supports Ubuntu (Tested on Ubuntu 18.04 LTS) and has some default variables:
+The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software automatically.
+This script **ONLY** works on supported distributions and has some default variables:
 
 1. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
 2. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
@@ -189,6 +191,8 @@ See the [README](./examples/README.md) to get information about all built-in exa
 - [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python modules.
 
 - [examples](./examples/): Example programs for functionalities of the ComNetsEmu emulator.
+
+- [patch](./patch/): Patches for external dependencies that are installed from source via [installer](./util/install.sh).
 
 - [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
 

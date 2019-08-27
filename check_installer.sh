@@ -12,8 +12,7 @@ set -e
 set -o nounset
 
 # TODO:  <06-06-19, Zuo> Test installation on other distributions
-# TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
-TEST_IMAGES=("ubuntu:18.04")
+TEST_IMAGES=("ubuntu:18.04" "debian:buster")
 TEST_OPTIONS=("-t")
 COMNETSEMU_DIR="/root/comnetsemu"
 
@@ -34,12 +33,13 @@ COPY ./comnetsemu/ $COMNETSEMU_DIR/comnetsemu
 COPY ./Makefile $COMNETSEMU_DIR/Makefile
 COPY ./util/ $COMNETSEMU_DIR/util
 COPY ./setup.py $COMNETSEMU_DIR/setup.py
+COPY ./patch/ $COMNETSEMU_DIR/patch
 WORKDIR $COMNETSEMU_DIR/util
 
 RUN bash ./install.sh $opt
 
 CMD ["bash"]
 EOF
-sudo docker image rm "test_comnetsemu_install_$img"
-done
+        sudo docker image rm "test_comnetsemu_install_$img"
+    done
 done

@@ -122,3 +122,5 @@ app/network_coding_transport/*.pcap
 app/mec/*.txt
 
 util/vm_customize.sh
+
+extern_deps/

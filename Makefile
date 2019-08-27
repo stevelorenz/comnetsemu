@@ -33,25 +33,11 @@ typecheck: $(PYSRC)
 	@echo "*** Running type checks with $(PYTYPE)..."
 	$(PYTYPE) ./comnetsemu/net.py
 
-#  TODO:  <05-08-19, Zuo> Add a runner to select examples #
-test-examples: $(COMNETSEMU)
-	@echo "*** Running basic functional examples of the emulator"
-	$(PYTHON) ./examples/dockerhost.py
-	$(PYTHON) ./examples/dockerindocker.py
+test-examples: $(COMNETSEMU) $(EXAMPLES)
+	cd ./examples && bash ./run.sh
 
 test-examples-all: $(COMNETSEMU) $(EXAMPLES)
-	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
-	@echo "*** WARN: It takes time..."
-	@echo "**** Basic functional examples of the emulator"
-	$(PYTHON) ./examples/dockerhost.py
-	$(PYTHON) ./examples/dockerindocker.py
-	@echo "**** Examples for security..."
-	$(PYTHON) ./examples/nftables.py
-	$(PYTHON) ./examples/wireguard.py
-	@echo "*** Examples for Mininet with bash..."
-	bash ./examples/mininet_demystify/run.sh
-	sleep 3
-	bash ./examples/mininet_demystify/clean.sh
+	cd ./examples && bash ./run.sh -a
 
 test: $(COMNETSEMU) $(TEST)
 	@echo "Running core tests of ComNetsEmu python module."
