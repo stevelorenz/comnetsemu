@@ -27,11 +27,11 @@ def testTopo():
     info('*** Adding hosts\n')
     router = net.addDockerHost('router', dimage='sec_test',
                            cpuset_cpus="1", cpu_quota=25000)
-    h1 = net.addDockerHost('h1', dimage='sec_test', ip='10.0.0.2',
+    internal1 = net.addDockerHost('internal1', dimage='sec_test', ip='10.0.0.2',
                            cpuset_cpus="1", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='sec_test', ip='192.168.0.2',
+    internal2 = net.addDockerHost('internal2', dimage='sec_test', ip='192.168.0.2',
                            cpuset_cpus="0", cpu_quota=25000)
-    h3 = net.addDockerHost('h3', dimage='sec_test', ip='100.64.0.2',
+    internet = net.addDockerHost('internet', dimage='sec_test', ip='100.64.0.2',
                            cpuset_cpus="0", cpu_quota=25000)
 
     info('*** Adding switch\n')
@@ -43,9 +43,9 @@ def testTopo():
     net.addLinkNamedIfce(s1, router, bw=100, delay='1ms', use_htb=True)
     net.addLinkNamedIfce(s2, router, bw=100, delay='1ms', use_htb=True)
     net.addLinkNamedIfce(s3, router, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h1, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s2, h2, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s3, h3, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, internal1, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s2, internal2, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s3, internet, bw=100, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
@@ -56,16 +56,16 @@ def testTopo():
     router.cmd("ip a a 100.64.0.1/24 dev router-s3")
 
     # Configure the router as default gateway
-    h1.cmd("ip r c default via 10.0.0.1")
-    h2.cmd("ip r c default via 192.168.0.1")
-    h3.cmd("ip r c default via 100.64.0.1")
+    internal1.cmd("ip r c default via 10.0.0.1")
+    internal2.cmd("ip r c default via 192.168.0.1")
+    internet.cmd("ip r c default via 100.64.0.1")
 
     # Start some services
-    h2.cmd("service ssh start")
-    h2.cmd("nc -l -p 1337 &")
+    internal2.cmd("service ssh start")
+    internal2.cmd("nc -l -p 1337 &")
     router.cmd("service ssh start")
 
-    check_connectivity_between_hosts(router, h1, h2, h3)
+    check_connectivity_between_hosts(router, internal1, internal2, internet)
 
     # Create whitelist
     info('*** Create firewall whitelist\n')
@@ -76,41 +76,41 @@ def testTopo():
     router.cmd("nft add rule inet filter forward ip saddr 192.168.0.0/24 accept")
 
     # TODO: Rewrite the filter ruleset and create a chain with filter rules for each of the 3 network interfaces of the router
-    # TODO: Filter traffic to the open ports 22 and 1337 on the router and h2
+    # TODO: Filter traffic to the open ports 22 and 1337 on the router and internal2
 
-    check_connectivity_between_hosts(router, h1, h2, h3)
+    check_connectivity_between_hosts(router, internal1, internal2, internet)
 
     info('*** Stopping network')
     net.stop()
 
 
-def check_connectivity_between_hosts(router, h1, h2, h3):
+def check_connectivity_between_hosts(router, internal1, internal2, internet):
     info("\n*** Testing router\n")
-    info("** router -> h1\n")
+    info("** router -> internal1\n")
     test_connection(router, "10.0.0.2")
-    info("** router -> h2\n")
+    info("** router -> internal2\n")
     test_connection(router, "192.168.0.2")
-    info("** router -> h3\n")
+    info("** router -> internet\n")
     test_connection(router, "100.64.0.2")
-    info("\n*** Testing h1\n")
-    info("** h1 -> h2\n")
-    test_connection(h1, "192.168.0.2")
-    info("** h1 -> h3\n")
-    test_connection(h1, "100.64.0.2")
-    info("\n*** Testing h2\n")
-    info("** h2 -> h1\n")
-    test_connection(h2, "10.0.0.2")
-    info("** h2 -> h3\n")
-    test_connection(h2, "100.64.0.2")
-    info("\n*** Testing h3\n")
-    info("** h3 -> h1\n")
-    test_connection(h3, "10.0.0.2")
-    info("** h3 -> h2\n")
-    test_connection(h3, "192.168.0.2")
+    info("\n*** Testing internal1\n")
+    info("** internal1 -> internal2\n")
+    test_connection(internal1, "192.168.0.2")
+    info("** internal1 -> internet\n")
+    test_connection(internal1, "100.64.0.2")
+    info("\n*** Testing internal2\n")
+    info("** internal2 -> internal1\n")
+    test_connection(internal2, "10.0.0.2")
+    info("** internal2 -> internet\n")
+    test_connection(internal2, "100.64.0.2")
+    info("\n*** Testing internet\n")
+    info("** internet -> internal1\n")
+    test_connection(internet, "10.0.0.2")
+    info("** internet -> internal2\n")
+    test_connection(internet, "192.168.0.2")
     info("\n*** Checking for open ports\n")
-    check_open_port(h1, "192.168.0.2", "22")
-    check_open_port(h1, "192.168.0.2", "1337")
-    check_open_port(h1, "192.168.0.1", "22")
+    check_open_port(internal1, "192.168.0.2", "22")
+    check_open_port(internal1, "192.168.0.2", "1337")
+    check_open_port(internal1, "192.168.0.1", "22")
     info("\n")
 
 

