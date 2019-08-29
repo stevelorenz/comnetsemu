@@ -103,7 +103,7 @@ BCC_VER="v0.9.0"
 DOCKER_PY_VER="3.7.2"
 
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
-DEP_INSTALL_FUNCS=(install_mininet install_ryu)
+DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
@@ -176,14 +176,14 @@ function upgrade_docker() {
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
-function install_mininet() {
+function install_mininet_with_deps() {
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
     local mininet_patch_dir="$COMNETSEMU_DIR/comnetsemu/patch/mininet"
 
     no_dir_exit "$mininet_patch_dir"
     mkdir -p "$mininet_dir"
 
-    echo "*** Install Mininet"
+    echo "*** Install Mininet and its minimal dependencies."
     $install git
     cd "$mininet_dir" || exit
     git clone https://github.com/mininet/mininet.git
@@ -250,12 +250,14 @@ function upgrade_comnetsemu_deps() {
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo ""
         echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
 
+        echo ""
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
+        install_devs
 
+        echo ""
         echo "- Upgrade dependencies installed from source"
         echo "  The upgrade script checks the version flag (format tool_name-version) in $EXTERN_DEP_DIR"
         echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
@@ -263,7 +265,6 @@ function upgrade_comnetsemu_deps() {
         for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            # TODO: Replace ls | grep with glob or for loop
             installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "$dep_name-*" | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
             echo "Installed version: $installed_ver, requested version: ${req_ver}"
@@ -284,7 +285,7 @@ function reinstall_comnetsemu_deps() {
     echo "*** Reinstall ComNetsEmu dependencies."
     sudo rm -r "$EXTERN_DEP_DIR"
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -327,7 +328,7 @@ function remove_comnetsemu() {
 
 function test_install() {
     echo "*** Test installation. Used by ../check_installer.sh script."
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -338,7 +339,7 @@ function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     # MUST run at the end!
@@ -349,7 +350,7 @@ function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -383,7 +384,7 @@ else
         h) usage ;;
         k) install_kernel_modules ;;
         l) install_lightweight ;;
-        n) install_mininet ;;
+        n) install_mininet_with_deps ;;
         r) reinstall_comnetsemu_deps ;;
         t) test_install ;;
         u) upgrade_comnetsemu_deps ;;
