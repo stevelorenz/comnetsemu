@@ -24,3 +24,4 @@
 ## Dev Style Guide ##
 
 - [Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
+- [Google Markdown Style Guide](https://github.com/google/styleguide/blob/gh-pages/docguide/style.md)

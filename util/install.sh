@@ -85,14 +85,14 @@ echo "*** ComNetsEmu Installer ***"
 DEFAULT_REMOTE="origin"
 
 # Get the directory containing comnetsemu source code folder
-COMNETSEMU_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+TOP_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 # The name of the comnetsemu source code folder
 COMNETSEMU_SRC_DIR="comnetsemu"
 
 # Directory containing external dependencies installed from source
 # Dependencies are downloaded into another directory because the current directory is synced to the vagrant VM by default.
 # Clone sources into this directory has privileges conflicts with host OS.
-EXTERN_DEP_DIR="$HOME/comnetsemu_dependencies"
+EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
@@ -106,7 +106,7 @@ DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
 DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
-echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
 echo " - The path to install all dependencies: $EXTERN_DEP_DIR"
 
 function usage() {
@@ -178,7 +178,7 @@ function upgrade_docker() {
 
 function install_mininet_with_deps() {
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
-    local mininet_patch_dir="$COMNETSEMU_DIR/comnetsemu/patch/mininet"
+    local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
 
     no_dir_exit "$mininet_patch_dir"
     mkdir -p "$mininet_dir"
@@ -199,7 +199,7 @@ function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
     warning "[INSTALL]" "The docker-py and Mininet MUST be already installed."
     $install python3
-    cd "$COMNETSEMU_DIR/comnetsemu" || exit
+    cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
 }
 
@@ -265,7 +265,7 @@ function upgrade_comnetsemu_deps() {
         for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "$dep_name-*" | cut -d '-' -f 2-)
+            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "$dep_name"-\* | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
             echo "Installed version: $installed_ver, requested version: ${req_ver}"
             if [[ "$installed_ver" != "$req_ver" ]]; then
@@ -359,9 +359,9 @@ function all() {
 }
 
 # Check if source and dependency directory exits
-if [[ ! -d "$COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR" ]]; then
+if [[ ! -d "$TOP_DIR/$COMNETSEMU_SRC_DIR" ]]; then
     error "[PATH]" "The ComNetsEmu source directory does not exist."
-    echo " The default path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+    echo " The default path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
     echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
     exit 1
 fi
