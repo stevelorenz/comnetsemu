@@ -54,11 +54,12 @@ CPU: Intel i7-7600U @ 2.80GHz).
 
 Firstly, clone the repository with git.
 $TOP_DIR is the directory that you want to download the ComNetsEmu's source code. In Vagrant VM, TOP_DIR="$HOME".
-ComNetsEmu's installer (BASH scripts) will download external dependencies also in this directory.
+ComNetsEmu's installer (BASH scripts) assumes the name of the source directory is **comnetsemu** and will download
+external source dependencies also in $TOP_DIR.
 
 ```bash
 $ cd $TOP_DIR
-$ git clone https://stevelorenz@bitbucket.org/comnets/comnetsemu.git
+$ git clone https://bitbucket.org/comnets/comnetsemu.git comnetsemu
 ```
 
 ComNetsEmu's [installer](./util/install.sh) tries to install dependencies with package manager (apt, pip etc.) if they

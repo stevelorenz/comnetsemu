@@ -10,6 +10,17 @@ set -e
 # Fail on unset var usage
 set -o nounset
 
+# Mininet's installer's default assumption.
+if [[ $EUID -eq 0 ]]; then
+    echo "Installer should be run as a user with sudo permissions, "
+    echo "not root."
+    exit 1
+fi
+
+# Set magic variables for current file & dir
+# __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+
 ####################
 #  Util Functions  #
 ####################
@@ -107,7 +118,7 @@ DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
-echo " - The path to install all dependencies: $EXTERN_DEP_DIR"
+echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
 
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
@@ -123,7 +134,7 @@ function usage() {
     echo " -h: print usage"
     echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
-    echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
+    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
@@ -189,8 +200,6 @@ function install_mininet_with_deps() {
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
     git checkout -b dev $MININET_VER
-    echo "*** Apply patches to Mininet."
-    check_patch "$mininet_patch_dir/util.patch" 1
     cd util || exit
     PYTHON=python3 ./install.sh -nfvw03
 }
@@ -265,12 +274,12 @@ function upgrade_comnetsemu_deps() {
         for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "$dep_name"-\* | cut -d '-' -f 2-)
+            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "${dep_name}"-\* | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
-            echo "Installed version: $installed_ver, requested version: ${req_ver}"
-            if [[ "$installed_ver" != "$req_ver" ]]; then
-                warning "[Upgrade]" "Upgrade $dep_name from $installed_ver to $req_ver"
-                sudo rm -rf "$EXTERN_DEP_DIR/$dep_name-$installed_ver"
+            echo "Installed version: ${installed_ver}, requested version: ${req_ver}"
+            if [[ "${installed_ver}" != "${req_ver}" ]]; then
+                warning "[Upgrade]" "Upgrade ${dep_name} from ${installed_ver} to ${req_ver}"
+                sudo rm -rf "$EXTERN_DEP_DIR/${dep_name}-${installed_ver}"
                 ${DEP_INSTALL_FUNCS[i]}
             fi
             echo ""
