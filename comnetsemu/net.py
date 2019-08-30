@@ -20,7 +20,7 @@ from mininet.term import cleanUpScreens, makeTerms
 from mininet.util import BaseString, checkRun
 
 # ComNetsEmu version: should be consistent with README and LICENSE
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 
 VNFMANGER_MOUNTED_DIR = "/tmp/comnetsemu/vnfmanager"
 
