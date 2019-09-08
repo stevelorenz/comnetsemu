@@ -21,7 +21,7 @@ BS_1            BS_2
 
 This structure now needs to be translated into something that can be implemented in Mininet.
 * Client -> Node / DockerHost, needs to execute an client application that sends requests
-* Base Station -> OVSwitch, with custom Contoller to choose optimal Server in AS to process request
+* Base Station -> OVSwitch, with custom Controller to choose optimal Server in AS to process request
 * Autonomous System -> Fat Tree topology, end Nodes are the Servers, which are modeled as DockerHosts (it is assumed that every Server offers the Option to process the Client request), Nodes in-between are simple switches
 
 ````text
@@ -82,7 +82,7 @@ Before running, a dedicated docker image needs to be created with
 sudo docker build -t mec_test -f ./Dockerfile.mec_test .
 ```
 
-... ,where `mec_test` is the image name used in both, `mec` and `mec_only_forwarding` and `Dockerfile.mec_test` is the Dockerfile located in `/app/mec`.
+... ,where `mec_test` is the image name used in both, `mec` and `edgecloud.py` and `Dockerfile.mec_test` is the Dockerfile located in `/app/mec`.
 
 In the next step the Controllers need to be started
 
@@ -90,12 +90,12 @@ In the next step the Controllers need to be started
 ryu-manager --verbose --log-file log.txt --ofp-tcp-listen-port 6633 ./controller.py
 ```
 
-The `--log-file` option is optional, but `--ofp-tcp-listen-port` should match the one in `edgecloud.py` / `only_forwarding.py` (relevant when using multiple controllers).
+The `--log-file` option is optional, but `--ofp-tcp-listen-port` should match the one in `edgecloud.py` (relevant when using multiple controllers).
 
 To launch the emulation 
 
 ```sh
-sudo python3 ./edgecloud.py
+sudo python3 ./edgelcoud/edgecloud.py
 ```
 
 It is recommended to have a separate terminal session for each controller and the application.

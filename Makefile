@@ -1,10 +1,10 @@
 # vim:ft=make
-#
+
 COMNETSEMU = comnetsemu/*.py
 CE_BIN = bin/ce
-TEST = comnetsemu/test/*.py
+UNITTESTS = comnetsemu/test/unit/*.py
 EXAMPLES = examples/*.py
-PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TEST)
+PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(UNITTESTS)
 PYTHON ?= python3
 PYTYPE = pytype
 P8IGN = E251,E201,E302,E202,E126,E127,E203,E226
@@ -39,17 +39,13 @@ test-examples: $(COMNETSEMU) $(EXAMPLES)
 test-examples-all: $(COMNETSEMU) $(EXAMPLES)
 	cd ./examples && bash ./run.sh -a
 
-test: $(COMNETSEMU) $(TEST)
-	@echo "Running core tests of ComNetsEmu python module."
-	$(PYTHON) ./comnetsemu/test/test_comnetsemu.py
+test: $(COMNETSEMU) $(UNITTESTS)
+	@echo "Running all unit tests of ComNetsEmu python package."
+	$(PYTHON) ./comnetsemu/test/unit/runner.py -v
 
-test-all: $(COMNETSEMU) $(TEST)
-	@echo "Running all tests of ComNetsEmu python module."
-	$(PYTHON) ./comnetsemu/test/runner.py -v
-
-coverage: $(COMNETSEMU) $(TEST)
+coverage: $(COMNETSEMU) $(UNITTESTS)
 	@echo "Running coverage tests of ComNetsEmu core functions."
-	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/test_comnetsemu.py
+	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/unit/runner.py -v
 	$(PYTHON) -m coverage report -m
 
 installercheck: ./util/install.sh

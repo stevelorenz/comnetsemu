@@ -274,7 +274,7 @@ function upgrade_comnetsemu_deps() {
         for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "${dep_name}"-\* | cut -d '-' -f 2-)
+            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "${dep_name}-*" | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
             echo "Installed version: ${installed_ver}, requested version: ${req_ver}"
             if [[ "${installed_ver}" != "${req_ver}" ]]; then

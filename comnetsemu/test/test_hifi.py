@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
-
 """
 About: Test high-fidelity compatibility between ComNetsEmu and upstream Mininet
 
@@ -12,7 +11,6 @@ Diff upstream test_hifi.py:
 - The tolerance is increased because ComNetsEmu is mainly used inside the VM.
   The tolerance is higher than bare-mental setup.
 """
-
 
 import sys
 import unittest
@@ -29,11 +27,7 @@ from mininet.util import quietRun
 
 N = 2
 
-
-dargs = {
-    "dimage": "dev_test",
-    "dcmd": "bash"
-}
+dargs = {"dimage": "dev_test", "dcmd": "bash"}
 DockerHostTest = partial(DockerHost, **dargs)
 
 
@@ -50,6 +44,7 @@ class SingleSwitchOptionsTopo(Topo):
         for h in range(n):
             host = self.addHost('h%s' % (h + 1))
             self.addLink(switch, host)
+
 
 # Tell pylint not to complain about calls to other class
 # pylint: disable=E1101
@@ -77,9 +72,8 @@ class testOptionsTopoCommon(object):
                 'measured value: %s\n'
                 'failure tolerance: %s\n'
                 'upper bound: %s\n'
-                'lower bound: %s\n'
-                % (expected, measured, tolerance_frac,
-                   upperBound, lowerBound))
+                'lower bound: %s\n' %
+                (expected, measured, tolerance_frac, upperBound, lowerBound))
         msg += info
 
         self.assertGreaterEqual(float(measured), lowerBound, msg=msg)
@@ -94,8 +88,10 @@ class testOptionsTopoCommon(object):
         REPS = 3
         lopts = {'delay': '%sms' % DELAY_MS, 'use_htb': True}
         mn = Mininet(topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
-                     link=TCLink, switch=self.switchClass,
-                     autoStaticArp=True, waitConnected=True)
+                     link=TCLink,
+                     switch=self.switchClass,
+                     autoStaticArp=True,
+                     waitConnected=True)
         mn.start()
         for _ in range(REPS):
             ping_delays = mn.pingFull()
@@ -117,14 +113,14 @@ class testOptionsTopoCommon(object):
                'Link = TCLink\n'
                'lopts = %s\n'
                'host = default'
-               'switch = %s\n'
-               % (DELAY_MS, ping_outputs, N, loptsStr, self.switchClass))
+               'switch = %s\n' %
+               (DELAY_MS, ping_outputs, N, loptsStr, self.switchClass))
 
         mn.stop()
         for rttval in [rttmin, rttavg, rttmax]:
             # Multiply delay by 4 to cover there & back on two links
-            self.assertWithinTolerance(rttval, DELAY_MS * 4.0,
-                                       DELAY_TOLERANCE, msg)
+            self.assertWithinTolerance(rttval, DELAY_MS * 4.0, DELAY_TOLERANCE,
+                                       msg)
 
     def testLinkLoss(self):
         "Verify that we see packet drops with a high configured loss rate."
@@ -132,7 +128,9 @@ class testOptionsTopoCommon(object):
         REPS = 1
         lopts = {'loss': LOSS_PERCENT, 'use_htb': True}
         mn = Mininet(topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
-                     host=DockerHostTest, link=TCLink, switch=self.switchClass,
+                     host=DockerHostTest,
+                     link=TCLink,
+                     switch=self.switchClass,
                      waitConnected=True)
         # Drops are probabilistic, but the chance of no dropped packets is
         # 1 in 100 million with 4 hops for a link w/99% loss.
@@ -151,11 +149,11 @@ class testOptionsTopoCommon(object):
                'Link = TCLink\n'
                'lopts = %s\n'
                'host = default\n'
-               'switch = %s\n'
-               % (LOSS_PERCENT, dropped_total, N, loptsStr,
-                  self.switchClass))
+               'switch = %s\n' %
+               (LOSS_PERCENT, dropped_total, N, loptsStr, self.switchClass))
 
         self.assertGreater(dropped_total, 0, msg)
+
 
 # pylint: enable=E1101
 
@@ -180,6 +178,7 @@ class testOptionsTopoIVS(testOptionsTopoCommon, unittest.TestCase):
     "Verify ability to create networks with host and link options (IVS)."
     longMessage = True
     switchClass = IVSSwitch
+
 
 @unittest.skipUnless(quietRun('which ofprotocol'),
                      'Reference user switch is not installed')
