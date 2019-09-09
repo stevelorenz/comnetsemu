@@ -12,7 +12,8 @@ from shlex import split
 import shutil
 
 import docker
-from mininet.log import LEVELS, debug, error, info
+from mininet.log import info
+from mininet.clean import cleanup as mn_cleanup
 from comnetsemu.net import VNFMANGER_MOUNTED_DIR
 
 
@@ -25,7 +26,7 @@ def sh(cmd, check=True):
 def cleanup():
     info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" + "-" * 80 + "\n")
     info("*** Run mininet's cleanups\n")
-    subprocess.run(["mn", "-c"], check=True)
+    mn_cleanup()
     cleanup_docker_containers()
     cleanup_netdevs()
     info("*** Remove temp directories\n")
@@ -65,7 +66,7 @@ def cleanup_docker_containers():
 def cleanup_netdevs():
     """ISSUE: Maybe too aggressive."""
     info(
-        "*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n")
+        r"*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n")
     links = sh("ip link show")
     ret = re.findall(r"[a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+", links)
     if ret:

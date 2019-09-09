@@ -28,6 +28,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.pytype
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -121,3 +122,5 @@ app/network_coding_transport/*.pcap
 app/mec/*.txt
 
 util/vm_customize.sh
+
+extern_deps/

@@ -1,6 +1,6 @@
 # Q & A #
 
-##### Ques: Why not the default Mininet ?
+##### Ques: Why not the vanilla Mininet ?
 
 Ans: Default Mininet (the latest version) does not support running Docker containers applications directly inside
 Mininet Host with sufficient network isolation. ComNetsEmu adds a new node type: DockerHost to deploy internal Docker

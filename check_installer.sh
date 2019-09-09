@@ -12,9 +12,8 @@ set -e
 set -o nounset
 
 # TODO:  <06-06-19, Zuo> Test installation on other distributions
-# TEST_IMAGES=("ubuntu:18.04" "debian:jessie")
-TEST_IMAGES=("ubuntu:18.04")
-TEST_OPTIONS=("-a")
+TEST_IMAGES=("ubuntu:18.04" "debian:buster")
+TEST_OPTIONS=("-t")
 COMNETSEMU_DIR="/root/comnetsemu"
 
 for img in "${TEST_IMAGES[@]}"; do
@@ -27,20 +26,20 @@ FROM $img
 ENV COMNETSEMU_DIR=/root/comnetsemu
 
 RUN apt-get update && apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
-
-    WORKDIR /root
+WORKDIR /root
 RUN mkdir -p $COMNETSEMU_DIR/comnetsemu -p $COMNETSEMU_DIR/util
 COPY ./bin/ $COMNETSEMU_DIR/bin
 COPY ./comnetsemu/ $COMNETSEMU_DIR/comnetsemu
 COPY ./Makefile $COMNETSEMU_DIR/Makefile
 COPY ./util/ $COMNETSEMU_DIR/util
 COPY ./setup.py $COMNETSEMU_DIR/setup.py
+COPY ./patch/ $COMNETSEMU_DIR/patch
 WORKDIR $COMNETSEMU_DIR/util
 
 RUN bash ./install.sh $opt
 
 CMD ["bash"]
 EOF
-sudo docker image rm "test_comnetsemu_install_$img"
-done
+        sudo docker image rm "test_comnetsemu_install_$img"
+    done
 done

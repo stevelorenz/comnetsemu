@@ -9,7 +9,7 @@ The compiling and attachment of the XDP program use IOVisor/BCC, please install
 it with ../util/install.sh -b before running this example.
 """
 
-from bcc import BPF
+from bcc import BPF  # pylint: disable=import-error
 
 from comnetsemu.net import Containernet
 from mininet.link import TCLink

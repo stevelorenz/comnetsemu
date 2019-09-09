@@ -20,7 +20,7 @@ from mininet.term import makeTerms
 from mininet.util import quietRun
 
 
-class CLI(CLI):
+class CLI(CLI):  # pylint: disable=function-redefined
 
     helpStr = (
         "You can send commands to Docker hosts with the same method of Mininet.\n"
@@ -107,7 +107,7 @@ class CLI(CLI):
                     errno_, errmsg = e.args
                     # pylint: enable=unpacking-non-sequence
                     if errno_ != errno.EINTR:
-                        error("select.error: %d, %s" % (errno_, errmsg))
+                        error("select.error: %s, %s" % (errno_, errmsg))
                         error(
                             "The command is not terminated. Please kill it manually\n")
                         node.sendInt()

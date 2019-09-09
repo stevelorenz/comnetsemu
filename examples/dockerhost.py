@@ -57,9 +57,9 @@ def run_net():
 
     info("*** Configure the link loss rate of h1 at runtime\n")
     for loss in loss_rates:
-        print("* The loss rate of h1 is {:.2f}%".format(loss))
+        print("* The loss rate of h1 is {:.2f}%, unidirectional".format(loss))
         print("* Ping test count: %d" % PING_COUNT)
-        net.change_host_ifce_loss(h1, "h1-s1", loss)
+        net.ChangeHostIfceLoss(h1, "h1-s1", loss)
         ret = h1.cmd("ping -c %d 10.0.0.2" % PING_COUNT)
         sent, received = tool.parsePing(ret)
         measured = ((sent - received) / float(sent)) * 100.0

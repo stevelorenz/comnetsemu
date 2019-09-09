@@ -16,11 +16,6 @@ This example demonstrate how to use ComNetsEmu's API to deploy Docker container 
 Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization. The Dockerhost with
 internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
 
-#### docker_migration.py
-
-This example shows how to perform **stateful** migration ([CRIU](https://criu.org/Main_Page) is used) of internal Docker
-containers between different Docker hosts.
-
 #### flowvisor
 
 This example shows how to run [FlowVisor](https://github.com/OPENNETWORKINGLAB/flowvisor/wiki) inside Docker container.
@@ -28,6 +23,10 @@ This example shows how to run [FlowVisor](https://github.com/OPENNETWORKINGLAB/f
 #### mininet_demystify
 
 Demystify technologies used in Mininet for lightweight network emulation.
+Run two bash scripts inside the folder with root privilege:
+- [run.sh](./mininet_demystify/run.sh): Build a topology with three hosts connected to a single switch and run basic
+    ping, iperf and Openflow tests.
+- [clean.sh](./mininet_demystify/clean.sh): Cleanup all network resources and processes created by run.sh.
 
 ### nftables.py:
 
