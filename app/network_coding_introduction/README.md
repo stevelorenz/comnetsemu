@@ -11,11 +11,11 @@ This folder contains the following files:
    containers.
 
 2. build_kodo_lib.sh: Script to build Kodo library on the system running the
-   Testbed. Because Kodo requires [Licence](http://steinwurf.com/license.html),
-   the binaries can not be released. The dynamic library file kodo.so must be
-   built firstly and located in this directory to run the emulation. This script
-   will build the library (source are downloaded in "$HOME/kodo-python") and
-   copy it to this directory.
+   Testbed. Because Kodo requires a
+   [Licence](http://steinwurf.com/license.html), the binaries can not be
+   released. We must build the dynamic library file kodo.so and copy it into the
+   docker images. This script will build the library (source are downloaded in
+   "$HOME/kodo-python") and copy it to this directory.
 
 3. notebooks/: This folder contains the Jupyter notebooks used for teaching the
    basics on network coding.
