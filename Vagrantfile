@@ -54,6 +54,14 @@ update-initramfs -u -k 4.19.0-041900-generic
 update-grub
 SCRIPT
 
+$post_installation= <<-SCRIPT
+# Allow vagrant user to use Docker without sudo
+usermod -aG docker vagrant
+if [ -d /home/vagrant/.docker ]; then
+  chown -R vagrant:vagrant /home/vagrant/.docker
+fi
+SCRIPT
+
 ####################
 #  Vagrant Config  #
 ####################
@@ -129,6 +137,8 @@ If there are any new commits in the dev branch in the remote repository, Please 
       fi
     SHELL
 
+    comnetsemu.vm.provision :shell, inline: $post_installation, privileged: true
+
     # Always run this when use `vagrant up`
     # - Check to update all dependencies
     # ISSUE: The VM need to have Internet connection to boot up...
@@ -136,6 +146,9 @@ If there are any new commits in the dev branch in the remote repository, Please 
     #  cd /home/vagrant/comnetsemu/util || exit
     #  PYTHON=python3 ./install.sh -u
     #SHELL
+
+    # VM networking
+    comnetsemu.vm.network "forwarded_port", guest: 8888, host: 8888, host_ip: "127.0.0.1"
 
     # Enable X11 forwarding
     comnetsemu.ssh.forward_agent = true
