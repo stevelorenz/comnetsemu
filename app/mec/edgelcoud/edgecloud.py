@@ -127,7 +127,7 @@ def start() -> None:
 
     info("\n*** Adding Switches\n")
     switch1: OVSSwitch = net.addSwitch("switch1")
-    
+
     switch11: OVSSwitch = net.addSwitch("switch11")
     switch12: OVSSwitch = net.addSwitch("switch12")
 
@@ -314,7 +314,7 @@ def start() -> None:
         _: str = data.decode()
         print(f"{_} {_[_.__len__()-1]}")
         if active_container:  # if container set, remove it
-            mgr.removeContainer(server_container)
+            mgr.removeContainer(server_container.name)
             time.sleep(2)  # prevent hang on waitContainerStart()
             print("removing container")
         server_container: DockerContainer = mgr.addContainer(
@@ -330,18 +330,18 @@ def start() -> None:
             break
 
     info("\n*** Removing Docker Containers\n")
-    mgr.removeContainer(client1_container)
-    mgr.removeContainer(probe1_container)
+    mgr.removeContainer(client1_container.name)
+    mgr.removeContainer(probe1_container.name)
 
-    mgr.removeContainer(probing_server1_container)
-    mgr.removeContainer(probing_server2_container)
-    mgr.removeContainer(probing_server3_container)
-    mgr.removeContainer(probing_server4_container)
+    mgr.removeContainer(probing_server1_container.name)
+    mgr.removeContainer(probing_server2_container.name)
+    mgr.removeContainer(probing_server3_container.name)
+    mgr.removeContainer(probing_server4_container.name)
     if full_tree:
-        mgr.removeContainer(probing_server5_container)
-        mgr.removeContainer(probing_server6_container)
-        mgr.removeContainer(probing_server7_container)
-        mgr.removeContainer(probing_server8_container)
+        mgr.removeContainer(probing_server5_container.name)
+        mgr.removeContainer(probing_server6_container.name)
+        mgr.removeContainer(probing_server7_container.name)
+        mgr.removeContainer(probing_server8_container.name)
 
     info("\n*** Stopping Network\n")
     net.stop()
