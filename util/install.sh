@@ -10,6 +10,17 @@ set -e
 # Fail on unset var usage
 set -o nounset
 
+# Mininet's installer's default assumption.
+if [[ $EUID -eq 0 ]]; then
+    echo "Installer should be run as a user with sudo permissions, "
+    echo "not root."
+    exit 1
+fi
+
+# Set magic variables for current file & dir
+# __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+
 ####################
 #  Util Functions  #
 ####################
@@ -85,14 +96,14 @@ echo "*** ComNetsEmu Installer ***"
 DEFAULT_REMOTE="origin"
 
 # Get the directory containing comnetsemu source code folder
-COMNETSEMU_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+TOP_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 # The name of the comnetsemu source code folder
 COMNETSEMU_SRC_DIR="comnetsemu"
 
 # Directory containing external dependencies installed from source
 # Dependencies are downloaded into another directory because the current directory is synced to the vagrant VM by default.
 # Clone sources into this directory has privileges conflicts with host OS.
-EXTERN_DEP_DIR="$HOME/comnetsemu_dependencies"
+EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
@@ -103,11 +114,11 @@ BCC_VER="v0.9.0"
 DOCKER_PY_VER="3.7.2"
 
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
-DEP_INSTALL_FUNCS=(install_mininet install_ryu)
+DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
-echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
-echo " - The path to install all dependencies: $EXTERN_DEP_DIR"
+echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
+echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
 
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
@@ -123,7 +134,7 @@ function usage() {
     echo " -h: print usage"
     echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
-    echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
+    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
@@ -176,21 +187,19 @@ function upgrade_docker() {
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
-function install_mininet() {
+function install_mininet_with_deps() {
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
-    local mininet_patch_dir="$COMNETSEMU_DIR/comnetsemu/patch/mininet"
+    local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
 
     no_dir_exit "$mininet_patch_dir"
     mkdir -p "$mininet_dir"
 
-    echo "*** Install Mininet"
+    echo "*** Install Mininet and its minimal dependencies."
     $install git
     cd "$mininet_dir" || exit
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
     git checkout -b dev $MININET_VER
-    echo "*** Apply patches to Mininet."
-    check_patch "$mininet_patch_dir/util.patch" 1
     cd util || exit
     PYTHON=python3 ./install.sh -nfvw03
 }
@@ -199,7 +208,7 @@ function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
     warning "[INSTALL]" "The docker-py and Mininet MUST be already installed."
     $install python3
-    cd "$COMNETSEMU_DIR/comnetsemu" || exit
+    cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
 }
 
@@ -250,12 +259,14 @@ function upgrade_comnetsemu_deps() {
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo ""
         echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
 
+        echo ""
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
+        install_devs
 
+        echo ""
         echo "- Upgrade dependencies installed from source"
         echo "  The upgrade script checks the version flag (format tool_name-version) in $EXTERN_DEP_DIR"
         echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
@@ -263,13 +274,12 @@ function upgrade_comnetsemu_deps() {
         for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            # TODO: Replace ls | grep with glob or for loop
-            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "$dep_name-*" | cut -d '-' -f 2-)
+            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "${dep_name}"-\* | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
-            echo "Installed version: $installed_ver, requested version: ${req_ver}"
-            if [[ "$installed_ver" != "$req_ver" ]]; then
-                warning "[Upgrade]" "Upgrade $dep_name from $installed_ver to $req_ver"
-                sudo rm -rf "$EXTERN_DEP_DIR/$dep_name-$installed_ver"
+            echo "Installed version: ${installed_ver}, requested version: ${req_ver}"
+            if [[ "${installed_ver}" != "${req_ver}" ]]; then
+                warning "[Upgrade]" "Upgrade ${dep_name} from ${installed_ver} to ${req_ver}"
+                sudo rm -rf "$EXTERN_DEP_DIR/${dep_name}-${installed_ver}"
                 ${DEP_INSTALL_FUNCS[i]}
             fi
             echo ""
@@ -284,7 +294,7 @@ function reinstall_comnetsemu_deps() {
     echo "*** Reinstall ComNetsEmu dependencies."
     sudo rm -r "$EXTERN_DEP_DIR"
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -327,7 +337,7 @@ function remove_comnetsemu() {
 
 function test_install() {
     echo "*** Test installation. Used by ../check_installer.sh script."
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -338,7 +348,7 @@ function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     # MUST run at the end!
@@ -349,7 +359,7 @@ function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     install_devs
@@ -358,9 +368,9 @@ function all() {
 }
 
 # Check if source and dependency directory exits
-if [[ ! -d "$COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR" ]]; then
+if [[ ! -d "$TOP_DIR/$COMNETSEMU_SRC_DIR" ]]; then
     error "[PATH]" "The ComNetsEmu source directory does not exist."
-    echo " The default path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+    echo " The default path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
     echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
     exit 1
 fi
@@ -383,7 +393,7 @@ else
         h) usage ;;
         k) install_kernel_modules ;;
         l) install_lightweight ;;
-        n) install_mininet ;;
+        n) install_mininet_with_deps ;;
         r) reinstall_comnetsemu_deps ;;
         t) test_install ;;
         u) upgrade_comnetsemu_deps ;;

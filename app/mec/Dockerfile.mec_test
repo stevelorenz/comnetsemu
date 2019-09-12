@@ -39,3 +39,4 @@ CMD ["bash"]
 ADD client.py /tmp/
 ADD probe_agent.py /tmp/
 ADD server.py /tmp/
+ADD probe_server.py /tmp/

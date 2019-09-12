@@ -23,27 +23,27 @@ See the comparison between upstream Mininet [here](./doc/comparison.md).
 
 Common facts about ComNetsEmu:
 
-- Emulation performance is considered but not the main focus. All emulated nodes (processes) share the same underlying
+-   Emulation performance is considered but not the main focus. All emulated nodes (processes) share the same underlying
     compute, storage and network resources when running it on a single system. ComNetsEmu is heavier than vanilla
     Mininet due to complete host isolation. Chose a reasonable performance limitation is recommended for better
     emulation results. For example, use e.g. 100ms as link delay instead of 1ms for large scale topology.
 
-- ComNetsEmu is developed with **Python3.6**.
+-   ComNetsEmu is developed with **Python3.6**.
 
 #### Main Features
 
-- Use Docker hosts in Mininet topologies.
+-   Use Docker hosts in Mininet topologies.
 
-- Manage application Docker containers deployed INSIDE Docker hosts. Docker-in-Docker(dind) is used by ComNetsEmu as an
-    lightweight emulation for nested-virtualization. The Docker host with internal Docker containers deployed is used to
-    **mimic** an actual physical host that runs Docker containers.
+-   Manage application Docker containers deployed INSIDE Docker hosts. "Docker-in-Docker"(sibling containers) is used
+    by ComNetsEmu as an lightweight emulation for nested-virtualization. The Docker host with internal Docker containers
+    deployed is used to **mimic** an actual physical host that runs Docker containers.
 
 ### Installation
 
 **Supported/Tested distributions**:
 
-1. Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
-1. GNU/Debian 10 (Buster)
+1.  Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
+1.  GNU/Debian 10 (Buster)
 
 For development and using it as a playground, it is recommended to run ComNetsEmu INSIDE a VM. Run ComNetsEmu/Mininet
 application requires **root privilege**, hacking it inside a VM is also safer. ComNetsEmu's [install
@@ -51,6 +51,23 @@ script](./util/install.sh) uses Mininet's install script to install Mininet nati
 Mininet's doc, the install script is a bit **intrusive** and may possible **damage** your OS and/or home directory. It
 is recommended to trying and installing ComNetsEmu in a VM. It runs smoothly in a VM with 2 vCPUs and 2GB RAM. (Physical
 CPU: Intel i7-7600U @ 2.80GHz).
+
+Firstly, clone the repository with git.
+$TOP_DIR is the directory that you want to download the ComNetsEmu's source code. In Vagrant VM, TOP_DIR="$HOME".
+ComNetsEmu's installer (BASH scripts) assumes the name of the source directory is **comnetsemu** and will download
+external source dependencies also in $TOP_DIR.
+
+```bash
+$ cd $TOP_DIR
+$ git clone https://bitbucket.org/comnets/comnetsemu.git comnetsemu
+```
+
+ComNetsEmu's [installer](./util/install.sh) tries to install dependencies with package manager (apt, pip etc.) if they
+are available.  Unavailable dependencies (e.g. latest stable Mininet) are installed from source code. The source codes
+are downloaded into "$TOP_DIR/comnetsemu_dependencies" directory by default (It does not use a subdirectory
+inside the ComNetsEmu's source due to a limitation of Vagrant).
+The installer also checks the status of the dependency directory when upgrading is performed.
+The ComNetsEmu's installer script is designed **mainly** for easy/simple setup/upgrade of the **Vagrant VM environment**.
 
 **MARK**: ComNetsEmu is developed with Python3 (3.6). Please use `python3` command to run examples or applications.
 Because the current master branch is still under heavy development, therefore this `python3` module can be only
@@ -137,7 +154,7 @@ $ sudo apt install git make pkg-config sudo python3 libpython3-dev python3-dev p
 - Install ComNetsEmu with all dependencies:
 
 ```bash
-$ cd $HOME/comnetsemu/util
+$ cd $TOP_DIR/comnetsemu/util
 $ PYTHON=python3 bash ./install.sh -a
 ```
 
@@ -149,8 +166,8 @@ applications. It is recommended to upgraded to latest commit of the master branc
 The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software automatically.
 This script **ONLY** works on supported distributions and has some default variables:
 
-1. The ComNetsEmu's source files are located in "$HOME/comnetsemu"
-2. The dependencies installed from source are located in "$HOME/comnetsemu_dependencies"
+1. The ComNetsEmu's source files are located in "$TOP_DIR/comnetsemu"
+2. The dependencies installed from source are located in "$TOP_DIR/comnetsemu_dependencies"
 
 You can modify these variables in the installer script for your customized installation.
 
@@ -158,11 +175,11 @@ You can modify these variables in the installer script for your customized insta
 used, the develop mode and sync folder are used to apply changes automatically. Otherwise, the module should be
 re-installed manually.
 
-Before running the upgrade function, the source code repository (by default, "$HOME/comnetsemu") should be updated to the latest
+Before running the upgrade function, the source code repository (by default, "$TOP_DIR/comnetsemu") should be updated to the latest
 commit in master branch via git (fix conflicts if required):
 
 ```bash
-$ cd $HOME/comnetsemu
+$ cd $TOP_DIR/comnetsemu
 $ git checkout master
 $ git pull origin master
 ```
@@ -170,14 +187,14 @@ $ git pull origin master
 Then run following commands to upgrade automatically (good luck ^_^):
 
 ```bash
-$ cd $HOME/comnetsemu/util
-$ bash ./install.sh -u
+$ cd $TOP_DIR/comnetsemu/util
+$ PYTHON=python3 bash ./install.sh -u
 ```
 
 ### Run the Docker-in-Docker example
 
 ```bash
-$ cd $HOME/comnetsemu/examples/
+$ cd $TOP_DIR/comnetsemu/examples/
 $ sudo python3 .dockerindocker.py
 ```
 
@@ -202,9 +219,23 @@ See the [README](./examples/README.md) to get information about all built-in exa
 
 ### Development Guide and API Documentation
 
-ComNetsEmu's documentation is generated by the same tool of Mininet: [doxygen](http://www.doxygen.nl/). Please install
-doxygen and help2man before building the documentation. The built documentation has the same style of upstream Mininet's
-[API documentation](http://mininet.org/api/hierarchy.html).
+- Run unit tests with coverage report and minimal example tests:
+
+```bash
+$ sudo make coverage
+$ sudo make test-examples
+```
+
+- Run static code checking(with pyflakes, pylint and pep8) and type hints checking (with google/pytype):
+
+```bash
+$ make codecheck
+$ make typecheck
+```
+
+ComNetsEmu's API documentation is generated by the same tool of Mininet: [doxygen](http://www.doxygen.nl/). Please
+install doxygen and help2man before building the documentation. The built documentation has the same style of upstream
+Mininet's [API documentation](http://mininet.org/api/hierarchy.html).
 
 - Build and open HTML documentation in browser:
 
@@ -215,7 +246,7 @@ $ xdg-open ./doc/html/index.html
 
 - To build PDF documentation with Latex, the `GENERATE_LATEX` flag in ./doc/Doxyfile should be set to `YES`.
 
-### [Q&A](./doc/q_and_a.md)
+### [Q&A](./doc/faq.md)
 
 ### [Useful Links](./doc/ref_links.md)
 
