@@ -11,8 +11,8 @@ USER root
 # Copy the notebooks
 COPY ./notebooks /home/jovyan/notebooks
 COPY ./kodo.so /home/jovyan/notebooks/kodo.so
-RUN chown jovyan /home/jovyan/notebooks
-RUN chmod 700 /home/jovyan/notebooks
+RUN chown -R jovyan /home/jovyan/notebooks
+RUN chmod -R 700 /home/jovyan/notebooks
 
 # We need to downgrade python to 3.6.8 because
 # thats the version in the vagrant VM

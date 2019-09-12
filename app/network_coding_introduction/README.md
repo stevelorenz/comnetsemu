@@ -31,3 +31,9 @@ $ docker run -p 8888:8888 netcod
 ```
 Once you run the third command, in the console, you will see a link that you
 must paste into a browser in order to access the jupyter notebooks.
+
+**INFO**: If you build and run the container inside the VM managed by the Vagrant, it's better to access the notebooks
+link in the browser running on your **host** system.
+(By default, no web browser is installed in the VM.)
+The VM is configured with forwarded port: all_guest_ip:8888 to 127.0.0.1:8888 on the host.
+You can paste the link into the browser running on your host system.
