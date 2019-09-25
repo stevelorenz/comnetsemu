@@ -14,7 +14,7 @@ from mininet.log import info, setLogLevel
 from mininet.node import Controller
 import random
 
-PING_COUNT = 3
+PING_COUNT = 1
 
 
 def testTopo():
@@ -27,11 +27,11 @@ def testTopo():
 
     info('*** Adding hosts\n')
     client = net.addDockerHost('client', dimage='sec_test', ip='10.0.0.1',
-                           cpuset_cpus="1", cpu_quota=25000)
+                               cpuset_cpus="1", cpu_quota=25000)
     server = net.addDockerHost('server', dimage='nginx', ip='10.0.0.2',
-                           cpuset_cpus="1", cpu_quota=25000)
+                               cpuset_cpus="1", cpu_quota=25000)
     attacker = net.addDockerHost('attacker', dimage='sec_test', ip='10.0.0.3',
-                           cpuset_cpus="0", cpu_quota=25000)
+                                 cpuset_cpus="0", cpu_quota=25000)
 
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
@@ -45,44 +45,55 @@ def testTopo():
     net.start()
 
     info('** client -> server\n')
-    test_connection(client, "10.0.0.2")
+    info('** ' + str(test_connection(client, "10.0.0.2")) + '\n')
     info('** attacker -> server\n')
-    test_connection(attacker, "10.0.0.2")
+    info('** ' + str(test_connection(attacker, "10.0.0.2")) + '\n')
 
-    info('\n')
+    info('*** The client and the attacker can both communicate with the server \n\n')
 
     # Create blacklist
-    info('*** Create blacklist\n')
-    # TODO: Create a nftables filter table on server and drop all incoming traffic that is coming from attacker (10.0.0.3)
+    info('*** Create a blacklist that stops the attacker from accessing the server.\n')
+    info('*** First create a nftables table for IPv4 and IPv6 and then add a base chain connected to the input hook.\n')
+    info('*** Finally add a rule to the base chain that drops packets coming from the attacker (10.0.0.3).\n')
+    info('*** When the attacker is blocked the exercise continues.\n')
 
     #  Check if client can connect and attacker can not.
+    while not test_connection(client, "10.0.0.2") or test_connection(attacker, "10.0.0.2"):
+        sleep(5)
+
     info('** client -> server\n')
+    info('** ' + str(test_connection(client, "10.0.0.2")) + '\n')
     test_connection(client, "10.0.0.2")
     info('** attacker -> server\n')
-    test_connection(attacker, "10.0.0.2")
-
-    # attacker changes her ip address
-    info("*** attacker changes ip address to a different one!\n")
-    attacker.cmd("ip a f dev attacker-s1")
-    attacker.cmd("ip a a 10.0.0." + str(random.randint(3,250)) + "/24 dev attacker-s1")
-
-    # attacker can connect again
-    info('** attacker -> server\n')
-    test_connection(attacker, "10.0.0.2")
+    info('** ' + str(test_connection(attacker, "10.0.0.2")) + '\n')
 
     info('\n')
+    info('*** The attacker is blocked and the client can still access the server.\n')
+    info("*** The attacker changed her IP address to a different one!\n")
+    info("*** Implement a whitelist that only allows the client to connect to the server.\n")
 
-    # Change to whitelist
-    info('*** Create whitelist\n')
-    # TODO: Create a whitelist that only allows incoming traffic from client (10.0.0.1)
+    attacker_ip = "10.0.0." + str(random.randint(3, 250))
+    attacker.cmd("ip a f dev attacker-s1")
+    attacker.cmd("ip a a " + attacker_ip + "/24 dev attacker-s1")
+
+    info('** attacker -> server\n')
+    info('** ' + str(test_connection(attacker, "10.0.0.2")) + '\n')
+
+    #  Check if client can connect and attacker can not.
+    while not test_connection(client, "10.0.0.2") or test_connection(attacker, "10.0.0.2"):
+        sleep(5)
+
+    info('\n')
 
     # The server can talk back to server
     info('** client -> server\n')
+    info('** ' + str(test_connection(client, "10.0.0.2")) + '\n')
     test_connection(client, "10.0.0.2")
     info('** attacker -> server\n')
-    test_connection(attacker, "10.0.0.2")
+    info('** ' + str(test_connection(attacker, "10.0.0.2")) + '\n')
 
     info('*** Stopping network')
+    sleep(10)
     net.stop()
 
 
@@ -91,9 +102,9 @@ def test_connection(source_container, target_ip):
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     if measured == 0.0:
-        info('* Connection established\n')
+        return True
     else:
-        info('* Connection denied\n')
+        return False
 
 
 if __name__ == '__main__':
