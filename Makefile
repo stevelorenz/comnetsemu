@@ -52,6 +52,10 @@ installercheck: ./util/install.sh
 	@ echo "*** Check installer"
 	bash ./check_installer.sh
 
+format: $(PYSRC)
+	@echo "Format Python sources with black"
+	black $(PYSRC)
+
 
 install:
 	$(PYTHON) setup.py install
@@ -62,7 +66,8 @@ develop: $(MNEXEC) $(MANPAGES)
 .PHONY: doc
 
 doc: $(PYSRC)
-	doxygen doc/Doxyfile
+	@echo "Build documentation in HTML format"
+	cd ./doc/ && make html
 
 build-test-containers:
 	@echo "Build all test containers"

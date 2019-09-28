@@ -111,6 +111,8 @@ venv.bak/
 # built documentation
 doc/html
 doc/latex
+doc/build/
+doc/api/*.rst
 
 ----------
 -  MISC  -

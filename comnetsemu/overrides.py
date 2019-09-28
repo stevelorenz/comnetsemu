@@ -34,8 +34,16 @@ def override(module, name):
 
 
 @override("mininet.util", "makeIntfPair")
-def makeIntfPairFixed(intf1, intf2, addr1=None, addr2=None, node1=None,
-                      node2=None, deleteIntfs=True, runCmd=None):
+def makeIntfPairFixed(
+    intf1,
+    intf2,
+    addr1=None,
+    addr2=None,
+    node1=None,
+    node2=None,
+    deleteIntfs=True,
+    runCmd=None,
+):
     """Make a veth pair connnecting new interfaces intf1 and intf2
        intf1: name for interface 1
        intf2: name for interface 2
@@ -51,19 +59,24 @@ def makeIntfPairFixed(intf1, intf2, addr1=None, addr2=None, node1=None,
         runCmd2 = quietRun if not node2 else node2.cmd
     if deleteIntfs:
         # Delete any old interfaces with the same names
-        runCmd('ip link del ' + intf1)
-        runCmd2('ip link del ' + intf2)
+        runCmd("ip link del " + intf1)
+        runCmd2("ip link del " + intf2)
     # Create new pair
     netns1 = node1.pid
     netns2 = 1 if not node2 else node2.pid
     if addr1 is None and addr2 is None:
-        cmd = 'ip link add name %s netns %s ' \
-              'type veth peer name %s netns %s' \
-              % (intf1, netns1, intf2, netns2)
+        cmd = "ip link add name %s netns %s " "type veth peer name %s netns %s" % (
+            intf1,
+            netns1,
+            intf2,
+            netns2,
+        )
     else:
-        cmd = 'ip link add name %s address %s netns %s ' \
-              'type veth peer name %s address %s netns %s' \
-              % (intf1, addr1, netns1, intf2, addr2, netns2)
+        cmd = (
+            "ip link add name %s address %s netns %s "
+            "type veth peer name %s address %s netns %s"
+            % (intf1, addr1, netns1, intf2, addr2, netns2)
+        )
 
     _, cmdOutput, _ = errRun(cmd)
 
@@ -73,10 +86,13 @@ def makeIntfPairFixed(intf1, intf2, addr1=None, addr2=None, node1=None,
     # [1] https://github.com/mininet/mininet/issues/884
     # [2] https://lwn.net/Articles/783494/
     if "No such device" in cmdOutput:
-        debug("Ignored error creating interface pair (%s,%s): %s " %
-              (intf1, intf2, cmdOutput))
+        debug(
+            "Ignored error creating interface pair (%s,%s): %s "
+            % (intf1, intf2, cmdOutput)
+        )
         cmdOutput = ""
 
     if cmdOutput:
-        raise Exception("Error creating interface pair (%s,%s): %s " %
-                        (intf1, intf2, cmdOutput))
+        raise Exception(
+            "Error creating interface pair (%s,%s): %s " % (intf1, intf2, cmdOutput)
+        )

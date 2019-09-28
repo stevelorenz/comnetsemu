@@ -22,14 +22,13 @@ def runTests(testDir, verbosity=1):
     # discover all tests in testDir
     testSuite = defaultTestLoader.discover(testDir)
     # run tests
-    success = (TextTestRunner(verbosity=verbosity)
-               .run(testSuite).wasSuccessful())
+    success = TextTestRunner(verbosity=verbosity).run(testSuite).wasSuccessful()
     sys.exit(0 if success else 1)
 
 
-if __name__ == '__main__':
-    setLogLevel('warning')
+if __name__ == "__main__":
+    setLogLevel("warning")
     # get the directory containing example tests
     thisdir = os.path.dirname(os.path.realpath(__file__))
-    vlevel = 2 if '-v' in sys.argv else 1
+    vlevel = 2 if "-v" in sys.argv else 1
     runTests(testDir=thisdir, verbosity=vlevel)

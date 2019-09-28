@@ -40,12 +40,12 @@ class CLI(CLI):  # pylint: disable=function-redefined
             output("*** ComNetsEmu CLI usage:\n")
             output(self.helpStr)
 
-    def do_xterm(self, line, term='xterm'):
+    def do_xterm(self, line, term="xterm"):
         """Spawn xterm(s) for the given node(s).
            Usage: xterm node1 node2 ..."""
         args = line.split()
         if not args:
-            error('usage: %s node1 node2 ...\n' % term)
+            error("usage: %s node1 node2 ...\n" % term)
         else:
             for arg in args:
                 if arg not in self.mn:
@@ -74,14 +74,14 @@ class CLI(CLI):  # pylint: disable=function-redefined
             if self.isatty():
                 # Buffer by character, so that interactive
                 # commands sort of work
-                quietRun('stty -icanon min 1')
+                quietRun("stty -icanon min 1")
             while True:
                 try:
                     bothPoller.poll()
                     # XXX BL: this doesn't quite do what we want.
                     if False and self.inputFile:
                         key = self.inputFile.read(1)
-                        if key != '':
+                        if key != "":
                             node.write(key)
                         else:
                             self.inputFile = None
@@ -109,7 +109,8 @@ class CLI(CLI):  # pylint: disable=function-redefined
                     if errno_ != errno.EINTR:
                         error("select.error: %s, %s" % (errno_, errmsg))
                         error(
-                            "The command is not terminated. Please kill it manually\n")
+                            "The command is not terminated. Please kill it manually\n"
+                        )
                         node.sendInt()
                         break
 
@@ -146,13 +147,8 @@ def spawnAttachedXterm(dhost):
     :param dhost (str): Name of the docker host
     """
     title = '"dockerhost:%s"' % dhost
-    params = {
-        "title": title,
-        "name": "mn.%s" % dhost,
-        "shell": "/usr/bin/env sh"
-    }
-    cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(
-        **params)
+    params = {"title": title, "name": "mn.%s" % dhost, "shell": "/usr/bin/env sh"}
+    cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(**params)
 
     term = subprocess.Popen(shlex.split(cmd))
     return term

@@ -14,7 +14,7 @@ from mininet.log import debug, error, info, warn
 from mininet.node import Host
 
 
-class DockerHost (Host):
+class DockerHost(Host):
     """Node that represents a docker container.
     This part is inspired by:
     http://techandtrains.com/2014/08/21/docker-container-as-mininet-host/
@@ -22,8 +22,14 @@ class DockerHost (Host):
     """
 
     def __init__(
-            self, name, dimage=None, dcmd=None,
-            ishell="bash", ishell_args="--norc -is", **kwargs):
+        self,
+        name,
+        dimage=None,
+        dcmd=None,
+        ishell="bash",
+        ishell_args="--norc -is",
+        **kwargs
+    ):
         """
         Creates a Docker container as Mininet host.
 
@@ -49,47 +55,51 @@ class DockerHost (Host):
         self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.ishell = ishell
         self.ishell_args = ishell_args
-        self.dc = None  # pointer to the dict containing 'Id' and 'Warnings' keys of the container
+        self.dc = (
+            None
+        )  # pointer to the dict containing 'Id' and 'Warnings' keys of the container
         self.dcinfo = None
         self.did = None  # Id of running container
         #  let's store our resource limits to have them available through the
         #  Mininet API later on
-        defaults = {'cpu_quota': -1,
-                    # 'cpu_period': None,
-                    'cpu_period': 100000,  # Use 100ms as default
-                    'cpu_shares': None,
-                    'cpuset_cpus': None,
-                    'mem_limit': None,
-                    'memswap_limit': None,
-                    'environment': {},
-                    'volumes': [],  # use ["/home/user1/:/mnt/vol2:rw"]
-                    'network_mode': None,
-                    'publish_all_ports': True,
-                    'port_bindings': {},
-                    'ports': [],
-                    'dns': [],
-                    }
+        defaults = {
+            "cpu_quota": -1,
+            # 'cpu_period': None,
+            "cpu_period": 100000,  # Use 100ms as default
+            "cpu_shares": None,
+            "cpuset_cpus": None,
+            "mem_limit": None,
+            "memswap_limit": None,
+            "environment": {},
+            "volumes": [],  # use ["/home/user1/:/mnt/vol2:rw"]
+            "network_mode": None,
+            "publish_all_ports": True,
+            "port_bindings": {},
+            "ports": [],
+            "dns": [],
+        }
         defaults.update(kwargs)
 
         # keep resource in a dict for easy update during container lifetime
         self.resources = dict(
-            cpu_quota=defaults['cpu_quota'],
-            cpu_period=defaults['cpu_period'],
-            cpu_shares=defaults['cpu_shares'],
-            cpuset_cpus=defaults['cpuset_cpus'],
-            mem_limit=defaults['mem_limit'],
-            memswap_limit=defaults['memswap_limit']
+            cpu_quota=defaults["cpu_quota"],
+            cpu_period=defaults["cpu_period"],
+            cpu_shares=defaults["cpu_shares"],
+            cpuset_cpus=defaults["cpuset_cpus"],
+            mem_limit=defaults["mem_limit"],
+            memswap_limit=defaults["memswap_limit"],
         )
 
-        self.volumes = defaults['volumes']
-        self.environment = {
-        } if defaults['environment'] is None else defaults['environment']
+        self.volumes = defaults["volumes"]
+        self.environment = (
+            {} if defaults["environment"] is None else defaults["environment"]
+        )
         # setting PS1 at "docker run" may break the python docker api (update_container hangs...)
         # self.environment.update({"PS1": chr(127)})  # CLI support
-        self.network_mode = defaults['network_mode']
-        self.publish_all_ports = defaults['publish_all_ports']
-        self.port_bindings = defaults['port_bindings']
-        self.dns = defaults['dns']
+        self.network_mode = defaults["network_mode"]
+        self.publish_all_ports = defaults["publish_all_ports"]
+        self.port_bindings = defaults["port_bindings"]
+        self.dns = defaults["dns"]
 
         # setup docker API client
         self.dclt = docker.from_env()
@@ -112,8 +122,8 @@ class DockerHost (Host):
             binds=self.volumes,
             publish_all_ports=self.publish_all_ports,
             port_bindings=self.port_bindings,
-            mem_limit=self.resources.get('mem_limit'),
-            cpuset_cpus=self.resources.get('cpuset_cpus'),
+            mem_limit=self.resources.get("mem_limit"),
+            cpuset_cpus=self.resources.get("cpuset_cpus"),
             dns=self.dns,
         )
 
@@ -122,8 +132,9 @@ class DockerHost (Host):
             for container in container_list:
                 for container_name in container.get("Names", []):
                     if "%s.%s" % (self.dnameprefix, name) in container_name:
-                        self.dcli.remove_container(container="%s.%s" % (
-                            self.dnameprefix, name), force=True)
+                        self.dcli.remove_container(
+                            container="%s.%s" % (self.dnameprefix, name), force=True
+                        )
                         break
 
         debug("Before creating the container\n")
@@ -138,11 +149,14 @@ class DockerHost (Host):
             environment=self.environment,
             # network_disabled=True,  # docker stats breaks if we disable the default network
             host_config=hc,
-            ports=defaults['ports'],
+            ports=defaults["ports"],
             labels={"comnetsemu": "dockerhost"},
-            volumes=[self._get_volume_mount_name(
-                v) for v in self.volumes if self._get_volume_mount_name(v) is not None],
-            hostname=name
+            volumes=[
+                self._get_volume_mount_name(v)
+                for v in self.volumes
+                if self._get_volume_mount_name(v) is not None
+            ],
+            hostname=name,
         )
 
         # start the container
@@ -172,8 +186,8 @@ class DockerHost (Host):
                 cmd_field = list()
             # clean up cmd_field
             try:
-                cmd_field.remove(u'/bin/sh')
-                cmd_field.remove(u'-c')
+                cmd_field.remove(u"/bin/sh")
+                cmd_field.remove(u"-c")
             except ValueError:
                 pass
             # we just add the entryp. commands to the beginning:
@@ -202,8 +216,7 @@ class DockerHost (Host):
                 return None
             return cmd
         except BaseException as ex:
-            error("Error during image inspection of {}:{}"
-                  .format(imagename, ex))
+            error("Error during image inspection of {}:{}".format(imagename, ex))
         return None
 
     def get_entrypoint_field(self, imagename):
@@ -219,8 +232,7 @@ class DockerHost (Host):
                 return None
             return ep
         except BaseException as ex:
-            error("Error during image inspection of {}:{}"
-                  .format(imagename, ex))
+            error("Error during image inspection of {}:{}".format(imagename, ex))
         return None
 
     # Command support via shell process in namespace
@@ -233,8 +245,15 @@ class DockerHost (Host):
         # bash -i: force interactive
         # -s: pass $* to shell, and make process easy to find in ps
         # prompt is set to sentinel chr( 127 )
-        cmd = ['docker', 'exec', '-it', '%s.%s' % (self.dnameprefix, self.name), 'env', 'PS1=' + chr(127),
-               'mininet:' + self.name]
+        cmd = [
+            "docker",
+            "exec",
+            "-it",
+            "%s.%s" % (self.dnameprefix, self.name),
+            "env",
+            "PS1=" + chr(127),
+            "mininet:" + self.name,
+        ]
         debug("Insert interactive shell bin and args")
         cmd.insert(-1, self.ishell)
         ishell_args = shlex.split(self.ishell_args)
@@ -246,9 +265,10 @@ class DockerHost (Host):
         # received by the parent
         self.master, self.slave = pty.openpty()
         debug("Docker host master:{}, slave:{}\n".format(self.master, self.slave))
-        self.shell = self._popen(cmd, stdin=self.slave, stdout=self.slave, stderr=self.slave,
-                                 close_fds=False)
-        self.stdin = os.fdopen(self.master, 'r')
+        self.shell = self._popen(
+            cmd, stdin=self.slave, stdout=self.slave, stderr=self.slave, close_fds=False
+        )
+        self.stdin = os.fdopen(self.master, "r")
         self.stdout = self.stdin
         self.pid = self._get_pid()
         self.pollOut = select.poll()
@@ -261,7 +281,7 @@ class DockerHost (Host):
         self.execed = False
         self.lastCmd = None
         self.lastPid = None
-        self.readbuf = ''
+        self.readbuf = ""
         # Wait for prompt
         while True:
             data = self.read(1024)
@@ -270,9 +290,8 @@ class DockerHost (Host):
             self.pollOut.poll()
         self.waiting = False
         # +m: disable job control notification
-        self.cmd('unset HISTFILE; stty -echo; set +m')
-        debug("After Docker host master:{}, slave:{}\n".format(
-            self.master, self.slave))
+        self.cmd("unset HISTFILE; stty -echo; set +m")
+        debug("After Docker host master:{}, slave:{}\n".format(self.master, self.slave))
 
     def _get_volume_mount_name(self, volume_str):
         """ Helper to extract mount names from volume specification strings """
@@ -288,7 +307,7 @@ class DockerHost (Host):
             if self.slave:
                 os.close(self.slave)
             if self.waitExited:
-                debug('waiting for', self.pid, 'to terminate\n')
+                debug("waiting for", self.pid, "to terminate\n")
                 self.shell.wait()
         self.shell = None
         self.dclt.close()
@@ -304,8 +323,11 @@ class DockerHost (Host):
             print(e)
             warn("Warning: API error during container removal.\n")
 
-        debug("Terminate. Docker host master:{}, slave:{}\n".format(
-            self.master, self.slave))
+        debug(
+            "Terminate. Docker host master:{}, slave:{}\n".format(
+                self.master, self.slave
+            )
+        )
         self.cleanup()
 
     def sendCmd(self, *args, **kwargs):
@@ -324,20 +346,21 @@ class DockerHost (Host):
            args: Popen() args, single list, or string
            kwargs: Popen() keyword args"""
         if not self._is_container_running():
-            error("ERROR: Can't connect to Container \'%s\'' for docker host \'%s\'!\n" % (
-                self.did, self.name))
+            error(
+                "ERROR: Can't connect to Container '%s'' for docker host '%s'!\n"
+                % (self.did, self.name)
+            )
             return
         # MARK: Use -t option to allocate pseudo-TTY for each DockerHost
-        mncmd = ["docker", "exec", "-t", "%s.%s" %
-                 (self.dnameprefix, self.name)]
+        mncmd = ["docker", "exec", "-t", "%s.%s" % (self.dnameprefix, self.name)]
         return Host.popen(self, *args, mncmd=mncmd, **kwargs)
 
     def cmd(self, *args, **kwargs):
         """Send a command, wait for output, and return it.
            cmd: string"""
-        verbose = kwargs.get('verbose', False)
+        verbose = kwargs.get("verbose", False)
         log = info if verbose else debug
-        log('*** %s : %s\n' % (self.name, args))
+        log("*** %s : %s\n" % (self.name, args))
         self.sendCmd(*args, **kwargs)
         return self.waitOutput(verbose)
 
@@ -354,24 +377,26 @@ class DockerHost (Host):
             if self.shell:
                 self.shell.poll()
                 if self.shell.returncode is not None:
-                    debug("*** Shell died for docker host \'%s\'!\n" % self.name)
+                    debug("*** Shell died for docker host '%s'!\n" % self.name)
                     self.shell = None
-                    debug("*** Restarting Shell of docker host \'%s\'!\n" %
-                          self.name)
+                    debug("*** Restarting Shell of docker host '%s'!\n" % self.name)
                     self.startShell()
             else:
-                debug("*** Restarting Shell of docker host \'%s\'!\n" % self.name)
+                debug("*** Restarting Shell of docker host '%s'!\n" % self.name)
                 self.startShell()
         else:
-            error("ERROR: Can't connect to Container \'%s\'' for docker host \'%s\'!\n" % (
-                self.did, self.name))
+            error(
+                "ERROR: Can't connect to Container '%s'' for docker host '%s'!\n"
+                % (self.did, self.name)
+            )
             if self.shell:
                 self.shell = None
 
     def _is_container_running(self):
         """Verify if container is alive"""
         container_list = self.dcli.containers(
-            filters={"id": self.did, "status": "running"})
+            filters={"id": self.did, "status": "running"}
+        )
         if len(container_list) == 0:
             return False
         return True
@@ -408,10 +433,10 @@ class DockerHost (Host):
         imageName = "%s:%s" % (repo, tag)
 
         for image in images:
-            if 'RepoTags' in image:
-                if image['RepoTags'] is None:
+            if "RepoTags" in image:
+                if image["RepoTags"] is None:
                     return False
-                if imageName in image['RepoTags']:
+                if imageName in image["RepoTags"]:
                     return True
         return False
 
@@ -420,9 +445,11 @@ class DockerHost (Host):
         :return: True if pull was successful. Else false.
         """
         try:
-            info('*** Image "%s:%s" not found. Trying to load the image. \n' %
-                 (repository, tag))
-            info('*** This can take some minutes...\n')
+            info(
+                '*** Image "%s:%s" not found. Trying to load the image. \n'
+                % (repository, tag)
+            )
+            info("*** This can take some minutes...\n")
 
             message = ""
             for line in self.dcli.pull(repository, tag, stream=True):
@@ -430,11 +457,9 @@ class DockerHost (Host):
                 message = message + json.dumps(json.loads(line), indent=4)
 
         except Exception:
-            error('*** error: _pull_image: %s:%s failed.' %
-                  (repository, tag) + message)
+            error("*** error: _pull_image: %s:%s failed." % (repository, tag) + message)
         if not self._image_exists(repository, tag):
-            error('*** error: _pull_image: %s:%s failed.' %
-                  (repository, tag) + message)
+            error("*** error: _pull_image: %s:%s failed." % (repository, tag) + message)
             return False
         return True
 
@@ -460,9 +485,11 @@ class DockerHost (Host):
         self.resources.update(kwargs)
         # filter out None values to avoid errors
         resources_filtered = {
-            res: self.resources[res] for res in self.resources if self.resources[res] is not None}
-        info("{1}: update resources {0}\n".format(
-            resources_filtered, self.name))
+            res: self.resources[res]
+            for res in self.resources
+            if self.resources[res] is not None
+        }
+        info("{1}: update resources {0}\n".format(resources_filtered, self.name))
         self.dcli.update_container(self.dc, **resources_filtered)
 
     def updateCpuLimit(self, cpu_quota=-1, cpu_period=-1, cpu_shares=-1, cores=None):
@@ -482,13 +509,11 @@ class DockerHost (Host):
         # also negative values can be set for cpu_quota (uncontrained setting)
         # just check if value is a valid integer
         if isinstance(cpu_quota, int):
-            self.resources['cpu_quota'] = self.cgroupSet(
-                "cfs_quota_us", cpu_quota)
+            self.resources["cpu_quota"] = self.cgroupSet("cfs_quota_us", cpu_quota)
         if cpu_period >= 0:
-            self.resources['cpu_period'] = self.cgroupSet(
-                "cfs_period_us", cpu_period)
+            self.resources["cpu_period"] = self.cgroupSet("cfs_period_us", cpu_period)
         if cpu_shares >= 0:
-            self.resources['cpu_shares'] = self.cgroupSet("shares", cpu_shares)
+            self.resources["cpu_shares"] = self.cgroupSet("shares", cpu_shares)
         if cores:
             self.dcli.update_container(self.dc, cpuset_cpus=cores)
             # quota, period ad shares can also be set by this line. Usable for future work.
@@ -506,13 +531,15 @@ class DockerHost (Host):
         """
         # see https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt
         if mem_limit >= 0:
-            self.resources['mem_limit'] = self.cgroupSet(
-                "limit_in_bytes", mem_limit, resource="memory")
+            self.resources["mem_limit"] = self.cgroupSet(
+                "limit_in_bytes", mem_limit, resource="memory"
+            )
         if memswap_limit >= 0:
-            self.resources['memswap_limit'] = self.cgroupSet(
-                "memsw.limit_in_bytes", memswap_limit, resource="memory")
+            self.resources["memswap_limit"] = self.cgroupSet(
+                "memsw.limit_in_bytes", memswap_limit, resource="memory"
+            )
 
-    def cgroupSet(self, param, value, resource='cpu'):
+    def cgroupSet(self, param, value, resource="cpu"):
         """
         Directly manipulate the resource settings of the Docker container's cgrpup.
         Args:
@@ -523,8 +550,7 @@ class DockerHost (Host):
         Returns: value that was set
 
         """
-        cmd = 'cgset -r %s.%s=%s docker/%s' % (
-            resource, param, value, self.did)
+        cmd = "cgset -r %s.%s=%s docker/%s" % (resource, param, value, self.did)
         debug(cmd + "\n")
         try:
             check_output(cmd, shell=True)
@@ -533,11 +559,13 @@ class DockerHost (Host):
             return
         nvalue = int(self.cgroupGet(param, resource))
         if nvalue != value:
-            error('*** error: cgroupSet: %s set to %s instead of %s\n'
-                  % (param, nvalue, value))
+            error(
+                "*** error: cgroupSet: %s set to %s instead of %s\n"
+                % (param, nvalue, value)
+            )
         return nvalue
 
-    def cgroupGet(self, param, resource='cpu'):
+    def cgroupGet(self, param, resource="cpu"):
         """
         Read cgroup values.
         Args:
@@ -547,8 +575,7 @@ class DockerHost (Host):
         Returns: value
 
         """
-        cmd = 'cgget -r %s.%s docker/%s' % (
-            resource, param, self.did)
+        cmd = "cgget -r %s.%s docker/%s" % (resource, param, self.did)
         try:
             return int(check_output(cmd, shell=True).split()[-1])
         except Exception:
@@ -569,19 +596,16 @@ class DockerHost (Host):
         if ret.startswith("ifconfig: bad"):
             # warn("\nFailed to set IP address with ifconfig\n")
             info("Use iproute2 instead of ifconfig (used by Mininet).\n")
-            if '/' in ip:
-                ifce.ip, ifce.prefixLen = ip.split('/')
-                ret = self.cmd("ip addr add {} dev {}".format(
-                    ip, ifce.name
-                ))
+            if "/" in ip:
+                ifce.ip, ifce.prefixLen = ip.split("/")
+                ret = self.cmd("ip addr add {} dev {}".format(ip, ifce.name))
             else:
                 if prefixLen is None:
-                    raise Exception('No prefix length set for IP address %s'
-                                    % (ip, ))
+                    raise Exception("No prefix length set for IP address %s" % (ip,))
                 ifce.ip, ifce.prefixLen = ip, prefixLen
-                ret = self.cmd("ip addr add {}/{} dev {}".format(
-                    ip, prefixLen, ifce.name
-                ))
+                ret = self.cmd(
+                    "ip addr add {}/{} dev {}".format(ip, prefixLen, ifce.name)
+                )
         return ret
 
 

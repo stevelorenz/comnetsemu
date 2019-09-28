@@ -25,7 +25,7 @@ HOST_NUM = 3
 
 class TestTopo(Topo):
     def build(self, n):
-        switch = self.addSwitch('s1')
+        switch = self.addSwitch("s1")
         for h in range(1, n + 1):
             host = self.addHost(f"h{h}", ip=f"10.0.0.{h}/24")
             self.addLink(host, switch)
@@ -37,11 +37,13 @@ class TestVNFManager(unittest.TestCase):
         dargs = {"dimage": "dev_test", "dcmd": "bash"}
         dhost_test = functools.partial(DockerHost, **dargs)
 
-        cls.net = Containernet(topo=TestTopo(HOST_NUM),
-                               switch=OVSBridge,
-                               host=dhost_test,
-                               autoSetMacs=True,
-                               autoStaticArp=True)
+        cls.net = Containernet(
+            topo=TestTopo(HOST_NUM),
+            switch=OVSBridge,
+            host=dhost_test,
+            autoSetMacs=True,
+            autoStaticArp=True,
+        )
         cls.net.start()
         cls.mgr = VNFManager(cls.net)
 
@@ -69,11 +71,13 @@ class TestVNFManager(unittest.TestCase):
         cname_list = list()
         for i in range(1, HOST_NUM + 1):
             for j in range(1, i + 1):
-                self.mgr.addContainer(f"c{i}{j}",
-                                      f"h{i}",
-                                      "dev_test",
-                                      "/bin/bash",
-                                      docker_args={"cpu_quota": 1000})
+                self.mgr.addContainer(
+                    f"c{i}{j}",
+                    f"h{i}",
+                    "dev_test",
+                    "/bin/bash",
+                    docker_args={"cpu_quota": 1000},
+                )
                 cname_list.append(f"c{i}{j}")
 
         # Check docker_args works
@@ -83,8 +87,7 @@ class TestVNFManager(unittest.TestCase):
         for i in range(1, HOST_NUM + 1):
             cins_host = self.mgr.getContainers(f"h{i}")
             cname_list_host = [c.name for c in cins_host]
-            self.assertEqual(cname_list_host,
-                             [f"c{i}{k}" for k in range(1, i + 1)])
+            self.assertEqual(cname_list_host, [f"c{i}{k}" for k in range(1, i + 1)])
             for cname in cname_list_host:
                 self.mgr.removeContainer(cname)
 
@@ -100,9 +103,10 @@ class TestVNFManager(unittest.TestCase):
 
         # CPU and memory
         h1.updateCpuLimit(cpu_quota=10000)
-        h1.updateMemoryLimit(mem_limit=10 * (1024**2))  # in bytes
-        c1 = self.mgr.addContainer("c1", "h1", "dev_test",
-                                   "stress-ng -c 1 -m 1 --vm-bytes 300M")
+        h1.updateMemoryLimit(mem_limit=10 * (1024 ** 2))  # in bytes
+        c1 = self.mgr.addContainer(
+            "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M"
+        )
         usages = self.mgr.monResourceStats(c1.name, sample_period=0.1)
         cpu = sum(u[0] for u in usages) / len(usages)
         mem = sum(u[1] for u in usages) / len(usages)
@@ -110,7 +114,7 @@ class TestVNFManager(unittest.TestCase):
         self.assertTrue(abs(mem - 10.0) <= MEM_ERR_THR)
         self.mgr.removeContainer(c1.name)
         h1.updateCpuLimit(cpu_quota=-1)
-        h1.updateMemoryLimit(mem_limit=100 * (1024**3))
+        h1.updateMemoryLimit(mem_limit=100 * (1024 ** 3))
 
         # Network
         for r in [h2, h3]:
