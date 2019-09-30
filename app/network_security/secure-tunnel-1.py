@@ -14,12 +14,10 @@ from mininet.log import info, setLogLevel
 from mininet.node import Controller
 from mininet.util import dumpNodeConnections
 
-PING_COUNT = 15
+PING_COUNT = 1
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
-
     net = Containernet(controller=Controller, link=TCLink)
 
     info('*** Adding controller\n')
@@ -50,43 +48,44 @@ def testTopo():
     server.cmd("mkdir -p /var/run/vsftpd/empty")
     server.cmd("vsftpd &")
 
-    # TODO: Setup a tunnel to protect the ftp request from the MitM attacker!
-    # You can use test_connection to verify that the tunnel was established.
-    # Remember that you have to request the file through the tunnel and not via external IP of the server!
-    # Generate the keys for wireguard and grep them from the host like this
-    # key = client.cmd("cat keyfile").replace('\n', ' ').replace('\r', '')
+    info("Setup a tunnel to protect the ftp request from the MitM attacker!\n")
+    info("First create key pairs for the client and server and then establish a WireGuard tunnel between them\n")
+    info("Use the inner tunnel ip 192.168.0.2 for the server!\n")
 
-    test_connection(client, "10.0.0.2")
-    login_at_ftp_server(client, "10.0.0.2")
-
-    info('*** Extract Passwords\n')
-    sleep(20)
-    output = attacker.cmd('cat messages.log')
-    password_found = False
-    for line in output.split("\n"):
-        if "PASS" in line:
-            password_found = True
-            info('*** Found password: ' + line + '\n')
-
-    if not password_found:
-        info('*** No password found!\n')
+    x = 0
+    while not check_secure_network_tunnel(attacker, client, x):
+        sleep(10)
+        x = x + 1
 
     info('*** Stopping network\n')
     net.stop()
 
 
-def login_at_ftp_server(client_container, ftp_server_ip):
-    info('*** Login into ftp server\n')
-    client_container.cmd("printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh")
+def check_secure_network_tunnel(attacker, client, index):
+    if not test_connection(client, "192.168.0.2"):
+        return False
+    login_at_ftp_server(client, "192.168.0.2", "password" + str(index))
+    output = attacker.cmd('cat messages.log')
+    for line in output.split("\n"):
+        print(line)
+        if "password" + str(index) in line:
+            return False
+    return True
+
+
+def login_at_ftp_server(client_container, ftp_server_ip, password):
+    #info('*** Login into ftp server\n')
+    client_container.cmd("printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root " + password + " \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh")
 
 
 def test_connection(source_container, target_ip):
-    info("*** Test the connection\n")
-    info("* Ping test count: %d" % PING_COUNT)
-    ret = source_container.cmd("ping -c " + str(PING_COUNT) + " " + target_ip)
+    ret = source_container.cmd("ping -W 1 -c " + str(PING_COUNT) + " " + target_ip)
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
-    info("* Measured loss rate: {:.2f}%\n".format(measured))
+    if measured == 0.0:
+        return True
+    else:
+        return False
 
 
 if __name__ == '__main__':
