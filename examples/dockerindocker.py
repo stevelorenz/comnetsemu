@@ -48,8 +48,7 @@ def testDockerInDocker(n):
             "h%s" % (i + 1),
             dimage="dev_test",
             ip="10.0.0.%s" % (i + 1),
-            cpuset_cpus=CPU_SETS,
-            volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"],
+            docker_args={"cpuset_cpus": "0"},
         )
         hosts.append(host)
         switch = net.addSwitch("s%s" % (i + 1))
@@ -66,8 +65,10 @@ def testDockerInDocker(n):
         "*** Run a simple ping test between two internal containers deployed on h1 and h%s\n"
         % n
     )
-    head = mgr.addContainer("head", "h1", "dev_test", "/bin/bash")
-    tail = mgr.addContainer("tail", "h%s" % n, "dev_test", "ping -c 3 10.0.0.1")
+    head = mgr.addContainer("head", "h1", "dev_test", "/bin/bash", docker_args={})
+    tail = mgr.addContainer(
+        "tail", "h%s" % n, "dev_test", "ping -c 3 10.0.0.1", docker_args={}
+    )
 
     info("*** Tail start ping head, wait for 5s...")
     time.sleep(5)
@@ -91,13 +92,14 @@ def testDockerInDocker(n):
     # Mark: CPU percent = cpu_quota / cpu_period. The default CPU period is
     # 100ms = 100000 us
     for i, h in enumerate(hosts):
-        h.updateCpuLimit(cpu_quota=int(50000 / n))
-        h.updateMemoryLimit(mem_limit=10 * (1024 ** 2))  # in bytes
+        h.dins.update(cpu_quota=int(50000 / n))
+        h.dins.update(mem_limit=10 * (1024 ** 2))  # in bytes
         c = mgr.addContainer(
             "stress_app_%s" % (i + 1),
             h.name,
             "dev_test",
             "stress-ng -c 1 -m 1 --vm-bytes 300M",
+            docker_args={},
         )
         containers.append(c)
 

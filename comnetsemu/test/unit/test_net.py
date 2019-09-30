@@ -27,14 +27,16 @@ class TestTopo(Topo):
     def build(self, n):
         switch = self.addSwitch("s1")
         for h in range(1, n + 1):
-            host = self.addHost(f"h{h}", ip=f"10.0.0.{h}/24")
+            host = self.addHost(
+                f"h{h}", ip=f"10.0.0.{h}/24", docker_args={"cpuset_cpus": "0"}
+            )
             self.addLink(host, switch)
 
 
 class TestVNFManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        dargs = {"dimage": "dev_test", "dcmd": "bash"}
+        dargs = {"dimage": "dev_test"}
         dhost_test = functools.partial(DockerHost, **dargs)
 
         cls.net = Containernet(
@@ -49,7 +51,7 @@ class TestVNFManager(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.mgr.addContainer("zombie", "h1", "dev_test", "/bin/bash")
+        cls.mgr.addContainer("zombie", "h1", "dev_test", "/bin/bash", {})
         cls.net.stop()
         cls.mgr.stop()
         if sys.exc_info() != (None, None, None):
@@ -62,7 +64,7 @@ class TestVNFManager(unittest.TestCase):
 
     def test_container_crud(self):
         with self.assertRaises(KeyError):
-            self.mgr.addContainer("foo", "foo", "dev_test", "/bin/bash")
+            self.mgr.addContainer("foo", "foo", "dev_test", "/bin/bash", {})
         with self.assertRaises(ValueError):
             self.mgr.removeContainer("foo")
         with self.assertRaises(ValueError):
@@ -102,10 +104,11 @@ class TestVNFManager(unittest.TestCase):
         h3 = self.net.get("h3")
 
         # CPU and memory
-        h1.updateCpuLimit(cpu_quota=10000)
-        h1.updateMemoryLimit(mem_limit=10 * (1024 ** 2))  # in bytes
+        h1.dins.update(cpu_quota=10000)
+        h1.dins.update(mem_limit=10 * (1024 ** 2))  # in bytes
+
         c1 = self.mgr.addContainer(
-            "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M"
+            "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M", {}
         )
         usages = self.mgr.monResourceStats(c1.name, sample_period=0.1)
         cpu = sum(u[0] for u in usages) / len(usages)
@@ -113,19 +116,19 @@ class TestVNFManager(unittest.TestCase):
         self.assertTrue(abs(cpu - 10.0) <= CPU_ERR_THR)
         self.assertTrue(abs(mem - 10.0) <= MEM_ERR_THR)
         self.mgr.removeContainer(c1.name)
-        h1.updateCpuLimit(cpu_quota=-1)
-        h1.updateMemoryLimit(mem_limit=100 * (1024 ** 3))
+        h1.dins.update(cpu_quota=-1)
+        h1.dins.update(mem_limit=100 * (1024 ** 3))
 
         # Network
         for r in [h2, h3]:
-            c1 = self.mgr.addContainer("c1", r.name, "dev_test", "iperf -s")
+            c1 = self.mgr.addContainer("c1", r.name, "dev_test", "iperf -s", {})
             ret = h1.cmd("iperf -c {} -u -b 10M -t 3".format(r.IP()))
             clt_bw = float(self.net._parseIperf(ret).split(" ")[0])
             self.assertTrue(clt_bw > 0.0)
             self.mgr.removeContainer(c1.name)
 
     # def test_container_migration(self):
-    #     self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash")
+    #     self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash", {})
     #     self.mgr.checkpoint("c1")
     #     from comnetsemu.cli import CLI
     #     CLI(self.net)

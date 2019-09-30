@@ -25,10 +25,10 @@ def testTopo():
 
     info("*** Adding hosts\n")
     h1 = net.addDockerHost(
-        "h1", dimage="sec_test", ip="10.0.0.1", cpuset_cpus="0", cpu_quota=25000
+        "h1", dimage="sec_test", ip="10.0.0.1", docker_args={"cpuset_cpus": "0"}
     )
     h2 = net.addDockerHost(
-        "h2", dimage="sec_test", ip="10.0.0.2", cpuset_cpus="1", cpu_quota=25000
+        "h2", dimage="sec_test", ip="10.0.0.2", docker_args={"cpuset_cpus": "0"}
     )
 
     info("*** Adding switch\n")

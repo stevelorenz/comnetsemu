@@ -1,1 +1,1 @@
-from .overrides import makeIntfPairFixed
+from .overrides import makeIntfPairFixed  # noqa

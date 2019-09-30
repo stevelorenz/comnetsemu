@@ -3,11 +3,12 @@
 COMNETSEMU = comnetsemu/*.py
 CE_BIN = bin/ce
 UNITTESTS = comnetsemu/test/unit/*.py
+TESTS = $(UNITTESTS) comnetsemu/test/*.py
 EXAMPLES = examples/*.py
-PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(UNITTESTS)
+PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TESTS)
 PYTHON ?= python3
 PYTYPE = pytype
-P8IGN = E251,E201,E302,E202,E126,E127,E203,E226
+CHECKERRIGNORE=E501,W605
 PREFIX ?= /usr
 DOCDIRS = doc/html doc/latex
 
@@ -20,18 +21,17 @@ clean:
 
 codecheck: $(PYSRC)
 	@echo "*** Running checks for code quality"
-	$(PYTHON) -m pyflakes $(PYSRC)
+	$(PYTHON) -m flake8 --extend-ignore=E501 --max-complexity 10 $(PYSRC)
 	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
-	$(PYTHON) -m pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
 
 errcheck: $(PYSRC)
 	@echo "*** Running checks for errors only"
-	$(PYTHON) -m pyflakes $(PYSRC)
+	$(PYTHON) -m flake8 --extend-ignore=$(CHECKERRIGNORE) $(PYSRC)
 	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
 
 typecheck: $(PYSRC)
 	@echo "*** Running type checks with $(PYTYPE)..."
-	$(PYTYPE) ./comnetsemu/net.py
+	$(PYTYPE) $(COMNETSEMU)
 
 test-examples: $(COMNETSEMU) $(EXAMPLES)
 	cd ./examples && bash ./run.sh

@@ -7,6 +7,7 @@ from os.path import join
 
 # Get version number from source tree
 import sys
+
 sys.path.append(".")
 from comnetsemu.net import VERSION
 
@@ -33,7 +34,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: System :: Emulators",
-        'Natural Language :: English'
+        "Natural Language :: English",
     ],
     keywords="networking emulator SDN NFV Docker",
     # license="BSD",

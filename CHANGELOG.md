@@ -9,12 +9,18 @@ And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Support connecting Docker hosts running inside Vagrant VM to external network.
--   Better logging of application DockerContainer.
+### Changed
+
+## v0.1.6 - 2019-11-05
+
+### Added
+
+-   Example of running DPDK application inside application container
 
 ### Changed
 
--   Current DockerHost implementation will be refactored to support better docker_args.
+-   Current DockerHost implementation (in node.py) is refactored to support Docker-py v3.7.2 API.
+    Builtin examples are also updated.
 
 ## v0.1.5 - 2019-08-30
 

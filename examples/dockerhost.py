@@ -40,16 +40,14 @@ def run_net():
         cls=DockerHost,
         dimage="dev_test",
         ip="10.0.0.1/24",
-        cpuset_cpus="0",
-        cpu_quota=25000,
+        docker_args={"cpuset_cpus": "0", "nano_cpus": int(1e8)},
     )
     h2 = net.addHost(
         "h2",
         cls=DockerHost,
         dimage="dev_test",
         ip="10.0.0.2/24",
-        cpuset_cpus="1",
-        cpu_quota=25000,
+        docker_args={"cpuset_cpus": "0", "nano_cpus": int(1e8)},
     )
 
     info("*** Adding switch\n")
@@ -101,8 +99,7 @@ class TestTopo(Topo):
                 "h%s" % h,
                 cls=DockerHost,
                 dimage="dev_test",
-                ip="10.0.0.%s/24" % h,
-                cpu_quota=int(50000 / n),
+                docker_args={"cpuset_cpus": "0", "nano_cpus": int(1e8)},
             )
             self.addLink(switch, host, bw=10, delay="100ms")
 

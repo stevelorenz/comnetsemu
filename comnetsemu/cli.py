@@ -141,13 +141,14 @@ class CLI(CLI):  # pylint: disable=function-redefined
         super(CLI, self).default(line)
 
 
-def spawnAttachedXterm(dhost):
-    """Spawn the xterm and attach to dhost with docker exec -it container
+def spawnAttachedXterm(dhost_name: str):
+    """Spawn the xterm and attach to a Dockerhost with docker exec -it
+    container. Bash is used as the interactive shell.
 
-    :param dhost (str): Name of the docker host
+    :param dhost_name (str): Name of the docker host
     """
-    title = '"dockerhost:%s"' % dhost
-    params = {"title": title, "name": "mn.%s" % dhost, "shell": "/usr/bin/env sh"}
+    title = '"dockerhost:%s"' % dhost_name
+    params = {"title": title, "name": dhost_name, "shell": "bash"}
     cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(**params)
 
     term = subprocess.Popen(shlex.split(cmd))

@@ -34,7 +34,7 @@ In the end the table is listed.
 
 This example shows how to create TUN interface inside Docker host and attach XDP program to veth interface.
 This example requires installation of [BCC](https://github.com/iovisor/bcc) to manage eBPF programs.
-BCC can be installed from source via [installer](../util/install.sh) with `-c` option.
+BCC can be installed from source via [installer](../util/install.sh) with `-b` option.
 
 ### wireguard.py:
 

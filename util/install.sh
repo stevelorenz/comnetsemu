@@ -195,7 +195,7 @@ function install_mininet_with_deps() {
     mkdir -p "$mininet_dir"
 
     echo "*** Install Mininet and its minimal dependencies."
-    $install git
+    $install git net-tools
     cd "$mininet_dir" || exit
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
@@ -227,7 +227,7 @@ function install_ryu() {
 function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage pyflakes pylint pytype
+    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype
 }
 
 function install_bcc() {

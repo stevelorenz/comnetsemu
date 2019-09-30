@@ -14,7 +14,7 @@ containers. New (heavyweight but more isolated/practical) host/node types are al
 Mininet in [Mininet's official hackathon](https://github.com/acmsigcomm18hackathon/hackathonprojects/wiki/Mininet#enhancements-to-mininet).
 ComNetsEmu aims at adding **essential** features/enhancements to Mininet for better emulations for SDN/NFV applications.
 
-A simple example is given with a [sketch](./figures/NFV_SDN_Testbed.png) for the emulation scenario: Assume Alice wants
+A simple example is given with a ![sketch](./figures/motivation_real_deployment.pdf) for the emulation scenario: Assume Alice wants
 to send packets to Bob with random linear network coding. Packet has to be transmitted through two switches S1 and S2.
 Link losses (It is not true in the wired domain, however, we just want to simulate the channel losses, packets are
 dropped in the queue of the switch manually.) exit in each link on the data plane. In order to mitigate the channel

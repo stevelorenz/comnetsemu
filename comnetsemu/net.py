@@ -9,13 +9,13 @@ from time import sleep
 import docker
 from comnetsemu.cli import spawnAttachedXterm
 from comnetsemu.node import DockerContainer, DockerHost
-from mininet.log import debug, error, info, warn
+from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.term import cleanUpScreens, makeTerms
 from mininet.util import BaseString
 
 # ComNetsEmu version: should be consistent with README and LICENSE
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 VNFMANGER_MOUNTED_DIR = "/tmp/comnetsemu/vnfmanager"
 
@@ -117,21 +117,24 @@ class VNFManager(object):
         os.makedirs(VNFMANGER_MOUNTED_DIR, exist_ok=True)
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
-        docker_args_used = dict()
-        if docker_args:
-            docker_args_used.update(docker_args)
         # Override the essential parameters
         for key in self.docker_args_default.keys():
-            if key in docker_args_used:
-                warn(f"Given argument: {key} is overriden by the default value.")
-        docker_args_used.update(self.docker_args_default)
-        docker_args_used["name"] = name
-        docker_args_used["image"] = dimage
-        docker_args_used["cgroup_parent"] = "/docker/{}".format(dhost.did)
-        docker_args_used["command"] = dcmd
-        docker_args_used["network_mode"] = "container:{}".format(dhost.did)
+            if key in docker_args:
+                import ipdb
 
-        ret = self.dclt.containers.create(**docker_args_used)
+                ipdb.set_trace()
+                error(
+                    f"Given argument: {key} will be overridden by the default "
+                    f"value: {self.docker_args_default[key]}\n"
+                )
+        docker_args.update(self.docker_args_default)
+        docker_args["name"] = name
+        docker_args["image"] = dimage
+        docker_args["cgroup_parent"] = "/docker/{}".format(dhost.dins.id)
+        docker_args["command"] = dcmd
+        docker_args["network_mode"] = "container:{}".format(dhost.dins.id)
+
+        ret = self.dclt.containers.create(**docker_args)
         return ret
 
     def _waitContainerStart(self, name):  # pragma: no cover
@@ -175,8 +178,8 @@ class VNFManager(object):
         dhost: str,
         dimage: str,
         dcmd: str,
+        docker_args: dict,
         wait: bool = True,
-        docker_args: dict = None,
     ) -> DockerContainer:
         """Create and run a new container inside a Mininet DockerHost.
 
@@ -189,9 +192,9 @@ class VNFManager(object):
         :param dhost (str): Name of the host used for deployment
         :param dimage (str): Name of the docker image
         :param dcmd (str): Command to run after the creation
-        :param wait (Bool): Wait until the container has the running state if True.
         :param docker_args (dict): All other keyword arguments supported by Docker-py.
             e.g. CPU and memory related limitations. Some parameters are overriden for VNFManager's functionalities.
+        :param wait (Bool): Wait until the container has the running state if True.
 
         Check cls.docker_args_default.
 
