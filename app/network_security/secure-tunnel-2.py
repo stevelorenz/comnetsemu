@@ -51,17 +51,13 @@ def testTopo():
 
     info('*** Create wg interfaces\n')
 
-    # TODO: Create a star topology with center as the center. Instead of using wg tool write a configuration for the
-    # interface and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.
-    # There is an example how to write a multiline configuration into a file below.
-    # center.cmd("printf -- 'first line\n second line\n' > /etc/wireguard/wg0.conf")
-    # The documentation of the interface configuration can be found in the manpages of the wg and wg-quick tool.
+    info("*** Create a star topology with center as the center. Instead of using wg tool write a configuration for the\n")
+    info("*** interface and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.\n")
+    info("*** The wg and wg-quick manpages contain a reference for the syntax of the configuration file.\n")
+    info("*** Use the network 192.168.0.0/24 for the inner tunnel and asign 192.168.0.1 to the center.\n")
 
-    info('*** Test the connection\n')
-    # TODO: Test the connection via the test_connection method to see if you can connect via the tunnels to center
-    test_connection(client1, "10.0.0.1")
-    test_connection(client2, "10.0.0.1")
-    test_connection(client3, "10.0.0.1")
+    while not test_connection(client1, "192.168.0.1") or not test_connection(client2, "192.168.0.1") or not test_connection(client3, "192.168.0.1"):
+        sleep(10)
 
     info('*** Stopping network\n')
     net.stop()
@@ -76,13 +72,13 @@ def generate_key_pair_for_host(center):
 
 
 def test_connection(source_container, target_ip):
-    info("*** Test the connection\n")
-    info("* Ping test count: %d" % PING_COUNT)
-    ret = source_container.cmd("ping -c " + str(PING_COUNT) + " " + target_ip)
+    ret = source_container.cmd("ping -W 1 -c " + str(PING_COUNT) + " " + target_ip)
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
-    info("* Measured loss rate: {:.2f}%\n".format(measured))
-
+    if measured == 0.0:
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     setLogLevel('info')
