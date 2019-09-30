@@ -104,7 +104,7 @@ class TestTopo(Topo):
                 ip="10.0.0.%s/24" % h,
                 cpu_quota=int(50000 / n),
             )
-            self.addLink(switch, host, bw=10, delay="100ms", use_htb=True)
+            self.addLink(switch, host, bw=10, delay="100ms")
 
 
 def run_topo():

@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Basic example of using Docker as a Mininet host
+About: This example demonstrates how to setup a Wireguard network tunnel between two hosts.
 """
 
 import comnetsemu.tool as tool

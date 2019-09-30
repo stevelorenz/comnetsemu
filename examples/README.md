@@ -13,33 +13,30 @@ supported) for them.
 #### dockerindocker.py
 
 This example demonstrate how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
-Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization. The Dockerhost with
-internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
-
-#### flowvisor
-
-This example shows how to run [FlowVisor](https://github.com/OPENNETWORKINGLAB/flowvisor/wiki) inside Docker container.
+Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization.
+The Dockerhost with internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
 
 #### mininet_demystify
 
 Demystify technologies used in Mininet for lightweight network emulation.
 Run two bash scripts inside the folder with root privilege:
-- [run.sh](./mininet_demystify/run.sh): Build a topology with three hosts connected to a single switch and run basic
+-   [run.sh](./mininet_demystify/run.sh): Build a topology with three hosts connected to a single switch and run basic
     ping, iperf and Openflow tests.
-- [clean.sh](./mininet_demystify/clean.sh): Cleanup all network resources and processes created by run.sh.
+-   [clean.sh](./mininet_demystify/clean.sh): Cleanup all network resources and processes created by run.sh.
 
 ### nftables.py:
 
-This examples shows the basic setup of a firewall with nftables. It first creates
-a table and chain to filter on the netfilter input hook and then adds a rule to
-filter the traffic of IP address '10.0.0.2'. In the end the table is listed.
+This examples shows the basic setup of a firewall with nftables.
+It first creates a table and chain to filter on the netfilter input hook and then adds a rule to filter the traffic of IP address '10.0.0.2'.
+In the end the table is listed.
 
 #### tun_ebpf.py
 
 This example shows how to create TUN interface inside Docker host and attach XDP program to veth interface.
+This example requires installation of [BCC](https://github.com/iovisor/bcc) to manage eBPF programs.
+BCC can be installed from source via [installer](../util/install.sh) with `-c` option.
 
 ### wireguard.py:
 
-This example demonstrates how to setup a Wireguard network tunnel between two
-hosts. First the required keys are generated and then the Wireguard interfaces
-are created and configured.
+This example demonstrates how to setup a Wireguard network tunnel between two hosts.
+First the required keys are generated and then the Wireguard interfaces are created and configured.

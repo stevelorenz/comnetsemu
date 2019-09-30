@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Basic example of using Docker as a Mininet host
+About: This examples shows the basic setup of a firewall with nftables.
 """
 
 import comnetsemu.tool as tool
@@ -35,8 +35,8 @@ def testTopo():
     s1 = net.addSwitch("s1")
 
     info("*** Creating links\n")
-    net.addLinkNamedIfce(s1, h1, bw=10, delay="1ms", use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay="1ms", use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay="10ms")
+    net.addLinkNamedIfce(s1, h2, bw=10, delay="10ms")
 
     info("*** Starting network\n")
     net.start()

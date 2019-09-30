@@ -35,10 +35,10 @@ def testTopo():
     s1 = net.addSwitch("s1")
 
     info("*** Creating links\n")
-    net.addLinkNamedIfce(s1, h1, bw=10, delay="100ms", use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=10, delay="100ms", use_htb=True)
-    net.addLinkNamedIfce(s1, h3, bw=10, delay="100ms", use_htb=True)
-    net.addLinkNamedIfce(s1, h4, bw=10, delay="100ms", use_htb=True)
+    net.addLinkNamedIfce(s1, h1, bw=10, delay="100ms")
+    net.addLinkNamedIfce(s1, h2, bw=10, delay="100ms")
+    net.addLinkNamedIfce(s1, h3, bw=10, delay="100ms")
+    net.addLinkNamedIfce(s1, h4, bw=10, delay="100ms")
 
     info("*** Starting network\n")
     net.start()

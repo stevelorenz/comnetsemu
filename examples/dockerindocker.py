@@ -53,10 +53,10 @@ def testDockerInDocker(n):
         )
         hosts.append(host)
         switch = net.addSwitch("s%s" % (i + 1))
-        net.addLink(switch, host, bw=10, delay="1ms", use_htb=True)
+        net.addLink(switch, host, bw=10, delay="10ms")
         if last_sw:
             # Connect switches
-            net.addLink(switch, last_sw, bw=10, delay="1ms", use_htb=True)
+            net.addLink(switch, last_sw, bw=10, delay="10ms")
         last_sw = switch
 
     info("*** Starting network\n")
