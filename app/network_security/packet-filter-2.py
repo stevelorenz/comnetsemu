@@ -14,7 +14,7 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 
-PING_COUNT = 3
+PING_COUNT = 1
 
 
 def testTopo():
