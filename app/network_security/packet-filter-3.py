@@ -17,7 +17,6 @@ PING_COUNT = 1
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
 
     net = Containernet(controller=Controller, link=TCLink)
 
@@ -64,8 +63,6 @@ def testTopo():
     internal2.cmd("service ssh start")
     internal2.cmd("nc -l -p 1337 &")
     router.cmd("service ssh start")
-
-    #check_connectivity_between_hosts(router, internal1, internal2, internet)
 
     # Create whitelist
     info('*** Create firewall whitelist\n')
@@ -127,23 +124,18 @@ def check_connectivity_between_hosts(router, internal1, internal2, internet):
         return False
     if check_open_port(internal1, "192.168.0.1", "22"):
         return False
-    #info("\n")
     return True
 
 
 def check_open_port(source_container, target_ip, target_port):
     tmp = source_container.cmd("nmap -p " + target_port + " " + target_ip)
     if "filtered" in tmp:
-        #info("* Port " + target_port + " on " + target_ip + " is filtered\n")
         return False
-        #return info("* Port " + target_port + " on " + target_ip + " is filtered\n")
     if "open" in tmp:
-        #info("* Port " + target_port + " on " + target_ip + " is open\n")
         return True
-        #return info("* Port " + target_port + " on " + target_ip + " is open\n")
     else:
         return False
-        #return info("* Port " + target_port + " on " + target_ip + " is closed\n")
+
 
 def test_connection(source_container, target_ip):
     ret = source_container.cmd("ping -W 1 -c " + str(PING_COUNT) + " " + target_ip)

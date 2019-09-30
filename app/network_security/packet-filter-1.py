@@ -18,7 +18,6 @@ PING_COUNT = 1
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
 
     net = Containernet(controller=Controller, link=TCLink)
 

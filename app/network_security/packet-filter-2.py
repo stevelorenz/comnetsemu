@@ -18,7 +18,6 @@ PING_COUNT = 1
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
 
     net = Containernet(controller=Controller, link=TCLink)
 
@@ -76,7 +75,6 @@ def testTopo():
     info('*** Drop all traffic of the client that exceeds 10 Mbit/s.\n')
 
     # client is overdoing it a little and our server cannot handle all of its requests...
-    # info('*** client is flodding server with too many requests!\n')
     server.cmd("iperf -s &")
 
     while try_to_flood_the_server(client):
