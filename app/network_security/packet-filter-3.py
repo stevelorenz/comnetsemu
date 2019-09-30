@@ -13,7 +13,7 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 
-PING_COUNT = 3
+PING_COUNT = 1
 
 
 def testTopo():
@@ -65,72 +65,94 @@ def testTopo():
     internal2.cmd("nc -l -p 1337 &")
     router.cmd("service ssh start")
 
-    check_connectivity_between_hosts(router, internal1, internal2, internet)
+    #check_connectivity_between_hosts(router, internal1, internal2, internet)
 
     # Create whitelist
     info('*** Create firewall whitelist\n')
     router.cmd("nft add table inet filter")
     router.cmd("nft add chain inet filter forward { type filter hook forward priority 0 \; policy drop \; }")
-    router.cmd("nft add rule inet filter forward ct state established,related ip daddr 10.0.0.0/24 accept")
+    router.cmd("nft add rule inet filter forward ct state established,related ip daddr 192.168.0.0/24 accept")
     router.cmd("nft add rule inet filter forward ip saddr 10.0.0.0/24 accept")
     router.cmd("nft add rule inet filter forward ip saddr 192.168.0.0/24 accept")
 
-    # TODO: Rewrite the filter ruleset and create a chain with filter rules for each of the 3 network interfaces of the router
-    # TODO: Filter traffic to the open ports 22 and 1337 on the router and internal2
+    info('*** Rewrite the present filter ruleset and create one chain for each of the 3 networks.\n')
+    info('*** You can use the network interfaces to distinguish the traffic from the networks.\n')
+    info('*** Additionally filter traffic to the ports 22 and 1337 on the router and the internal networks.\n')
 
-    check_connectivity_between_hosts(router, internal1, internal2, internet)
+    while not check_connectivity_between_hosts(router, internal1, internal2, internet):
+        sleep(5)
+
 
     info('*** Stopping network')
+    sleep(20)
     net.stop()
 
 
 def check_connectivity_between_hosts(router, internal1, internal2, internet):
-    info("\n*** Testing router\n")
-    info("** router -> internal1\n")
-    test_connection(router, "10.0.0.2")
-    info("** router -> internal2\n")
-    test_connection(router, "192.168.0.2")
-    info("** router -> internet\n")
-    test_connection(router, "100.64.0.2")
-    info("\n*** Testing internal1\n")
-    info("** internal1 -> internal2\n")
-    test_connection(internal1, "192.168.0.2")
-    info("** internal1 -> internet\n")
-    test_connection(internal1, "100.64.0.2")
-    info("\n*** Testing internal2\n")
-    info("** internal2 -> internal1\n")
-    test_connection(internal2, "10.0.0.2")
-    info("** internal2 -> internet\n")
-    test_connection(internal2, "100.64.0.2")
-    info("\n*** Testing internet\n")
-    info("** internet -> internal1\n")
-    test_connection(internet, "10.0.0.2")
-    info("** internet -> internal2\n")
-    test_connection(internet, "192.168.0.2")
-    info("\n*** Checking for open ports\n")
-    check_open_port(internal1, "192.168.0.2", "22")
-    check_open_port(internal1, "192.168.0.2", "1337")
-    check_open_port(internal1, "192.168.0.1", "22")
-    info("\n")
+    #info("\n*** Testing router\n")
+    #info("** router -> internal1\n")
+    if not test_connection(router, "10.0.0.2"):
+        return False
+    #info("** router -> internal2\n")
+    if not test_connection(router, "192.168.0.2"):
+        return False
+    #info("** router -> internet\n")
+    if not test_connection(router, "100.64.0.2"):
+        return False
+    #info("\n*** Testing internal1\n")
+    #info("** internal1 -> internal2\n")
+    if not test_connection(internal1, "192.168.0.2"):
+        return False
+    #info("** internal1 -> internet\n")
+    if test_connection(internal1, "100.64.0.2"):
+        return False
+    #info("\n*** Testing internal2\n")
+    #info("** internal2 -> internal1\n")
+    if not test_connection(internal2, "10.0.0.2"):
+        return False
+    #info("** internal2 -> internet\n")
+    if not test_connection(internal2, "100.64.0.2"):
+        return False
+    #info("\n*** Testing internet\n")
+    #info("** internet -> internal1\n")
+    if test_connection(internet, "10.0.0.2"):
+        return False
+    #info("** internet -> internal2\n")
+    if test_connection(internet, "192.168.0.2"):
+        return False
+    #info("\n*** Checking for open ports\n")
+    if check_open_port(internal1, "192.168.0.2", "22"):
+        return False
+    if check_open_port(internal1, "192.168.0.2", "1337"):
+        return False
+    if check_open_port(internal1, "192.168.0.1", "22"):
+        return False
+    #info("\n")
+    return True
 
 
 def check_open_port(source_container, target_ip, target_port):
     tmp = source_container.cmd("nmap -p " + target_port + " " + target_ip)
     if "filtered" in tmp:
-        return info("* Port " + target_port + " on " + target_ip + " is filtered\n")
+        #info("* Port " + target_port + " on " + target_ip + " is filtered\n")
+        return False
+        #return info("* Port " + target_port + " on " + target_ip + " is filtered\n")
     if "open" in tmp:
-        return info("* Port " + target_port + " on " + target_ip + " is open\n")
+        #info("* Port " + target_port + " on " + target_ip + " is open\n")
+        return True
+        #return info("* Port " + target_port + " on " + target_ip + " is open\n")
     else:
-        return info("* Port " + target_port + " on " + target_ip + " is closed\n")
+        return False
+        #return info("* Port " + target_port + " on " + target_ip + " is closed\n")
 
 def test_connection(source_container, target_ip):
-    ret = source_container.cmd("ping -c " + str(PING_COUNT) + " " + target_ip)
+    ret = source_container.cmd("ping -W 1 -c " + str(PING_COUNT) + " " + target_ip)
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     if measured == 0.0:
-        return info('* Connection established\n')
+        return True
     else:
-        return info('* Connection denied\n')
+        return False
 
 
 if __name__ == '__main__':
