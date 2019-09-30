@@ -48,9 +48,9 @@ def testTopo():
     server.cmd("mkdir -p /var/run/vsftpd/empty")
     server.cmd("vsftpd &")
 
-    info("Setup a tunnel to protect the ftp request from the MitM attacker!\n")
-    info("First create key pairs for the client and server and then establish a WireGuard tunnel between them\n")
-    info("Use the inner tunnel ip 192.168.0.2 for the server!\n")
+    info("*** Setup a tunnel to protect the ftp request from the MitM attacker!\n")
+    info("*** First create key pairs for the client and server and then establish a WireGuard tunnel between them\n")
+    info("*** Use the inner tunnel ip 192.168.0.2 for the server!\n")
 
     x = 0
     while not check_secure_network_tunnel(attacker, client, x):
