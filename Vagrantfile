@@ -87,7 +87,7 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.post_up_message = '
 VM started! Run "vagrant ssh <vmname>" to connect.
 
-INFO !!! For all developers:
+INFO! For ComNetsEmu users:
 
 If there are any new commits in the dev branch in the remote repository, Please do following steps to upgrade dependencies:
 
