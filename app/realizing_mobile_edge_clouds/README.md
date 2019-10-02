@@ -1,4 +1,4 @@
-# Mobile Edge-Cloud - MEC
+# Realizing Mobile Edge Cloud (MEC) #
 
 ## Implementation Specifications / Introduction to general thoughts
 

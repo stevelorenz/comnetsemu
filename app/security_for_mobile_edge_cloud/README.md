@@ -1,7 +1,9 @@
-# Network Security #
+# Security for Mobile Edge Cloud #
 
-## Introduction ## This folder contains exercises for packet filter and secure
-network tunnels. As packet filter, we use nftables, which is the state-of-the-art
+## Introduction ##
+
+This folder contains exercises for packet filter and secure network tunnels.
+As packet filter, we use nftables, which is the state-of-the-art
 packet filter on Linux systems. For securing network traffic in transit we use
 WireGuard as secure network tunnel. Example usage of nftables and WireGuard is
 shown in the examples folder (../../examples).

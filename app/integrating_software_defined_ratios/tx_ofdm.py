@@ -18,27 +18,6 @@ from optparse import OptionParser
 import pmt
 import time
 
-import random
-import string
-import os
-
-
-def generate_big_random_letters(filename, size):
-    """
-    generate big random letters/alphabets to a file
-    :param filename: the filename
-    :param size: the size in bytes
-    :return: void
-    """
-
-    chars = "".join([random.choice(string.letters) for i in range(size)])  # 1
-
-    with open(filename, "w") as f:
-        f.write(chars)
-    pass
-
-    return os.path.join(os.getcwd(), filename)
-
 
 class tx_ofdm(gr.top_block):
     def __init__(self):
@@ -83,7 +62,7 @@ class tx_ofdm(gr.top_block):
         )
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vcc((0.05,))
         self.blocks_file_source_0 = blocks.file_source(
-            gr.sizeof_char * 1, generate_big_random_letters("filename.txt", 1000), True
+            gr.sizeof_char * 1, "/home/GNURadio-Files/file_tx.txt", True
         )
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
 
@@ -149,7 +128,7 @@ def main(top_block_cls=tx_ofdm, options=None):
     tb = top_block_cls()
     tb.start()
     try:
-        input("Press Enter to quit: ")
+        raw_input("Press Enter to quit: ")
     except EOFError:
         pass
     tb.stop()
