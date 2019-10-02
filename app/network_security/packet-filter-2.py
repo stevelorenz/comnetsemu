@@ -8,16 +8,16 @@ About: Basic example of using Docker as a Mininet host
 
 import comnetsemu.tool as tool
 from time import sleep
+import re
 from comnetsemu.net import Containernet
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 
-PING_COUNT = 3
+PING_COUNT = 1
 
 
 def testTopo():
-    "Create an empty network and add nodes to it."
 
     net = Containernet(controller=Controller, link=TCLink)
 
@@ -25,54 +25,60 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='sec_test', ip='10.0.0.1',
-                           cpuset_cpus="1", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='nginx', ip='10.0.0.2',
-                           cpuset_cpus="1", cpu_quota=25000)
+    client = net.addDockerHost('client', dimage='sec_test', ip='10.0.0.1',
+                               cpuset_cpus="1", cpu_quota=25000)
+    server = net.addDockerHost('server', dimage='nginx', ip='10.0.0.2',
+                               cpuset_cpus="1", cpu_quota=25000)
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, client, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, server, bw=100, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
 
-    info('** h1 -> h2\n')
-    test_connection(h1, "10.0.0.2")
+    info('** client -> server\n')
+    info('** ' + str(test_connection(client, "10.0.0.2")) + '\n')
 
     info('\n')
 
     # Create whitelist
     info('*** Create whitelist\n')
-    h2.cmd("nft add table inet filter")
-    h2.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
-    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
+    server.cmd("nft add table inet filter")
+    server.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
+    server.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
 
-    # The server can talk back to h1
-    info('** h2 -> h1\n')
-    test_connection(h2, "10.0.0.2")
+    # The server can talk back to client
+    info('** server -> client\n')
+    info('** ' + str(test_connection(server, "10.0.0.1")) + '\n')
     # But he cannot talk to some other server on the internet, this is a problem
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
+    info('** server -> internet\n')
+    info('** ' + str(test_connection(server, "8.8.8.8")) + '\n')
 
     info('\n')
 
-    info('*** Enable connection tracking\n')
-    #TODO: Create a rule that uses connection tracking to enable hosts on the internet to responde to requests of h2
+    info('*** The server can only communicate with the client because of the implemented whitelist filtering.\n')
+    info('*** When the server wants to talk to the internet the internet cannot talk back because the incoming '
+         'traffic is dropped.\n')
+    info('*** Use the connection tracking state to allow established connections to answer the server.\n')
+    info('*** Do this without removing the whitelist.\n')
 
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
+    while not test_connection(server, "8.8.8.8") or not test_connection(client, "10.0.0.2"):
+        sleep(5)
 
-    # h1 is overdoing it a little and our server cannot handle all of its requests...
-    info('*** h1 is flodding h2 with too many requests!\n')
-    h2.cmd("iperf -s &")
-    print(h1.cmd("iperf -c 10.0.0.2"))
+    info('** server -> internet\n')
+    info('** ' + str(test_connection(server, "8.8.8.8")) + '\n')
 
-    #TODO: Create a limit rule that allows h1 to only use a maximum of 10 Mbit/s
+    info('*** Now we want to make sure that the client cannot overload the server with traffic.\n')
+    info('*** Drop all traffic of the client that exceeds 10 Mbit/s.\n')
 
-    print(h1.cmd("iperf -c 10.0.0.2"))
+    # client is overdoing it a little and our server cannot handle all of its requests...
+    server.cmd("iperf -s &")
+
+    while try_to_flood_the_server(client):
+        sleep(5)
 
     info('\n')
 
@@ -85,9 +91,20 @@ def test_connection(source_container, target_ip):
     sent, received = tool.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     if measured == 0.0:
-        info('* Connection established\n')
+        return True
     else:
-        info('* Connection denied\n')
+        return False
+
+def try_to_flood_the_server(client):
+    text = client.cmd("iperf -c 10.0.0.2")
+
+    speed = re.search('[0-9]*\.*[0-9]*\sMbits', text)
+    #print(speed)
+    speed = float(speed[0].split(" ")[0])
+    #print(speed)
+
+    return speed > 10.0
+
 
 
 if __name__ == '__main__':

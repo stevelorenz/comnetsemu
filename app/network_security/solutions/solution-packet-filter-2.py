@@ -25,55 +25,55 @@ def testTopo():
     net.addController('c0')
 
     info('*** Adding hosts\n')
-    h1 = net.addDockerHost('h1', dimage='sec_test', ip='10.0.0.1',
+    client = net.addDockerHost('client', dimage='sec_test', ip='10.0.0.1',
                            cpuset_cpus="1", cpu_quota=25000)
-    h2 = net.addDockerHost('h2', dimage='nginx', ip='10.0.0.2',
+    server = net.addDockerHost('server', dimage='nginx', ip='10.0.0.2',
                            cpuset_cpus="1", cpu_quota=25000)
     info('*** Adding switch\n')
     s1 = net.addSwitch('s1')
 
     info('*** Creating links\n')
-    net.addLinkNamedIfce(s1, h1, bw=100, delay='1ms', use_htb=True)
-    net.addLinkNamedIfce(s1, h2, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, client, bw=100, delay='1ms', use_htb=True)
+    net.addLinkNamedIfce(s1, server, bw=100, delay='1ms', use_htb=True)
 
     info('*** Starting network\n')
     net.start()
 
-    info('** h1 -> h2\n')
-    test_connection(h1, "10.0.0.2")
+    info('** client -> server\n')
+    test_connection(client, "10.0.0.2")
 
     info('\n')
 
     # Create whitelist
     info('*** Create whitelist\n')
-    h2.cmd("nft add table inet filter")
-    h2.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
-    h2.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
+    server.cmd("nft add table inet filter")
+    server.cmd("nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }")
+    server.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
 
-    # The server can talk back to h1
-    info('** h2 -> h1\n')
-    test_connection(h2, "10.0.0.2")
+    # The server can talk back to client
+    info('** server -> client\n')
+    test_connection(server, "10.0.0.2")
     # But he cannot talk to some other server on the internet, this is a problem
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
+    info('** server -> internet\n')
+    test_connection(server, "8.8.8.8")
 
     info('\n')
 
 
     info('*** Enable connection tracking\n')
-    h2.cmd("nft add rule inet filter input ct state established,related accept")
+    server.cmd("nft add rule inet filter input ct state established,related accept")
 
-    info('** h2 -> internet\n')
-    test_connection(h2, "8.8.8.8")
+    info('** server -> internet\n')
+    test_connection(server, "8.8.8.8")
 
-    # h1 is overdoing it a little and our server cannot handle all of its requests...
-    info('*** h1 is flodding h2 with too many requests!\n')
-    h2.cmd("iperf -s &")
-    print(h1.cmd("iperf -c 10.0.0.2"))
+    # client is overdoing it a little and our server cannot handle all of its requests...
+    info('*** client is flodding server with too many requests!\n')
+    server.cmd("iperf -s &")
+    print(client.cmd("iperf -c 10.0.0.2"))
 
-    h2.cmd("nft insert rule inet filter input position 2 limit rate over 1 mbytes/second drop")
+    server.cmd("nft insert rule inet filter input position 2 limit rate over 1 mbytes/second drop")
 
-    print(h1.cmd("iperf -c 10.0.0.2"))
+    print(client.cmd("iperf -c 10.0.0.2"))
 
     info('\n')
 
