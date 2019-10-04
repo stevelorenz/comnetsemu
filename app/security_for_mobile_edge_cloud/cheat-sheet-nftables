@@ -1,0 +1,47 @@
+## Listing
+
+# List all tables
+nft list tables
+
+# List content of table filter with type inet
+nft list table inet filter
+
+# List content of table filter with type inet and display handles
+nft list table inet filter -a
+
+# List content of chain forward in inet table filter
+nft list chain inet filter forward
+
+## Adding
+
+# Add table filter with type inet
+nft add table inet filter
+
+# Add chain foward to table inet filter
+nft add chain inet filter forward
+
+# Add base chain forward to table inet filter that is connected to the netfilter hook forward, accepts packets by default, and has priority 0
+nft add chain inet filter forward { type filter hook forward priority 0 \; policy drop \; }
+
+# Add (at last position) a rule to chain forward in table inet filter that drops all traffic that is directed to 8.8.8.8
+nft add rule inet filter forward ip daddr 8.8.8.8 drop
+
+# Insert (at first position) a rule in chain forward in table inet filter that counts all traffic that is directed to 8.8.8.8
+nft insert rule inet filter forward ip daddr 8.8.8.8 count
+
+# Add (below the rule with handel 5) a rule in chain forward in table inet filter that blocks all tcp traffic to port 22
+nft add rule inet filter forward position 5 tcp dport 22 drop
+
+## Removing
+
+# Remove table filter with type inet
+nft delete table inet filter
+
+# Remove chain forward in table filter
+nft delete chain inet filter forward
+
+# Remove all rules from a chain forward in table inet filter
+nft flush chain inet filter forward
+
+# Remove the rule with handle 5 in chain forward in table inet filter
+nft delete rule inet filter forward handle 5
