@@ -1,0 +1,38 @@
+version: "3"
+services:
+  sdr1:
+    cap_add:
+      - NET_ADMIN
+    build:
+      context: ../../
+      dockerfile: ./Dockerfile
+    image: "sdr"
+    hostname: SDR1
+    devices:
+      - /dev/net/tun
+    networks:
+      - SDR-net
+    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.3"'
+      
+  sdr2:
+    cap_add:
+      - NET_ADMIN
+    build:
+      context: ../../
+      dockerfile: ./Dockerfile
+    image: "sdr"
+    devices:
+      - /dev/net/tun
+    depends_on:
+      - sdr1
+    hostname: SDR2
+    networks:
+      - SDR-net
+    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.2"'
+      
+networks:
+  SDR-net:
+    external: true
+
+
+  

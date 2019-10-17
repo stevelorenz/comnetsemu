@@ -26,35 +26,22 @@ WORKDIR /home/workarea-gnuradio
 RUN git clone --recursive https://github.com/gnuradio/gnuradio
 RUN cd gnuradio
 WORKDIR /home/workarea-gnuradio/gnuradio
-RUN git checkout v3.7.13.4
+RUN git checkout maint-3.7
 RUN git submodule update --init --recursive
 
 RUN mkdir build && cd build
 WORKDIR /home/workarea-gnuradio/gnuradio/build
 
 RUN cmake ../
-RUN make
+RUN make -j2
 RUN make install
 RUN ldconfig
 
-#RUN groupadd usrp
-#RUN usermod -aG usrp $USER
 WORKDIR /etc/security/
 RUN echo "@GROUP    - rtprio    99" >> limits.conf
 
 WORKDIR /home
 RUN mkdir GNURadio-Files
-WORKDIR /home/GNURadio-Files
-ADD tx_ofdm.py /home/GNURadio-Files
-ADD file_tx.txt /home/GNURadio-Files
-ADD rx_ofdm.py /home/GNURadio-Files
-ADD file_rx.txt /home/GNURadio-Files
-#CMD python tx_ofdm.py
-#CMD python rx_ofdm.py
-
-ENV TINI_VERSION v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "-g", "--"]
+CMD /bin/bash
 
 WORKDIR /home/GNURadio-Files

@@ -1,5 +1,23 @@
 # Integrating Software-Defined Radios #
 
+# Testbed start
+Run setup.sh first.
+To run an examle, navigate to 
+
+````Text
+examples/<name>
+````
+and launch 
+
+````Text
+docker-compose up
+````
+login into the running examples with 
+
+````Text
+docker exec -it sdr[1|2] /bin/bash
+````
+
 # Data transmission using Ettus Research USRP #
 
 In this directory, you can find two examples that show the functionality of USRP systems in real
