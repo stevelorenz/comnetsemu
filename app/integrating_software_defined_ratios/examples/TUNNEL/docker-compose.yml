@@ -12,7 +12,7 @@ services:
       - /dev/net/tun
     networks:
       - SDR-net
-    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.3"'
+    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.3" & sleep 3 && sudo ifconfig sr0 192.168.200.1'
       
   sdr2:
     cap_add:
@@ -28,7 +28,7 @@ services:
     hostname: SDR2
     networks:
       - SDR-net
-    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.2"'
+    command: bash -c 'python /home/workarea-gnuradio/gnuradio/gr-digital/examples/ofdm/tunnel.py --freq 2.4 --args="addr=192.168.10.2"& sleep 3 && sudo ifconfig sr0 192.168.200.2'
       
 networks:
   SDR-net:
