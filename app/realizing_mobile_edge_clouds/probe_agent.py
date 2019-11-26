@@ -17,9 +17,17 @@ print(f"starting probing agent")
 while True:
     try:
         msg = json.dumps(
-            [{"message": f"packet{loop}", "type": "PROBE", "time": f"{time.time()}", "data": "None"}],
+            [
+                {
+                    "message": f"packet{loop}",
+                    "type": "PROBE",
+                    "time": f"{time.time()}",
+                    "data": "None",
+                }
+            ],
             sort_keys=True,
-            separators=(",", ": "))
+            separators=(",", ": "),
+        )
         rx_socket.sendall(msg.encode())
 
         if loop < 5:

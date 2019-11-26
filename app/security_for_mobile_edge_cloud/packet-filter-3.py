@@ -21,20 +21,27 @@ def testTopo():
 
     info("*** Adding hosts\n")
     router = net.addDockerHost(
-        "router", dimage="sec_test", cpuset_cpus="1", cpu_quota=25000
+        "router",
+        dimage="sec_test",
+        docker_args={"cpuset_cpus": "1", "cpu_quota": 25000},
     )
     internal1 = net.addDockerHost(
-        "internal1", dimage="sec_test", ip="10.0.0.2", cpuset_cpus="1", cpu_quota=25000
+        "internal1",
+        dimage="sec_test",
+        ip="10.0.0.2",
+        docker_args={"cpuset_cpus": "1", "cpu_quota": 25000},
     )
     internal2 = net.addDockerHost(
         "internal2",
         dimage="sec_test",
         ip="192.168.0.2",
-        cpuset_cpus="0",
-        cpu_quota=25000,
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     internet = net.addDockerHost(
-        "internet", dimage="sec_test", ip="100.64.0.2", cpuset_cpus="0", cpu_quota=25000
+        "internet",
+        dimage="sec_test",
+        ip="100.64.0.2",
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
 
     info("*** Adding switch\n")

@@ -22,10 +22,16 @@ def testTopo():
 
     info("*** Adding hosts\n")
     client = net.addDockerHost(
-        "client", dimage="sec_test", ip="10.0.0.1", cpuset_cpus="1", cpu_quota=25000
+        "client",
+        dimage="sec_test",
+        ip="10.0.0.1/24",
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     server = net.addDockerHost(
-        "server", dimage="nginx", ip="10.0.0.2", cpuset_cpus="1", cpu_quota=25000
+        "server",
+        dimage="nginx",
+        ip="10.0.0.2/24",
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     info("*** Adding switch\n")
     s1 = net.addSwitch("s1")

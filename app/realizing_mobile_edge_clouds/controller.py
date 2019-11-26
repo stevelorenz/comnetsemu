@@ -26,10 +26,15 @@ class Controller(app_manager.RyuApp):
         self.mac_to_port = {}
         self.eth_to_ip = {}
         self.latency = ({}, {})  # (link latency (with ARP), service latency (with UDP))
-        self.time: Tuple[float, float] = (0.0, 0.0)  # timestamp to calculate (link, service) latency
+        self.time: Tuple[float, float] = (
+            0.0,
+            0.0,
+        )  # timestamp to calculate (link, service) latency
         self.msg_cnt = 0  # msg count to decide on end of startup
         self.optimal_host = ""
-        self.tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # socket for REST
+        self.tx_socket = socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM
+        )  # socket for REST
         self.tx_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.tx_socket.connect(("127.0.0.1", 8016))
 
@@ -40,8 +45,9 @@ class Controller(app_manager.RyuApp):
         parser = datapath.ofproto_parser
 
         match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                          ofproto.OFPCML_NO_BUFFER)]
+        actions = [
+            parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)
+        ]
         self.add_flow(datapath, 0, match, actions)
 
     def remove_table_flows(self, datapath, table_id, match, instructions):
@@ -49,33 +55,39 @@ class Controller(app_manager.RyuApp):
         remove flows with empty flow mod
         """
         ofproto = datapath.ofproto
-        flow_mod = datapath.ofproto_parser.OFPFlowMod(datapath,
-                                                      0,
-                                                      0,
-                                                      table_id,
-                                                      ofproto.OFPFC_DELETE,
-                                                      0,
-                                                      0,
-                                                      ofproto.OFPP_ANY,
-                                                      ofproto.OFPG_ANY,
-                                                      0,
-                                                      match,
-                                                      instructions)
+        flow_mod = datapath.ofproto_parser.OFPFlowMod(
+            datapath,
+            0,
+            0,
+            table_id,
+            ofproto.OFPFC_DELETE,
+            0,
+            0,
+            ofproto.OFPP_ANY,
+            ofproto.OFPG_ANY,
+            0,
+            match,
+            instructions,
+        )
         return flow_mod
 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         if buffer_id:
-            mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
-                                    priority=priority, match=match,
-                                    instructions=inst)
+            mod = parser.OFPFlowMod(
+                datapath=datapath,
+                buffer_id=buffer_id,
+                priority=priority,
+                match=match,
+                instructions=inst,
+            )
         else:
-            mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                    match=match, instructions=inst)
+            mod = parser.OFPFlowMod(
+                datapath=datapath, priority=priority, match=match, instructions=inst
+            )
         datapath.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -89,13 +101,16 @@ class Controller(app_manager.RyuApp):
         """
         self.msg_cnt += 1
         if ev.msg.msg_len < ev.msg.total_len:
-            self.logger.debug("packet truncated: only %s of %s bytes",
-                              ev.msg.msg_len, ev.msg.total_len)
+            self.logger.debug(
+                "packet truncated: only %s of %s bytes",
+                ev.msg.msg_len,
+                ev.msg.total_len,
+            )
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        in_port = msg.match['in_port']
+        in_port = msg.match["in_port"]
 
         pkt = packet.Packet(msg.data)
 
@@ -144,8 +159,14 @@ class Controller(app_manager.RyuApp):
 
             # probing packet from probing agent
             if ip_src == "10.0.0.40":
-                for key, value in self.mac_to_port[dpid].items():  # send arp probe to all servers
-                    if key != "00:00:00:00:00:01" and key != "ff:ff:ff:ff:ff:ff" and key != "00:00:00:00:01:ff":
+                for key, value in self.mac_to_port[
+                    dpid
+                ].items():  # send arp probe to all servers
+                    if (
+                        key != "00:00:00:00:00:01"
+                        and key != "ff:ff:ff:ff:ff:ff"
+                        and key != "00:00:00:00:01:ff"
+                    ):
                         try:
                             probe_packet = packet.Packet()
                             addr = self.eth_to_ip.get(key)
@@ -156,18 +177,34 @@ class Controller(app_manager.RyuApp):
                                     addr = "10.0.0.22"
                                 else:
                                     raise
-                            probe_packet.add_protocol(ethernet.ethernet(dst='ff:ff:ff:ff:ff:ff',
-                                                                        src='00:00:00:00:01:ff',
-                                                                        ethertype=ether.ETH_TYPE_ARP))
-                            probe_packet.add_protocol(arp.arp(hwtype=1, proto=0x0800, hlen=6, plen=4, opcode=1,
-                                                              src_mac='00:00:00:00:01:ff', src_ip='10.0.0.40',
-                                                              dst_mac='00:00:00:00:00:00', dst_ip=addr))
+                            probe_packet.add_protocol(
+                                ethernet.ethernet(
+                                    dst="ff:ff:ff:ff:ff:ff",
+                                    src="00:00:00:00:01:ff",
+                                    ethertype=ether.ETH_TYPE_ARP,
+                                )
+                            )
+                            probe_packet.add_protocol(
+                                arp.arp(
+                                    hwtype=1,
+                                    proto=0x0800,
+                                    hlen=6,
+                                    plen=4,
+                                    opcode=1,
+                                    src_mac="00:00:00:00:01:ff",
+                                    src_ip="10.0.0.40",
+                                    dst_mac="00:00:00:00:00:00",
+                                    dst_ip=addr,
+                                )
+                            )
                             probe_packet.serialize()
-                            out = parser.OFPPacketOut(datapath=datapath,
-                                                      buffer_id=msg.buffer_id,
-                                                      in_port=in_port,
-                                                      actions=[parser.OFPActionOutput(value)],
-                                                      data=probe_packet.data)
+                            out = parser.OFPPacketOut(
+                                datapath=datapath,
+                                buffer_id=msg.buffer_id,
+                                in_port=in_port,
+                                actions=[parser.OFPActionOutput(value)],
+                                data=probe_packet.data,
+                            )
                             datapath.send_msg(out)
                             del out
                             del probe_packet
@@ -178,8 +215,13 @@ class Controller(app_manager.RyuApp):
                         data = None
                         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                             data = msg.data
-                        out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
-                                                  in_port=in_port, actions=[parser.OFPActionOutput(value)], data=data)
+                        out = parser.OFPPacketOut(
+                            datapath=datapath,
+                            buffer_id=msg.buffer_id,
+                            in_port=in_port,
+                            actions=[parser.OFPActionOutput(value)],
+                            data=data,
+                        )
                         datapath.send_msg(out)
                         del out
                         self.time = (self.time[0], time.time())
@@ -190,8 +232,13 @@ class Controller(app_manager.RyuApp):
                 data = None
                 if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                     data = msg.data
-                out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
-                                          in_port=in_port, actions=[parser.OFPActionOutput(ofproto.OFPP_FLOOD)], data=data)
+                out = parser.OFPPacketOut(
+                    datapath=datapath,
+                    buffer_id=msg.buffer_id,
+                    in_port=in_port,
+                    actions=[parser.OFPActionOutput(ofproto.OFPP_FLOOD)],
+                    data=data,
+                )
                 datapath.send_msg(out)
                 del out
                 return
@@ -205,7 +252,9 @@ class Controller(app_manager.RyuApp):
                     mac_list = []
                     latency_list = []
                     _ = ""
-                    for key, value in self.latency[1].items():  # @TODO replace with more elegant parsing dict to list
+                    for key, value in self.latency[
+                        1
+                    ].items():  # @TODO replace with more elegant parsing dict to list
                         mac_list.append(key)
                         latency_list.append(value)
                         self.logger.info(f"UDP,{key},{value}")
@@ -217,9 +266,11 @@ class Controller(app_manager.RyuApp):
                         self.optimal_host = mac_list[min_]
                         self.tx_socket.sendall(f"NEW SERVER {mac_list[min_]}".encode())
                     actions = [parser.OFPActionOutput(self.mac_to_port[dpid][_])]
-                    match = parser.OFPMatch(in_port=self.mac_to_port[dpid]["00:00:00:00:00:01"],
-                                            eth_dst=_,
-                                            eth_src="00:00:00:00:00:01")
+                    match = parser.OFPMatch(
+                        in_port=self.mac_to_port[dpid]["00:00:00:00:00:01"],
+                        eth_dst=_,
+                        eth_src="00:00:00:00:00:01",
+                    )
                     # add new optimal flow (@TODO check this)
                     if msg.buffer_id != ofproto.OFP_NO_BUFFER:
                         self.add_flow(datapath, 1, match, actions, msg.buffer_id)
@@ -243,6 +294,11 @@ class Controller(app_manager.RyuApp):
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
             data = msg.data
 
-        out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
-                                  in_port=in_port, actions=actions, data=data)
+        out = parser.OFPPacketOut(
+            datapath=datapath,
+            buffer_id=msg.buffer_id,
+            in_port=in_port,
+            actions=actions,
+            data=data,
+        )
         datapath.send_msg(out)

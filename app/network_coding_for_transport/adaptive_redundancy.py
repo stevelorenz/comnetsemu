@@ -23,51 +23,70 @@ from mininet.cli import CLI
 # Just for prototyping...
 # Should be replaced with SDN controller application
 # ------------------------------------------------------------------------------
+
+
 def get_ofport(ifce):
     """Get the openflow port based on iterface name
 
     :param ifce (str): Name of the interface
     """
     return check_output(
-        split("sudo ovs-vsctl get Interface {} ofport".format(ifce)
-              )).decode("utf-8")
+        split("sudo ovs-vsctl get Interface {} ofport".format(ifce))
+    ).decode("utf-8")
 
 
 def add_ovs_flows(net, switch_num):
     """Add OpenFlow rules for ARP/PING packets and other general traffic"""
 
-    check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=1,actions=output=2\""))
-    check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=2,actions=output=3\""))
-    check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=2,actions=output=3\""))
-    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=2,actions=output=3\""))
-    check_output(split("sudo ovs-ofctl add-flow s5 \"priority=1,in_port=2,actions=output=1\""))
+    check_output(
+        split('sudo ovs-ofctl add-flow s1 "priority=1,in_port=1,actions=output=2"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s2 "priority=1,in_port=2,actions=output=3"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s3 "priority=1,in_port=2,actions=output=3"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s4 "priority=1,in_port=2,actions=output=3"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s5 "priority=1,in_port=2,actions=output=1"')
+    )
 
-    check_output(split("sudo ovs-ofctl add-flow s1 \"priority=1,in_port=2,actions=output=1\""))
-    check_output(split("sudo ovs-ofctl add-flow s2 \"priority=1,in_port=3,actions=output=2\""))
-    check_output(split("sudo ovs-ofctl add-flow s3 \"priority=1,in_port=3,actions=output=2\""))
-    check_output(split("sudo ovs-ofctl add-flow s4 \"priority=1,in_port=3,actions=output=2\""))
-    check_output(split("sudo ovs-ofctl add-flow s5 \"priority=1,in_port=1,actions=output=2\""))
-
-
+    check_output(
+        split('sudo ovs-ofctl add-flow s1 "priority=1,in_port=2,actions=output=1"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s2 "priority=1,in_port=3,actions=output=2"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s3 "priority=1,in_port=3,actions=output=2"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s4 "priority=1,in_port=3,actions=output=2"')
+    )
+    check_output(
+        split('sudo ovs-ofctl add-flow s5 "priority=1,in_port=1,actions=output=2"')
+    )
 
 
 def dump_ovs_flows(switch_num):
     """Dump OpenFlow rules of first switch_num switches"""
     for i in range(switch_num):
-        ret = check_output(split("sudo ovs-ofctl dump-flows s{}".format(i+1)))
-        info("### Flow table of the switch s{} after adding flows:\n".format(
-            i+1))
+        ret = check_output(split("sudo ovs-ofctl dump-flows s{}".format(i + 1)))
+        info("### Flow table of the switch s{} after adding flows:\n".format(i + 1))
         print(ret.decode("utf-8"))
+
+
 # ------------------------------------------------------------------------------
 
 
 def disable_cksum_offload(switch_num):
     """Disable RX/TX checksum offloading"""
     for i in range(switch_num):
-        ifce = "s%s-h%s" % (i+1, i+1)
-        check_output(
-            split("sudo ethtool --offload %s rx off tx off" % ifce)
-        )
+        ifce = "s%s-h%s" % (i + 1, i + 1)
+        check_output(split("sudo ethtool --offload %s rx off tx off" % ifce))
 
 
 def save_hosts_info(hosts):
@@ -77,13 +96,14 @@ def save_hosts_info(hosts):
     """
     info = list()
     for i, h in enumerate(hosts):
-        mac = str(h.MAC("h{}-s{}".format(i+1, i+1)))
+        mac = str(h.MAC("h{}-s{}".format(i + 1, i + 1)))
         ip = str(h.IP())
         info.append([h.name, mac, ip])
 
-    with open('hosts_info.csv', 'w+') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    with open("hosts_info.csv", "w+") as csvfile:
+        writer = csv.writer(
+            csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL
+        )
         for i in info:
             writer.writerow(i)
 
@@ -103,19 +123,28 @@ def deploy_coders(mgr, hosts):
 
     info("*** Run NC decoder on host %s\n" % hosts[-2].name)
     decoder = mgr.addContainer(
-        "decoder", hosts[-2].name, "nc_coder",
+        "decoder",
+        hosts[-2].name,
+        "nc_coder",
         "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
-        wait=3)
+        wait=3,
+        docker_args={},
+    )
     info("*** Run NC encoder on host %s\n" % hosts[1].name)
     encoder = mgr.addContainer(
-        "encoder", hosts[1].name, "nc_coder",
-        "sudo python3 ./encoder.py h2-s2", wait=3)
+        "encoder",
+        hosts[1].name,
+        "nc_coder",
+        "sudo python3 ./encoder.py h2-s2",
+        wait=3,
+        docker_args={},
+    )
 
     return (encoder, decoder)
 
 
 def remove_coders(mgr, coders):
-    encoder, decoder= coders
+    encoder, decoder = coders
     mgr.removeContainer(encoder.name)
     mgr.removeContainer(decoder.name)
 
@@ -143,7 +172,8 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
     info(
         "Run Iperf test between {} (Client) and {} (Server), protocol: {}\n".format(
             h_clt.name, h_srv.name, proto
-        ))
+        )
+    )
     iperf_client_para = {
         "server_ip": h_srv.IP(),
         "port": UDP_PORT_DATA,
@@ -152,7 +182,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         "interval": 1,
         "length": str(SYMBOL_SIZE - 60),
         "proto": "-u",
-        "suffix": "> /dev/null 2>&1 &"
+        "suffix": "> /dev/null 2>&1 &",
     }
     if proto == "UDP" or proto == "udp":
         iperf_client_para["proto"] = "-u"
@@ -160,10 +190,13 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
 
     h_srv.cmd(
         "iperf -s {} -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
-            h_srv.IP(), UDP_PORT_DATA,iperf_client_para["proto"]))
+            h_srv.IP(), UDP_PORT_DATA, iperf_client_para["proto"]
+        )
+    )
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
-        **iperf_client_para)
+        **iperf_client_para
+    )
     print("Iperf client command: {}".format(iperf_clt_cmd))
     ret = h_clt.cmd(iperf_clt_cmd)
 
@@ -185,8 +218,8 @@ def create_topology(net, host_num):
     hosts = list()
 
     try:
-        info('*** Adding controller\n')
-        net.addController('c0', controller=RemoteController, port=6653)
+        info("*** Adding controller\n")
+        net.addController("c0", controller=RemoteController, port=6653)
 
         info("*** Adding Docker hosts and switches in a multi-hop chain topo\n")
         last_sw = None
@@ -194,9 +227,11 @@ def create_topology(net, host_num):
         for i in range(host_num):
             # Each host gets 50%/n of system CPU
             host = net.addDockerHost(
-                'h%s' % (i+1), dimage='dev_test', ip='10.0.0.%s' % (i+1),
-                cpu_quota=int(50000 / host_num),
-                volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
+                "h%s" % (i + 1),
+                dimage="dev_test",
+                ip="10.0.0.%s" % (i + 1),
+                docker_args={"cpu_quota": int(50000 / host_num)},
+            )
             hosts.append(host)
             switch = net.addSwitch("s%s" % (i + 1))
             # MARK: The losses are emulated via netemu of host's interface
@@ -204,10 +239,14 @@ def create_topology(net, host_num):
             if last_sw:
                 # Connect switches
                 if switch.name == "s4" and last_sw.name == "s3":
-                    net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms", loss=30)
+                    net.addLinkNamedIfce(
+                        switch, last_sw, use_htb=True, bw=10, delay="1ms", loss=30
+                    )
                     # info('Add losses between Switches: {} {}\n'.format(switch, last_sw))
                 else:
-                    net.addLinkNamedIfce(switch, last_sw, use_htb=True, bw=10, delay="1ms")
+                    net.addLinkNamedIfce(
+                        switch, last_sw, use_htb=True, bw=10, delay="1ms"
+                    )
             last_sw = switch
 
         return hosts
@@ -229,8 +268,6 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
     mgr = VNFManager(net)
     hosts = create_topology(net, host_num)
 
-
-
     try:
         info("*** Starting network\n")
         net.start()
@@ -247,7 +284,7 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
         # Wait for coders to be ready
 
         info("*** Starting Ryu controller\n")
-        c0 = net.get('c0')
+        c0 = net.get("c0")
         makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py ; read")
 
         # s2 = net.get('s2')
@@ -269,19 +306,15 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
         error("*** Emulation has errors:")
         error(e)
     finally:
-        info('*** Stopping network\n')
+        info("*** Stopping network\n")
         net.stop()
         mgr.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    setLogLevel('info')
-    coder_log_conf = {
-        "encoder": 1,
-        "decoder": 1,
-        "recoder": 1
-    }
+    setLogLevel("info")
+    coder_log_conf = {"encoder": 1, "decoder": 1, "recoder": 1}
 
     run_adaptive_redundancy(5, coder_log_conf)
 

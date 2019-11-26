@@ -4,6 +4,7 @@ import json
 import random
 import cmath
 from typing import List
+
 # import select
 # try:
 #     import numpy as np
@@ -48,12 +49,19 @@ while True:
         if val is not None or "None":
             pass
         # result = dft(val)
-        #@TODO : fft with data, use numpy.fft() for this
+        # @TODO : fft with data, use numpy.fft() for this
         msg = json.dumps(
-            [{"message": f"result{random.randint(0, 100)}\n{rng}", "time": f"{time.time()}", "data": val}],
+            [
+                {
+                    "message": f"result{random.randint(0, 100)}\n{rng}",
+                    "time": f"{time.time()}",
+                    "data": val,
+                }
+            ],
             sort_keys=True,
             # indent=4,
-            separators=(",", ": "))
+            separators=(",", ": "),
+        )
         for i in range(0, rng):
             i += 1
         rx_socket.sendto(msg.encode(), (addr[0], 8008))

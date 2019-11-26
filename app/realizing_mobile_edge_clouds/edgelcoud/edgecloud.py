@@ -30,10 +30,9 @@ def start() -> None:
     full_tree: bool = False
 
     info("\n*** Adding Controller\n")
-    controller1: RemoteController = net.addController("controller1",
-                                                      controller=RemoteController,
-                                                      ip="127.0.0.1",
-                                                      port=6633)
+    controller1: RemoteController = net.addController(
+        "controller1", controller=RemoteController, ip="127.0.0.1", port=6633
+    )
     controller1.start()
 
     info("\n*** Adding Hosts\n")
@@ -42,50 +41,42 @@ def start() -> None:
         dimage="mec_test",
         ip="10.0.0.10",
         mac="00:00:00:00:00:01",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw", "/tmp/:/tmp/log:rw"]
+        docker_args={"volumes": {"/tmp": {"bind": "/tmp", "mode": "rw"}}},
     )
     probe1: DockerHost = net.addDockerHost(
         "probe1",
         dimage="mec_test",
+        docker_args={},
         ip="10.0.0.40",
         mac="00:00:00:00:01:ff",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
     )
     server1: DockerHost = net.addDockerHost(
         "server1",
         dimage="mec_test",
         ip="10.0.0.21",
         mac="00:00:00:00:01:01",
-        cpu_quota=25000,
-        cpuset_cpus="0",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     server2: DockerHost = net.addDockerHost(
         "server2",
         dimage="mec_test",
         ip="10.0.0.22",
         mac="00:00:00:00:01:02",
-        cpu_quota=25000,
-        cpuset_cpus="0",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     server3: DockerHost = net.addDockerHost(
         "server3",
         dimage="mec_test",
         ip="10.0.0.23",
         mac="00:00:00:00:01:03",
-        cpu_quota=25000,
-        cpuset_cpus="0",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     server4: DockerHost = net.addDockerHost(
         "server4",
         dimage="mec_test",
         ip="10.0.0.24",
         mac="00:00:00:00:01:04",
-        cpu_quota=25000,
-        cpuset_cpus="0",
-        volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
     if full_tree:
         server5: DockerHost = net.addDockerHost(
@@ -93,36 +84,28 @@ def start() -> None:
             dimage="mec_test",
             ip="10.0.0.25",
             mac="00:00:00:00:01:05",
-            cpu_quota=25000,
-            cpuset_cpus="0",
-            volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+            docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
         )
         server6: DockerHost = net.addDockerHost(
             "server6",
             dimage="mec_test",
             ip="10.0.0.26",
             mac="00:00:00:00:01:06",
-            cpu_quota=25000,
-            cpuset_cpus="0",
-            volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+            docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
         )
         server7: DockerHost = net.addDockerHost(
             "server7",
             dimage="mec_test",
             ip="10.0.0.27",
             mac="00:00:00:00:01:07",
-            cpu_quota=25000,
-            cpuset_cpus="0",
-            volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+            docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
         )
         server8: DockerHost = net.addDockerHost(
             "server8",
             dimage="mec_test",
             ip="10.0.0.28",
             mac="00:00:00:00:01:08",
-            cpu_quota=25000,
-            cpuset_cpus="0",
-            volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"]
+            docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
         )
 
     info("\n*** Adding Switches\n")
@@ -154,76 +137,28 @@ def start() -> None:
     switch122.cmdPrint("ovs-vsctl show")
 
     info("\n*** Adding Links\n")
-    net.addLink(node1=switch1,
-                node2=client1,
-                delay="200ms",
-                use_htb=True)
-    net.addLink(node1=switch1,
-                node2=probe1,
-                delay="50ms",
-                use_htb=True)
+    net.addLink(node1=switch1, node2=client1, delay="200ms", use_htb=True)
+    net.addLink(node1=switch1, node2=probe1, delay="50ms", use_htb=True)
 
-    net.addLink(node1=switch1,
-                node2=switch11,
-                delay="10ms",
-                use_htb=True)
+    net.addLink(node1=switch1, node2=switch11, delay="10ms", use_htb=True)
     if full_tree:
-        net.addLink(node1=switch1,
-                    node2=switch12,
-                    delay="10ms",
-                    use_htb=True)
+        net.addLink(node1=switch1, node2=switch12, delay="10ms", use_htb=True)
 
-    net.addLink(node1=switch11,
-                node2=switch111,
-                delay="10ms",
-                use_htb=True)
-    net.addLink(node1=switch11,
-                node2=switch112,
-                delay="10ms",
-                use_htb=True)
+    net.addLink(node1=switch11, node2=switch111, delay="10ms", use_htb=True)
+    net.addLink(node1=switch11, node2=switch112, delay="10ms", use_htb=True)
     if full_tree:
-        net.addLink(node1=switch12,
-                    node2=switch121,
-                    delay="10ms",
-                    use_htb=True)
-        net.addLink(node1=switch12,
-                    node2=switch122,
-                    delay="10ms",
-                    use_htb=True)
+        net.addLink(node1=switch12, node2=switch121, delay="10ms", use_htb=True)
+        net.addLink(node1=switch12, node2=switch122, delay="10ms", use_htb=True)
 
-    net.addLink(node1=switch111,
-                node2=server1,
-                delay="100ms",
-                use_htb=True)
-    net.addLink(node1=switch111,
-                node2=server2,
-                delay="150ms",
-                use_htb=True)
-    net.addLink(node1=switch112,
-                node2=server3,
-                delay="200ms",
-                use_htb=True)
-    net.addLink(node1=switch112,
-                node2=server4,
-                delay="250ms",
-                use_htb=True)
+    net.addLink(node1=switch111, node2=server1, delay="100ms", use_htb=True)
+    net.addLink(node1=switch111, node2=server2, delay="150ms", use_htb=True)
+    net.addLink(node1=switch112, node2=server3, delay="200ms", use_htb=True)
+    net.addLink(node1=switch112, node2=server4, delay="250ms", use_htb=True)
     if full_tree:
-        net.addLink(node1=switch121,
-                    node2=server5,
-                    delay="300ms",
-                    use_htb=True)
-        net.addLink(node1=switch121,
-                    node2=server6,
-                    delay="350ms",
-                    use_htb=True)
-        net.addLink(node1=switch122,
-                    node2=server7,
-                    delay="400ms",
-                    use_htb=True)
-        net.addLink(node1=switch122,
-                    node2=server8,
-                    delay="450ms",
-                    use_htb=True)
+        net.addLink(node1=switch121, node2=server5, delay="300ms", use_htb=True)
+        net.addLink(node1=switch121, node2=server6, delay="350ms", use_htb=True)
+        net.addLink(node1=switch122, node2=server7, delay="400ms", use_htb=True)
+        net.addLink(node1=switch122, node2=server8, delay="450ms", use_htb=True)
 
     info("\n*** Starting Network\n")
     net.build()
@@ -235,65 +170,85 @@ def start() -> None:
         name="client1_container",
         dhost="client1",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/client.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/client.py",
+    )
     probe1_container: DockerContainer = mgr.addContainer(
         name="probe1_container",
         dhost="probe1",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/probe_agent.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/probe_agent.py",
+    )
 
     probing_server1_container: DockerContainer = mgr.addContainer(
         name="probing_server1_container",
         dhost="server1",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/probe_server.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/probe_server.py",
+    )
     probing_server2_container: DockerContainer = mgr.addContainer(
         name="probing_server2_container",
         dhost="server2",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/probe_server.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/probe_server.py",
+    )
     probing_server3_container: DockerContainer = mgr.addContainer(
         name="probing_server3_container",
         dhost="server3",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/probe_server.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/probe_server.py",
+    )
     probing_server4_container: DockerContainer = mgr.addContainer(
         name="probing_server4_container",
         dhost="server4",
         dimage="mec_test",
-        dcmd="python3.6 /tmp/probe_server.py")
+        docker_args={},
+        dcmd="python3.6 /tmp/probe_server.py",
+    )
     if full_tree:
         probing_server5_container: DockerContainer = mgr.addContainer(
             name="probing_server5_container",
             dhost="server5",
             dimage="mec_test",
-            dcmd="python3.6 /tmp/probe_server.py")
+            docker_args={},
+            dcmd="python3.6 /tmp/probe_server.py",
+        )
         probing_server6_container: DockerContainer = mgr.addContainer(
             name="probing_server6_container",
             dhost="server6",
             dimage="mec_test",
-            dcmd="python3.6 /tmp/probe_server.py")
+            docker_args={},
+            dcmd="python3.6 /tmp/probe_server.py",
+        )
         probing_server7_container: DockerContainer = mgr.addContainer(
             name="probing_server7_container",
             dhost="server7",
             dimage="mec_test",
-            dcmd="python3.6 /tmp/probe_server.py")
+            docker_args={},
+            dcmd="python3.6 /tmp/probe_server.py",
+        )
         probing_server8_container: DockerContainer = mgr.addContainer(
             name="probing_server8_container",
             dhost="server8",
             dimage="mec_test",
-            dcmd="python3.6 /tmp/probe_server.py")
+            docker_args={},
+            dcmd="python3.6 /tmp/probe_server.py",
+        )
 
     time.sleep(5)
 
     print(
-          f"client 1 : \n{client1_container.dins.logs().decode('utf-8')}\n"
-          f"probe 1 : \n{probe1_container.dins.logs().decode('utf-8')}\n"
-          f"probing server 1 : \n{probing_server1_container.dins.logs().decode('utf-8')}\n"
-          f"probing server 2 : \n{probing_server2_container.dins.logs().decode('utf-8')}\n"
-          f"probing server 3 : \n{probing_server3_container.dins.logs().decode('utf-8')}\n"
-          f"probing server 4 : \n{probing_server4_container.dins.logs().decode('utf-8')}\n"
-          )
+        f"client 1 : \n{client1_container.dins.logs().decode('utf-8')}\n"
+        f"probe 1 : \n{probe1_container.dins.logs().decode('utf-8')}\n"
+        f"probing server 1 : \n{probing_server1_container.dins.logs().decode('utf-8')}\n"
+        f"probing server 2 : \n{probing_server2_container.dins.logs().decode('utf-8')}\n"
+        f"probing server 3 : \n{probing_server3_container.dins.logs().decode('utf-8')}\n"
+        f"probing server 4 : \n{probing_server4_container.dins.logs().decode('utf-8')}\n"
+    )
     if full_tree:
         print(
             f"probing server 5 : \n{probing_server5_container.dins.logs().decode('utf-8')}\n"
@@ -308,7 +263,9 @@ def start() -> None:
 
     server_container: DockerContainer = None
 
-    info("\n*** Await REST instruction from Controller\n")  # REST -> REpresentational State Transfer
+    info(
+        "\n*** Await REST instruction from Controller\n"
+    )  # REST -> REpresentational State Transfer
     while True:
         data, addr = rx_socket.recvfrom(1024)
         _: str = data.decode()
@@ -319,10 +276,15 @@ def start() -> None:
             print("removing container")
         server_container: DockerContainer = mgr.addContainer(
             name="server_container",
-            dhost=f"server{_[_.__len__()-1]}",  # update dhost appropriate to target host
+            # update dhost appropriate to target host
+            dhost=f"server{_[_.__len__()-1]}",
             dimage="mec_test",
-            dcmd="python3.6 /tmp/server.py")
-        print(f"New container : \n{server_container.dins.logs().decode('utf-8')} on server{_[_.__len__()-1]}")
+            docker_args={},
+            dcmd="python3.6 /tmp/server.py",
+        )
+        print(
+            f"New container : \n{server_container.dins.logs().decode('utf-8')} on server{_[_.__len__()-1]}"
+        )
         cnt += 1
         active_container = True
         time.sleep(10)  # dont allow container change too frequent

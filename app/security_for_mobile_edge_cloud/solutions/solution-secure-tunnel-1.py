@@ -22,13 +22,22 @@ def testTopo():
 
     info("*** Adding hosts\n")
     client = net.addDockerHost(
-        "client", dimage="sec_test", ip="10.0.0.1", cpuset_cpus="1", cpu_quota=25000
+        "client",
+        dimage="sec_test",
+        ip="10.0.0.1",
+        docker_args={"cpuset_cpus": "1", "cpu_quota": 25000},
     )
     server = net.addDockerHost(
-        "server", dimage="sec_test", ip="10.0.0.2", cpuset_cpus="1", cpu_quota=25000
+        "server",
+        dimage="sec_test",
+        ip="10.0.0.2",
+        docker_args={"cpuset_cpus": "1", "cpu_quota": 25000},
     )
     attacker = net.addDockerHost(
-        "attacker", dimage="sec_test", ip="10.0.0.3", cpuset_cpus="0", cpu_quota=25000
+        "attacker",
+        dimage="sec_test",
+        ip="10.0.0.3",
+        docker_args={"cpuset_cpus": "0", "cpu_quota": 25000},
     )
 
     info("*** Adding switch\n")
@@ -105,7 +114,11 @@ def testTopo():
 
 def login_at_ftp_server(client_container, ftp_server_ip):
     info("*** Login into ftp server\n")
-    client_container.cmd("printf -- '#!/bin/bash \n ftp -i -n " + ftp_server_ip + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh")
+    client_container.cmd(
+        "printf -- '#!/bin/bash \n ftp -i -n "
+        + ftp_server_ip
+        + " <<EOF\n user root hunter2 \nEOF\n' > login.sh && chmod +x login.sh && ./login.sh"
+    )
 
 
 def test_connection(source_container, target_ip):

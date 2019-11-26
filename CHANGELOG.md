@@ -15,7 +15,6 @@ And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Example of running DPDK application inside application container
 
 ### Changed
 

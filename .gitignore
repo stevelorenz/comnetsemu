@@ -119,9 +119,9 @@ doc/api/*.rst
 ----------
 
 .vagrant/*
-app/network_coding_transport/*.csv
-app/network_coding_transport/*.pcap
-app/mec/*.txt
+app/network_coding_for_transport/*.csv
+app/network_coding_for_transport/*.pcap
+app/realizing_mobile_edge_clouds/*.txt
 
 util/vm_customize.sh
 

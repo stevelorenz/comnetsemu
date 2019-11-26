@@ -2,6 +2,7 @@ import socket
 import time
 import json
 import random
+
 # import subprocess
 
 # _ = subprocess.call("route add 10.255.255.255 dev client1-eth0", shell=True)
@@ -37,10 +38,18 @@ print(f"starting client, {_}")
 while True:
     try:
         msg = json.dumps(
-            [{"message": f"packet{loop}", "type": "DATA", "time": f"{time.time()}", "data": data}],
+            [
+                {
+                    "message": f"packet{loop}",
+                    "type": "DATA",
+                    "time": f"{time.time()}",
+                    "data": data,
+                }
+            ],
             sort_keys=True,
             # indent=4,
-            separators=(",", ": "))
+            separators=(",", ": "),
+        )
         rx_socket.sendall(msg.encode())
 
         # try:
