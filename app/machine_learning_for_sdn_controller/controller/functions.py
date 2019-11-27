@@ -2,8 +2,12 @@ import numpy as np
 from heapq import *
 import math
 
-#choices: 'latencyEchoRTT', 'bw'
+
 def create_matrix(data_map, choice):
+    """
+    Creates matrix from metrics
+    :rtype: object
+    """
     dimension = len(data_map.keys())
     s = (dimension, dimension)
     map = np.zeros(s)
@@ -18,10 +22,14 @@ def create_matrix(data_map, choice):
     for key1 in data_map.keys():
         for key2 in data_map[key1].keys():
             map[keyDict[key1]][keyDict[key2]] = data_map[key1][key2][choice][-1]['value']
-            # TODO: FALSCH
     return map
 
-def convertMatrixToDict(matrix):
+def convert_matrix_to_dict(matrix):
+    """
+    Converts matrix to dictionary
+    :param matrix:
+    :return:
+    """
     dict_build = {}
     lenghtMatrix = len(matrix)
     for i in range(lenghtMatrix):
@@ -32,7 +40,13 @@ def convertMatrixToDict(matrix):
                 dict_build[i + 1][j + 1] = matrix[i, j]
     return dict_build
 
-def convertDataMapToDict(dataMap, choice):
+def convert_data_map_to_dict(dataMap, choice):
+    """
+    Creates dictionary of data_map
+    :param dataMap:
+    :param choice:
+    :return:
+    """
     dictBuild = {}
     for key1 in dataMap.keys():
         dictBuild[key1] = {}
@@ -43,7 +57,16 @@ def convertDataMapToDict(dataMap, choice):
     return dictBuild
 
 def installingPaths(controller, path, firstPort, lastPort, ipSrc, ipDst):
-    p = mapPortsToPath(controller, path, firstPort, lastPort)
+    """
+    Modify the flow table entries on path
+    :param controller:
+    :param path:
+    :param firstPort:
+    :param lastPort:
+    :param ipSrc:
+    :param ipDst:
+    """
+    p = map_ports_to_path(controller, path, firstPort, lastPort)
     controller.logger.info("MAP TO PORTS: {}".format(p))
     # get DP from DPID for each switch
     for dpid in path:
@@ -68,48 +91,61 @@ def installingPaths(controller, path, firstPort, lastPort, ipSrc, ipDst):
         controller.add_flow(dp, 32768, match_ip, actions)
         controller.add_flow(dp, 1, match_arp, actions)
 
-def mapPortsToPath(controller, path, firstPort, lastPort):
+def map_ports_to_path(controller, path, firstPort, lastPort):
+    """
+    Returns path switch in path
+    :param controller:
+    :param path:
+    :param firstPort:
+    :param lastPort:
+    :return:
+    """
     #
-    p= {}
+    p = {}
     in_port = firstPort
-    #controller.logger.info("data_map: {}".format(controller.data_map))
-    #controller.logger.info("P1: {}".format(path[:-1]))
-    #controller.logger.info("P2: {}".format(path[1:]))
-    #controller.logger.info("ZIP FORMAT: {}".format(str(zip(path[:-1], path[1:]))))
+
     #zip builds a set
     for s1, s2 in zip(path[:-1], path[1:]):
         # TODO: check dass nicht vertauscht
         out_port = controller.data_map[s1][s2]['in_port']
         p[s1] = (in_port, out_port)
         in_port = controller.data_map[s2][s1]['in_port']
-        #controller.logger.info("OUT_PORT: {}".format(out_port))
-        #controller.logger.info("IN_PORT: {}".format(in_port))
-    p[path[-1]]= (in_port, lastPort)
-    #controller.logger.info("matched ports to switch {}: {}".format(s1, p[s1]))
+    p[path[-1]] = (in_port, lastPort)
     return p
 
-def buildConnectionBetweenHostsId(srcIP, dstIP):
-    #return '{}'.format(srcIP.split('.')[-1]+'.'+dstIP.split('.')[-1])
+def build_connection_between_hosts_id(srcIP, dstIP):
+    """
+    Creates identification of flows by the ip adresses
+    :param srcIP:
+    :param dstIP:
+    :return:
+    """
     return '{}'.format(srcIP + '_' + dstIP)
 
-def buildIpAdresses(idConn):
+def build_ip_adresses(idConn):
+    """
+    Returns ip addresses of an connection
+    :param idConn:
+    :return:
+    """
     strId = str(idConn)
     split = strId.split("_")
     srcIP = split[0]
     dstIP = split[1]
-    #lastSrcIP = split[0]
-    #ĺastDstIP = split[1]
-    #srcIP = "10.0.0.{}".format(lastSrcIP)
-    #dstIP = "10.0.0.{}".format(ĺastDstIP)
     return srcIP, dstIP
 
-def getCommandsRerouting(oldPath, newPath):
+def get_commands_rerouting(oldPath, newPath):
+    """
+    Returns the mod/add/operations that are necessary to reroute the flows
+    :param oldPath:
+    :param newPath:
+    :return:
+    """
     print('OldPath: {} NewPath: {}'.format(oldPath, newPath))
     npArray = np.array(iterative_levenshtein(newPath, oldPath))
     print("ArrayLevenstein: {}".format(npArray))
-    aStar = astar(npArray, (0,0),(len(newPath), len(oldPath)))
+    aStar = astar(npArray, (0, 0), (len(newPath), len(oldPath)))
     aStar.append((0, 0))
-    print(aStar)
     # analyze:
     i = 0
     # tuple: (operation, index)
@@ -136,7 +172,6 @@ def getCommandsRerouting(oldPath, newPath):
         i += 1
 
     # command, switch number
-    print(changelist)
     preOperation = -1
     nextOperation = -1
     for change in changelist:
@@ -161,6 +196,46 @@ def getCommandsRerouting(oldPath, newPath):
     print(oldPath)
     print(newPath)
     return changelist
+
+def get_link_cost(latency_dict, s1, s2):
+    """
+    Link cost of a link between two switches
+    :param latency_dict:
+    :param s1:
+    :param s2:
+    :return:
+    """
+    # only latency:
+    ew = latency_dict[s2][s1]
+    return ew
+
+def get_path_cost(latency_dict, path):
+    """
+    Cost of all links over a path combined
+    :param latency_dict:
+    :param path:
+    :return:
+    """
+    cost = 0
+    for i in range(len(path) - 1):
+        cost += get_link_cost(latency_dict, path[i], path[i+1])
+    return cost
+
+def filter_paths(latencyDict, paths, max_possible_paths):
+    """
+    filter paths for latency
+    returns maximum
+    :rtype: object
+    """
+    best_paths = []
+    for path in paths:
+        best_paths.append((path, get_path_cost(latencyDict, path)))
+    # sorted(best_paths, key= scndElement)
+    sorted(best_paths, key=lambda scndElement: scndElement[1])
+
+    print("PATHS: {}".format(paths))
+    return [path[0] for path in best_paths[:max_possible_paths]]
+
 
 #########################
 # Rerouting Levensteihn #
@@ -239,61 +314,102 @@ def astar(array, start, goal):
                     fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                     heappush(oheap, (fscore[neighbor], neighbor))
     return False
+
 # 0 - no change
 # 1 - substitution
 # 2 - insert
 # 3 - delete
-def retrieveOperations(changeList, newPath, oldPath):
-    insertList = []
-    deleteList = []
-    deleteListSwitches = []
-    flowAddOperations = []
-    flowModOperations = []
-    modList = []
+def retrieve_operations(changeList, new_path, old_path):
+    """
+    get changes in flow table from operation code
+    :param changeList:
+    :param new_path:
+    :param old_path:
+    :return:
+    """
+    insert_list = []
+    delete_list = []
+    delete_list_switches = []
+    flow_add_operations = []
+    flow_mod_operations = []
+    mod_list = []
     i = 0
     for change in changeList:
         operation = change[0]
         # substitution
         if(operation == 0):
-            modList.append(change[1])
+            mod_list.append(change[1])
         elif(operation == 1):
-            insertList.append(change[1])
-            deleteList.append(change[2])
+            insert_list.append(change[1])
+            delete_list.append(change[2])
         elif (operation == 2):
-            insertList.append(change[1])
+            insert_list.append(change[1])
         elif (operation == 3):
-            deleteList.append(change[2])
+            delete_list.append(change[2])
 
-    print("ModList: {}".format(modList))
-    print("InsertList: {}".format(insertList))
-    print("DeleteList: {}".format(deleteList))
-    print("OldPath: {}".format(oldPath))
+    print("ModList: {}".format(mod_list))
+    print("InsertList: {}".format(insert_list))
+    print("DeleteList: {}".format(delete_list))
+    print("OldPath: {}".format(old_path))
 
-    for element in insertList:
-        currentIndex = element-1
-        if currentIndex < (len(newPath) - 1):
-            following = newPath[currentIndex + 1]
-            if(currentIndex>0):
-                flowAddOperations.append([element, following])
+    for element in insert_list:
+        current_index = element-1
+        if current_index < (len(new_path) - 1):
+            following = new_path[current_index + 1]
+            if(current_index>0):
+                flow_add_operations.append([element, following])
                 # no change before, do it at last
 
     # if next element of the path is in inserting
     # change it at last
-    for element in modList:
-        currentIndex = element - 1
-        if currentIndex < (len(newPath) - 1):
-            print("new Path: {}, current Index: {}".format(newPath, currentIndex))
-            followingIndex = currentIndex + 1
-            following = newPath[followingIndex]
-            if followingIndex in insertList:
-                flowModOperations.append([element, following])
+    for element in mod_list:
+        current_index = element - 1
+        if current_index < (len(new_path) - 1):
+            print("new Path: {}, current Index: {}".format(new_path, current_index))
+            following_index = current_index + 1
+            following = new_path[following_index]
+            if following_index in insert_list:
+                flow_mod_operations.append([element, following])
 
-    for element in deleteList:
+    for element in delete_list:
         print("Delete index old: {}".format(element))
-        switch = oldPath[element]
-        deleteListSwitches.append(switch)
-    print("Delete list switches: {}".format(deleteListSwitches))
-    return flowAddOperations, flowModOperations, deleteListSwitches
+        switch = old_path[element]
+        delete_list_switches.append(switch)
+    print("Delete list switches: {}".format(delete_list_switches))
+    return flow_add_operations, flow_mod_operations, delete_list_switches
 
-def getOutputPort(controller, s1, s2):
+def get_output_port(controller, s1, s2):
+    """
+    Gets output port of a switch2switch connection
+    :param controller:
+    :param s1:
+    :param s2:
+    :return:
+    """
     return controller.data_map[s1][s2]['in_port']
+
+def check_new_measurement(timestamp, last_measurement):
+    """
+    checks if latency measurements have been made for the last state
+    @param timestamp:
+    @param last_measurement:
+    @return:
+    """
+    for dpid_rec in last_measurement:
+        for dpid_sent in last_measurement[dpid_rec]:
+            if last_measurement[dpid_rec][dpid_sent] < timestamp:
+                return False
+    return True
+
+def create_average_latency_dict_from_list(dict_list):
+    """
+    Calculates the average latency
+    :param dict_list:
+    :return:
+    """
+    mean_dict = {}
+    for key in list(dict_list[0].keys()):
+        mean_dict[key] = {}
+        for key2 in list(dict_list[0][key].keys()):
+            mean_dict[key][key2] = sum(d[key][key2] for d in dict_list) / len(dict_list)
+    return mean_dict

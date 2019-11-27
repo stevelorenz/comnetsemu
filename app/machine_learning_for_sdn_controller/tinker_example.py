@@ -6,25 +6,39 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
 from thread import start_new_thread
+import os, stat
+import json
 import time
 import csv
-#                s2 (10MBits/s)
-#   h11    10ms/     \10ms h41
-#   h12 -- s1        s4 -- h42
-#   h13    14ms\     /14ms h43
-#                s3 (7MBits/s)
+import requests
+import sys
+import math
+sys.path.append("...")
+sys.path.append("..")
+sys.path.append("../controller")
+sys.path.append(".")
+print(os.getcwd())
+print(sys.path.__str__())
+from config import Config
+
+
+#                s2
+#  h11    10ms /     \ 10ms    h41
+#     --     s1       s4 --
+#  h12    14ms \     / 14ms   h42
+#                s3
 
 
 def four_switches_network():
     net = Mininet(topo=None,
                   build=False,
                   ipBase='10.0.0.0/8', link=TCLink)
+
+    queue_lenght = Config.queue_lenght
+
+
     # linkarray
-    linkArray = []
-
-    #controllerIP = '192.168.56.129'
     controllerIP = '127.0.0.1'
-
     info('*** Adding controller\n')
     c0 = net.addController(name='c0',
                            controller=RemoteController,
@@ -48,10 +62,10 @@ def four_switches_network():
     h43 = net.addHost('h43', cls=Host, ip='10.0.0.43', defaultRoute=None)
 
     info('*** Add links\n')
-    linkArray.append(net.addLink(s1, s2, delay='10ms', bw=10, max_queue_size=500))
-    linkArray.append(net.addLink(s2, s4, delay='10ms', bw=10, max_queue_size=500))
-    linkArray.append(net.addLink(s1, s3, delay='14ms', bw=7, max_queue_size=500))
-    linkArray.append(net.addLink(s3, s4, delay='14ms', bw=7, max_queue_size=500))
+    net.addLink(s1, s2, delay='10ms',use_tbf = True, bw=3, max_queue_size=queue_lenght)
+    net.addLink(s2, s4, delay='10ms',use_tbf = True, bw=3, max_queue_size=queue_lenght)
+    net.addLink(s1, s3, delay='14ms',use_tbf = True, bw=4, max_queue_size=queue_lenght)
+    net.addLink(s3, s4, delay='14ms',use_tbf = True, bw=4, max_queue_size=queue_lenght)
 
     net.addLink(h11, s1)
     net.addLink(h12, s1)
@@ -61,9 +75,9 @@ def four_switches_network():
     net.addLink(h42, s4)
     net.addLink(h43, s4)
 
-    info( '*** Starting network\n')
+    info('*** Starting network\n')
     net.build()
-    info( '*** Starting controllers\n')
+    info('*** Starting controllers\n')
     for controller in net.controllers:
         controller.start()
 
@@ -77,6 +91,6 @@ def four_switches_network():
     net.stop()
 
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+    setLogLevel('info')
 
 four_switches_network()
