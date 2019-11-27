@@ -14,9 +14,7 @@ import requests
 import sys
 import math
 
-sys.path.append("...")
-sys.path.append("..")
-sys.path.append("../controller")
+sys.path.append("./controller")
 sys.path.append(".")
 print(os.getcwd())
 print(sys.path.__str__())

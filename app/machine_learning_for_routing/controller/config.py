@@ -56,14 +56,13 @@ class Config(object):
     measurements_for_reward = 1
 
     # duration to stay in one load level by iperf
-    duration_iperf_per_load_level_minutes = 20
+    duration_iperf_per_load_level_minutes = 5
 
     # load level
-    load_levels = [10, 10]
-    # load_levels = [10]
+    load_levels = [10]
 
     # number of iterations per measurement
-    iterations = 30
+    iterations = 1
 
     # init_value for softmax
     softmax_init_value = - 140
@@ -93,7 +92,7 @@ class Config(object):
     bias = BiasRL.RANDOM
 
     # where to save the logs
-    log_path = '../logs'
+    log_path = './logs'
 
     # how many rewards sould be taken until building an average for the saved reward
     savingRewardCounter = 1
