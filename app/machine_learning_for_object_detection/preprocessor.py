@@ -25,7 +25,7 @@ from utils.imgutils import feature_maps_to_image
 MTU = 1500
 
 
-class CompressorObj:
+class CompressorObj(object):
     def __init__(self):
         pass
 
@@ -60,7 +60,7 @@ class CompressorObj:
         return res
 
 
-class Preprocessor:
+class Preprocessor(object):
     def __init__(self):
         # tensorflow graph
         self.__model_path = './model/part1.pb'
