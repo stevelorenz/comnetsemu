@@ -5,8 +5,27 @@
 This folder contains exercises for packet filter and secure network tunnels.
 As packet filter, we use nftables, which is the state-of-the-art
 packet filter on Linux systems. For securing network traffic in transit we use
-WireGuard as secure network tunnel. Example usage of nftables and WireGuard is
-shown in the examples folder (../../examples).
+WireGuard as secure network tunnel.
+
+To run all exercises, two container images named sec_test and nginx are required.
+Images can be built by running:
+
+```bash
+$ sudo ./build_docker_images.sh
+```
+
+Example usage of nftables and WireGuard is shown in ./nftables.py and ./wireguard.py.
+
+1. nftables.py:
+
+This examples shows the basic setup of a firewall with nftables.
+It first creates a table and chain to filter on the netfilter input hook and then adds a rule to filter the traffic of IP address '10.0.0.2'.
+In the end the table is listed.
+
+2. wireguard.py:
+
+This example demonstrates how to setup a Wireguard network tunnel between two hosts.
+First the required keys are generated and then the Wireguard interfaces are created and configured.
 
 The exercises should be completed in ascending order, starting with exercise 1.
 The exercise scripts check if the tasks have been concluded and then deconstruct
