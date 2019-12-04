@@ -189,9 +189,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s {} -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
-            h_srv.IP(), UDP_PORT_DATA, iperf_client_para["proto"]
-        )
+        "iperf -s -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(UDP_PORT_DATA, iperf_client_para["proto"])
     )
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
