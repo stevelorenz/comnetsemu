@@ -22,9 +22,9 @@ from config import Config
 
 
 #                s2
-#  h11    10ms /     \ 10ms    h41
-#     --     s1       s3 --
-#  h12    14ms \     / 14ms   h42
+#  h1    10ms /     \ 10ms  h4
+#  h2 --     s1       s3 -- h5
+#  h3    14ms \     / 14ms  h6
 #                s4
 
 ###################################################################
@@ -115,35 +115,35 @@ def four_switches_network():
     s4 = net.addSwitch('s4', cls=OVSKernelSwitch)
 
     info('*** Add hosts\n')
-    h11 = net.addHost('h11', cls=Host, ip='10.0.0.11', defaultRoute=None)
-    h12 = net.addHost('h12', cls=Host, ip='10.0.0.12', defaultRoute=None)
-    h13 = net.addHost('h13', cls=Host, ip='10.0.0.13', defaultRoute=None)
+    h1 = net.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
+    h2 = net.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
+    h3 = net.addHost('h3', cls=Host, ip='10.0.0.3', defaultRoute=None)
 
-    h31 = net.addHost('h31', cls=Host, ip='10.0.0.31', defaultRoute=None)
-    h32 = net.addHost('h32', cls=Host, ip='10.0.0.32', defaultRoute=None)
-    h33 = net.addHost('h33', cls=Host, ip='10.0.0.33', defaultRoute=None)
+    h4 = net.addHost('h4', cls=Host, ip='10.0.0.4', defaultRoute=None)
+    h5 = net.addHost('h5', cls=Host, ip='10.0.0.5', defaultRoute=None)
+    h6 = net.addHost('h6', cls=Host, ip='10.0.0.6', defaultRoute=None)
 
     info('*** Add links\n')
     linkArray.append(
         net.addLink(s1, s2, delay='10ms', use_tbf=True, bw=3, max_queue_size=queue_lenght, latency_ms=10000000,
                     burst=1000000))
     linkArray.append(
-        net.addLink(s2, s4, delay='10ms', use_tbf=True, bw=3, max_queue_size=queue_lenght, latency_ms=10000000,
+        net.addLink(s2, s3, delay='10ms', use_tbf=True, bw=3, max_queue_size=queue_lenght, latency_ms=10000000,
                     burst=1000000))
     linkArray.append(
-        net.addLink(s1, s3, delay='14ms', use_tbf=True, bw=4, max_queue_size=queue_lenght, latency_ms=10000000,
+        net.addLink(s1, s4, delay='14ms', use_tbf=True, bw=4, max_queue_size=queue_lenght, latency_ms=10000000,
                     burst=1000000))
     linkArray.append(
-        net.addLink(s3, s4, delay='14ms', use_tbf=True, bw=4, max_queue_size=queue_lenght, latency_ms=10000000,
+        net.addLink(s4, s3, delay='14ms', use_tbf=True, bw=4, max_queue_size=queue_lenght, latency_ms=10000000,
                     burst=1000000))
 
-    net.addLink(h11, s1)
-    net.addLink(h12, s1)
-    net.addLink(h13, s1)
+    net.addLink(h1, s1)
+    net.addLink(h2, s1)
+    net.addLink(h3, s1)
 
-    net.addLink(h31, s4)
-    net.addLink(h32, s4)
-    net.addLink(h33, s4)
+    net.addLink(h4, s3)
+    net.addLink(h5, s3)
+    net.addLink(h6, s3)
 
     info('*** Starting network\n')
     net.build()
@@ -184,9 +184,9 @@ def four_switches_network():
                 write_in_File(fileName, logs, loadLevel, iteration_split_up_flag, iteration)
             # send load level
             print("(Re)starting iperf -- loadLevel:  {}".format(loadLevel))
-            start_new_thread(startIperf, (h11, h31, 2.75, 5001, timeTotal, loadLevel))
-            start_new_thread(startIperf, (h12, h32, 1.75, 5001, timeTotal, loadLevel))
-            start_new_thread(startIperf, (h13, h33, 1.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h1, h4, 2.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h2, h5, 1.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h3, h6, 1.75, 5001, timeTotal, loadLevel))
             i = i + 1
             time.sleep(timeTotal)
             # waiting additional 2 sec to reset states

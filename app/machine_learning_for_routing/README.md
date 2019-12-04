@@ -1,18 +1,24 @@
 ## Reinforcement Learning for Routing in Software-defined networks ##
-### Motivation and Setup ###
+### Setup ###
 
 ```text
-                s2 (10MBits/s)
+                s2 (3 MBits/s)
    h11    10ms/    \10ms  h41
-   h12 -- s1        s4 -- h42
+   h12 -- s1        s3 -- h42
           14ms\    /14ms
-                s3 (8MBits/s)
+                s4 (4 MBits/s)
 ```
 
 ### How to run ###
 
+Terminal 1:
 ```bash
-sudo python3 Run_Measurement.py --mn_file Scenario_Four_switches_two_ways_4_hosts.py
-```
+sudo python ./example.py
+``` 
+
+Terminal 2:
+```bash
+ryu-manager ./controller/remote_controller.py
+``` 
 
 ### ###
