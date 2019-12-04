@@ -3,9 +3,10 @@
 # vim:fenc=utf-8
 
 """
-About: Topology to test machine learning for object detection application
+About: Topology to test machine learning for object detection application.
 """
 
+from pathlib import Path
 from shlex import split
 from subprocess import check_output
 
@@ -15,7 +16,7 @@ from mininet.link import TCLink
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 
-HOST_SRC_DIR = "/home/vagrant/comnetsemu/app/machine_learning_object_detection"
+HOST_SRC_DIR = str(Path("./").absolute())
 
 
 def get_ofport(ifce):
@@ -28,8 +29,10 @@ def get_ofport(ifce):
     )
 
 
-def add_ovs_flows(net):
+def add_ovs_flows():
+    """Add Openflow rules to redirect traffic between client and server to vnf."""
     check_output(split("ovs-ofctl del-flows s1"))
+
     check_output(
         split(
             'ovs-ofctl add-flow s1 "{proto},in_port={in_port},actions=output={out_port}"'.format(
@@ -61,6 +64,7 @@ def disable_cksum_offload(ifces):
 
 
 def testTopo():
+    """testTopo"""
 
     net = Containernet(
         controller=Controller,
@@ -79,36 +83,23 @@ def testTopo():
         "client",
         dimage="yolov2",
         ip="10.0.0.11/24",
-        docker_args={
-            "cpuset_cpus": "0",
-            "volumes": {
-                "{}".format(HOST_SRC_DIR): {"bind": "/app/yolov2/", "mode": "ro"}
-            },
-        },
+        docker_args={"cpuset_cpus": "0", "hostname": "client"},
     )
 
     vnf = net.addDockerHost(
         "vnf",
         dimage="yolov2",
         ip="10.0.0.12/24",
-        docker_args={
-            "cpuset_cpus": "0",
-            "volumes": {
-                "{}".format(HOST_SRC_DIR): {"bind": "/app/yolov2/", "mode": "ro"}
-            },
-        },
+        docker_args={"cpuset_cpus": "0", "hostname": "vnf"},
     )
 
+    # Run server on another vCPU since it is more compute-intensive than client
+    # and vnf.
     server = net.addDockerHost(
         "server",
         dimage="yolov2",
         ip="10.0.0.21/24",
-        docker_args={
-            "cpuset_cpus": "0",
-            "volumes": {
-                "{}".format(HOST_SRC_DIR): {"bind": "/app/yolov2/", "mode": "ro"}
-            },
-        },
+        docker_args={"cpuset_cpus": "1", "hostname": "server"},
     )
 
     info("*** Adding switch\n")
@@ -122,7 +113,7 @@ def testTopo():
     info("*** Starting network\n")
     net.start()
     net.pingAll()
-    add_ovs_flows(net)
+    add_ovs_flows()
     ifces = ["s1-vnf"]
     disable_cksum_offload(ifces)
 

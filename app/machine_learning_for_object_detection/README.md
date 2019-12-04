@@ -2,8 +2,10 @@
 
 This example demonstrates how to deploy and test a distributed object detection application using [You Only Look Once
 (YOLO) version 2](https://pjreddie.com/darknet/yolov2/).
-YOLOv2 is a deep learning based method and uses Convolutional Neutral Network (CNN) to detect multiple objects in a image.
-To goal of this example is to show that the object detection latency can be reduced by offloading a part of CNN processing on the network edge.
+YOLOv2 is a deep learning based method and uses Convolutional Neutral Network (CNN) to detect multiple objects in a
+image.  To goal of this example is to show that the object detection latency can be reduced by offloading a part of CNN
+processing on the network edge. 
+
 The test topology described in [topology.py](./topology.py) is a simple chain with three nodes connected directly to a
 single switch:
 
@@ -33,16 +35,20 @@ $ sudo bash ./build_docker_images.sh
 $ sudo python3 ./topology.py
 ```
 
-5 terminals will be created when the network topology is created. Following two tests require running commands
-interactively in these terminals. Following steps are marked with a "(node name 1, node name 2, ...) description"
-format. The commands of this step should be executed **inside the corresponded terminal(s)**.
+Since the `xterms=True` is used in the topology.py, five terminals (one xterm for one node) will be created when the
+network topology is created.
+Two Xterms with prompt `root@comnetsemu` are for virtual switch node and the reference SDN controller (In the root namespace).
+These two Xterms can be closed.
+The other three Xterms with prompt `root@client`, `root@vnf` and `root@server` are for client, vnf and server (In their own Docker container).
+Following steps are marked with a "(node prompt name 1, node prompt name 2, ...) description" format.
+The commands of each step should be executed **inside the corresponded terminal(s) with the marked prompt name**.
 
 ## Test 1: The VNF can forward infinite packets ##
 
 In this test, the VNF can forward infinite packets. The client runs the preprocessor.py firstly in raw mode and then in
 processed mode.
 
-1. (vnf) Run VNF program with default arguments.
+1. (`root@vnf`) Run VNF program with default arguments.
 
 ```bash
 $ python ./vnf.py
@@ -51,7 +57,7 @@ $ python ./vnf.py
 *** Packet socket is bind, enter forwarding loop
 ```
 
-2. (server) Run server.py and wait for it to be ready.
+2. (`root@server`) Run server.py and wait for it to be ready.
 
 ```bash
 $ python ./server.py
@@ -60,7 +66,7 @@ $ python ./server.py
 *** Wait for data from client.
 ```
 
-3. (client) Run preprocessor.py with raw image mode (mode 0).
+3. (`root@client`) Run preprocessor.py with raw image mode (mode 0).
 
 ```bash
 $ python ./preprocessor.py 0
@@ -75,8 +81,8 @@ $ python ./preprocessor.py 0
 The client can get the detection result from the server and the total delay (including transmission and image processing
 for detection) is 11.43 second.
 
-4. (client) Run preprocessor.py with pre-processed mode (mode 1). The server.py should run on the server side. Restart
-it if the program crashes.
+4. (`root@client`) Run preprocessor.py with pre-processed mode (mode 1). The server.py should still keep running on the
+   server side. Restart it if the program crashes.
 
 ```bash
 $ python ./preprocessor.py 1
@@ -97,7 +103,7 @@ in processed mode. The 200 is chosen based on the required number of data packet
 (raw image: 235, pre-processed mode: 137). When the VNF can forward maximal 200 packets, the last 35 packets in raw
 image mode will be lost.
 
-1. (vnf) Run VNF program with maximal 200 packets.
+1. (`root@vnf`) Run VNF program with maximal 200 packets.
 
 ```bash
 $ python ./vnf.py --max 200
@@ -106,9 +112,9 @@ $ python ./vnf.py --max 200
 *** Packet socket is bind, enter forwarding loop
 ```
 
-2. (server) Run server program on server node like step 2 in Test 1.
+2. (`root@server`) Run server program on server node like step 2 in Test 1.
 
-3. (client) Run preprocessor program with raw mode like step 3 in Test 1.
+3. (`root@client`) Run preprocessor program with raw mode like step 3 in Test 1.
 
 ```bash
 # The VNF program terminates
@@ -123,9 +129,9 @@ Reach maximal forwarding number, exits
 Server recv timeout! exist.
 ```
 
-4. Restart VNF and server program with step 1 and 2.
+4. (`root@vnf`, `root@server`) Restart VNF and server program with step 1 and 2.
 
-5. Run preprocessor program with pre-processed mode (mode 1).
+5. (`root@client`) Run preprocessor program with pre-processed mode (mode 1).
 
 ```bash
 $ python ./preprocessor.py 1
