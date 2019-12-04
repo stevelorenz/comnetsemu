@@ -28,6 +28,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.pytype
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -110,12 +111,18 @@ venv.bak/
 # built documentation
 doc/html
 doc/latex
+doc/build/
+doc/api/*.rst
 
 ----------
 -  MISC  -
 ----------
 
 .vagrant/*
-app/network_coding_transport/*.csv
-app/network_coding_transport/*.pcap
-app/mec/*.txt
+app/network_coding_for_transport/*.csv
+app/network_coding_for_transport/*.pcap
+app/realizing_mobile_edge_clouds/*.txt
+
+util/vm_customize.sh
+
+extern_deps/

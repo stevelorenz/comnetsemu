@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 
-"Setuptools Params"
+"""Setuptools Configuration"""
 
 from setuptools import setup, find_packages
 from os.path import join
 
 # Get version number from source tree
 import sys
-sys.path.append('.')
+
+sys.path.append(".")
 from comnetsemu.net import VERSION
 
-scripts = [ join( 'bin', filename ) for filename in [ 'ce' ] ]
-modname = distname = 'comnetsemu'
+scripts = [join("bin", filename) for filename in ["ce"]]
+modname = distname = "comnetsemu"
 
 setup(
     name=distname,
     version=VERSION,
-    description='A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice',
-    author='The Deutsche Telekom Chair of Communication Networks, TU Dresden',
-    author_email='zuo.xiang@tu-dresden.de',
-    packages=find_packages(
-        exclude=['app', 'examples', 'util', 'venv']),
+    description="Emulator for Computing in Communication Networks.",
+    author="The Deutsche Telekom Chair of Communication Networks, TU Dresden",
+    author_email="zuo.xiang@tu-dresden.de",
+    packages=find_packages(exclude=["app", "examples", "util", "venv"]),
     long_description="""
         A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice
         """,
@@ -28,17 +28,22 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        "License :: OSI Approved :: BSD License",
+        # TODO: Add a proper license
+        # "License :: OSI Approved :: BSD License",
         "Programming Language :: Python:: 3.6",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: System :: Emulators",
-        'Natural Language :: English'
+        "Natural Language :: English",
     ],
-    keywords='networking emulator SDN NFV Docker',
-    license='BSD',
+    keywords="networking emulator SDN NFV Docker",
+    # license="BSD",
+    # MARK: MINIMAL requirements
     install_requires=[
-        'setuptools'
+        "setuptools>=39.0.1,<40.0.0",
+        "docker>=3.7.2,<4.0.0",
+        # Not available on PyPi
+        "mininet>=2.3.0d6",
     ],
     scripts=scripts,
 )

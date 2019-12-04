@@ -5,21 +5,16 @@ About: ComNetsEmu CLI utility
 """
 
 import argparse
-import subprocess
 import sys
-import shutil
 
-import docker
 from mininet.log import LEVELS, debug, error, info, lg
-from comnetsemu.net import VNFMANGER_MOUNTED_DIR
+from comnetsemu.clean import cleanup
 
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbosity",
-                        choices=LEVELS.keys(), default='info')
-    parser.add_argument("-c", "--clean", action="store_true",
-                        help="Run cleanups")
+    parser.add_argument("-v", "--verbosity", choices=LEVELS.keys(), default="info")
+    parser.add_argument("-c", "--clean", action="store_true", help="Run cleanups")
     args = parser.parse_args()
 
     lg.setLogLevel(args.verbosity)
@@ -28,43 +23,7 @@ def run():
         cleanup()
 
 
-def cleanup():
-    info("-" * 80 + "\n"+"*** Run ComNetsEmu's cleanups\n" +
-         "-" * 80 + "\n")
-    info("*** Run mininet's cleanups\n")
-    subprocess.run(["mn", "-c"], check=True)
-    cleanup_docker_containers()
-    info("*** Remove temp directories\n")
-    shutil.rmtree(VNFMANGER_MOUNTED_DIR, ignore_errors=True)
-
-
-def cleanup_docker_containers():
-    info("*** Run docker container cleanups\n")
-    client = docker.from_env()
-    containers = client.containers.list(all=True)
-    docker_hosts = list()
-    internal_containers = list()
-    for c in containers:
-        _type = c.labels.get("comnetsemu", None)
-        if not _type:
-            continue
-        if _type == "dockerhost":
-            docker_hosts.append(c)
-        elif _type == "dockercontainer":
-            internal_containers.append(c)
-
-    if docker_hosts:
-        info("Force remove all running DockerHost instances: {}\n".format(
-            ", ".join([c.name for c in docker_hosts])))
-        for c in docker_hosts:
-            c.remove(force=True)
-
-    if internal_containers:
-        info("Force remove all running internal Docker containers: {}\n".format(
-            ", ".join([c.name for c in internal_containers])))
-        for c in internal_containers:
-            c.remove(force=True)
-
+#  TODO:  <05-08-19, Zuo> Add helpers to setup Userspace network framework like DPDK #
 
 if __name__ == "__main__":
     try:
@@ -75,12 +34,17 @@ if __name__ == "__main__":
     except Exception:
         # Print exception
         type_, val_, trace_ = sys.exc_info()
-        errorMsg = ("-"*80 + "\n" +
-                    "Caught exception. Cleaning up...\n\n" +
-                    "%s: %s\n" % (type_.__name__, val_) +
-                    "-"*80 + "\n")
+        errorMsg = (
+            "-" * 80
+            + "\n"
+            + "Caught exception. Cleaning up...\n\n"
+            + "%s: %s\n" % (type_.__name__, val_)
+            + "-" * 80
+            + "\n"
+        )
         error(errorMsg)
         # Print stack trace to debug log
         import traceback
+
         stackTrace = traceback.format_exc()
         debug(stackTrace + "\n")

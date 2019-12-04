@@ -28,25 +28,27 @@ def get_ofport(ifce):
     :param ifce (str): Name of the interface
     """
     return check_output(
-        split("sudo ovs-vsctl get Interface {} ofport".format(ifce)
-              )).decode("utf-8")
+        split("sudo ovs-vsctl get Interface {} ofport".format(ifce))
+    ).decode("utf-8")
 
 
 def add_ovs_flows(net, switch_num):
     """Add OpenFlow rules for TCP/UDP traffic for dev tests, SHOULD be performed by the SDN controller"""
 
     for i in range(switch_num - 1):
-        check_output(
-            split("sudo ovs-ofctl del-flows s{}".format(i+1))
-        )
+        check_output(split("sudo ovs-ofctl del-flows s{}".format(i + 1)))
         proto = "udp"
-        in_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
-        out_port = get_ofport("s{}-s{}".format((i+1), (i+2)))
+        in_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
+        out_port = get_ofport("s{}-s{}".format((i + 1), (i + 2)))
         check_output(
             split(
-                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
-                       "proto": proto}
+                'sudo ovs-ofctl add-flow s{sw} "{proto},in_port={in_port},actions=output={out_port}"'.format(
+                    **{
+                        "sw": (i + 1),
+                        "in_port": in_port,
+                        "out_port": out_port,
+                        "proto": proto,
+                    }
                 )
             )
         )
@@ -54,13 +56,17 @@ def add_ovs_flows(net, switch_num):
         if i == 0:
             continue
 
-        in_port = get_ofport("s{}-s{}".format((i+1), i))
-        out_port = get_ofport("s{}-h{}".format((i+1), (i+1)))
+        in_port = get_ofport("s{}-s{}".format((i + 1), i))
+        out_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
         check_output(
             split(
-                "sudo ovs-ofctl add-flow s{sw} \"{proto},in_port={in_port},actions=output={out_port}\"".format(
-                    **{"sw": (i+1), "in_port": in_port, "out_port": out_port,
-                       "proto": proto}
+                'sudo ovs-ofctl add-flow s{sw} "{proto},in_port={in_port},actions=output={out_port}"'.format(
+                    **{
+                        "sw": (i + 1),
+                        "in_port": in_port,
+                        "out_port": out_port,
+                        "proto": proto,
+                    }
                 )
             )
         )
@@ -69,20 +75,19 @@ def add_ovs_flows(net, switch_num):
 def dump_ovs_flows(switch_num):
     """Dump OpenFlow rules of first switch_num switches"""
     for i in range(switch_num):
-        ret = check_output(split("sudo ovs-ofctl dump-flows s{}".format(i+1)))
-        info("### Flow table of the switch s{} after adding flows:\n".format(
-            i+1))
+        ret = check_output(split("sudo ovs-ofctl dump-flows s{}".format(i + 1)))
+        info("### Flow table of the switch s{} after adding flows:\n".format(i + 1))
         print(ret.decode("utf-8"))
+
+
 # ------------------------------------------------------------------------------
 
 
 def disable_cksum_offload(switch_num):
     """Disable RX/TX checksum offloading"""
     for i in range(switch_num):
-        ifce = "s%s-h%s" % (i+1, i+1)
-        check_output(
-            split("sudo ethtool --offload %s rx off tx off" % ifce)
-        )
+        ifce = "s%s-h%s" % (i + 1, i + 1)
+        check_output(split("sudo ethtool --offload %s rx off tx off" % ifce))
 
 
 def save_hosts_info(hosts):
@@ -92,13 +97,14 @@ def save_hosts_info(hosts):
     """
     info = list()
     for i, h in enumerate(hosts):
-        mac = str(h.MAC("h{}-s{}".format(i+1, i+1)))
+        mac = str(h.MAC("h{}-s{}".format(i + 1, i + 1)))
         ip = str(h.IP())
         info.append([h.name, mac, ip])
 
-    with open('hosts_info.csv', 'w+') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    with open("hosts_info.csv", "w+") as csvfile:
+        writer = csv.writer(
+            csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL
+        )
         for i in info:
             writer.writerow(i)
 
@@ -117,36 +123,51 @@ def deploy_coders(mgr, hosts, rec_st_idx, rec_num, action_map):
     """
     recoders = list()
 
-    info("*** Run NC recoder(s) in the middle, on hosts %s...\n" % (
-        ", ".join([x.name for x in hosts[rec_st_idx:rec_st_idx+rec_num]])))
-    for i in range(rec_st_idx, rec_st_idx+rec_num):
-        name = "recoder_on_h%d" % (i+1)
-        rec_cli = "h{}-s{} --action {}".format(i+1, i+1, action_map[i-2])
+    info(
+        "*** Run NC recoder(s) in the middle, on hosts %s...\n"
+        % (", ".join([x.name for x in hosts[rec_st_idx : rec_st_idx + rec_num]]))
+    )
+    for i in range(rec_st_idx, rec_st_idx + rec_num):
+        name = "recoder_on_h%d" % (i + 1)
+        rec_cli = "h{}-s{} --action {}".format(i + 1, i + 1, action_map[i - 2])
         recoder = mgr.addContainer(
-            name, hosts[i], "nc_coder",
-            " ".join(("sudo python3 ./recoder.py", rec_cli)), wait=3
+            name,
+            hosts[i].name,
+            "nc_coder",
+            " ".join(("sudo python3 ./recoder.py", rec_cli)),
+            wait=3,
+            docker_args={},
         )
         recoders.append(recoder)
     time.sleep(rec_num)
     info("*** Run NC decoder on host %s\n" % hosts[-2].name)
     decoder = mgr.addContainer(
-        "decoder", hosts[-2], "nc_coder",
+        "decoder",
+        hosts[-2].name,
+        "nc_coder",
         "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
-        wait=3)
+        wait=3,
+        docker_args={},
+    )
     info("*** Run NC encoder on host %s\n" % hosts[1].name)
     encoder = mgr.addContainer(
-        "encoder", hosts[1], "nc_coder",
-        "sudo python3 ./encoder.py h2-s2", wait=3)
+        "encoder",
+        hosts[1].name,
+        "nc_coder",
+        "sudo python3 ./encoder.py h2-s2",
+        wait=3,
+        docker_args={},
+    )
 
     return (encoder, decoder, recoders)
 
 
 def remove_coders(mgr, coders):
     encoder, decoder, recoders = coders
-    mgr.removeContainer(encoder)
-    mgr.removeContainer(decoder)
+    mgr.removeContainer(encoder.name)
+    mgr.removeContainer(decoder.name)
     for r in recoders:
-        mgr.removeContainer(r)
+        mgr.removeContainer(r.name)
 
 
 def print_coders_log(coders, coder_log_conf):
@@ -176,7 +197,8 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
     info(
         "Run Iperf test between {} (Client) and {} (Server), protocol: {}\n".format(
             h_clt.name, h_srv.name, proto
-        ))
+        )
+    )
     iperf_client_para = {
         "server_ip": h_srv.IP(),
         "port": 9999,
@@ -185,17 +207,21 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         "interval": 1,
         "length": str(SYMBOL_SIZE),
         "proto": "-u",
-        "suffix": "> /dev/null 2>&1 &"
+        "suffix": "> /dev/null 2>&1 &",
     }
     if proto == "UDP" or proto == "udp":
         iperf_client_para["proto"] = "-u"
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(iperf_client_para["proto"]))
+        "iperf -s -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
+            iperf_client_para["proto"]
+        )
+    )
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
-        **iperf_client_para)
+        **iperf_client_para
+    )
     print("Iperf client command: {}".format(iperf_clt_cmd))
     ret = h_clt.cmd(iperf_clt_cmd)
 
@@ -219,8 +245,8 @@ def create_topology(net, host_num):
     if host_num < 5:
         raise RuntimeError("Require at least 5 hosts")
     try:
-        info('*** Adding controller\n')
-        net.addController('c0')
+        info("*** Adding controller\n")
+        net.addController("c0")
 
         info("*** Adding Docker hosts and switches in a multi-hop chain topo\n")
         last_sw = None
@@ -228,18 +254,20 @@ def create_topology(net, host_num):
         for i in range(host_num):
             # Each host gets 50%/n of system CPU
             host = net.addDockerHost(
-                'h%s' % (i+1), dimage='dev_test', ip='10.0.0.%s' % (i+1),
-                cpu_quota=int(50000 / host_num),
-                volumes=["/var/run/docker.sock:/var/run/docker.sock:rw"])
+                "h%s" % (i + 1),
+                dimage="dev_test",
+                ip="10.0.0.%s" % (i + 1),
+                docker_args={"cpu_quota": int(50000 / host_num)},
+            )
             hosts.append(host)
             switch = net.addSwitch("s%s" % (i + 1))
             # MARK: The losses are emulated via netemu of host's interface
-            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms",
-                                 use_htb=True)
+            net.addLinkNamedIfce(switch, host, bw=10, delay="1ms", use_htb=True)
             if last_sw:
                 # Connect switches
-                net.addLinkNamedIfce(switch, last_sw, use_htb=True,
-                                     bw=10, delay="1ms", loss=20)
+                net.addLinkNamedIfce(
+                    switch, last_sw, use_htb=True, bw=10, delay="1ms", loss=20
+                )
             last_sw = switch
 
         return hosts
@@ -282,11 +310,10 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
                 action_map = ["forward"] * rec_num
                 action_map[i] = "recode"
                 info(
-                    "Number of recoders: %s, the action map: %s\n" % (
-                        rec_num, ", ".join(action_map))
+                    "Number of recoders: %s, the action map: %s\n"
+                    % (rec_num, ", ".join(action_map))
                 )
-                coders = deploy_coders(
-                    mgr, hosts, rec_st_idx, rec_num, action_map)
+                coders = deploy_coders(mgr, hosts, rec_st_idx, rec_num, action_map)
                 # Wait for coders to be ready
                 time.sleep(3)
                 run_iperf_test(hosts[0], hosts[-1], "udp", 30)
@@ -299,24 +326,16 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
         error("*** Emulation has errors:")
         error(e)
     finally:
-        info('*** Stopping network\n')
+        info("*** Stopping network\n")
         net.stop()
         mgr.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    setLogLevel('info')
-    coder_log_conf = {
-        "encoder": 0,
-        "decoder": 0,
-        "recoder": 0
-    }
+    setLogLevel("info")
+    coder_log_conf = {"encoder": 0, "decoder": 0, "recoder": 0}
 
-    PROFILES = {
-        "mobile_recoder_deterministic": 0,
-        "adaptive_redundancy": 1
-    }
+    PROFILES = {"mobile_recoder_deterministic": 0, "adaptive_redundancy": 1}
 
-    run_multihop_nc_test(
-        7, PROFILES["mobile_recoder_deterministic"], coder_log_conf)
+    run_multihop_nc_test(7, PROFILES["mobile_recoder_deterministic"], coder_log_conf)

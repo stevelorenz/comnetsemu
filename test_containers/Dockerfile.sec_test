@@ -9,7 +9,7 @@ RUN \
         apt-get -y upgrade && \
         apt-get install -y build-essential && \
         apt-get install -y net-tools iproute2 iputils-ping \
-        apt-transport-https ca-certificates curl stress nmap iperf iperf3 telnet netcat openssh-server
+        apt-transport-https ca-certificates curl stress nmap iperf iperf3 telnet netcat openssh-server nano vim
 
 # Install Docker from Docker Inc. repositories.
 RUN curl -sSL https://get.docker.com/ | sh
@@ -36,3 +36,6 @@ ENTRYPOINT ["/tini", "-g", "--"]
 
 ENV HOME /root
 WORKDIR /root
+
+# Define default command.
+CMD ["bash"]

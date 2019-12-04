@@ -10,11 +10,26 @@ set -e
 # Fail on unset var usage
 set -o nounset
 
+# Mininet's installer's default assumption.
+if [[ $EUID -eq 0 ]]; then
+    echo "Installer should be run as a user with sudo permissions, "
+    echo "not root."
+    exit 1
+fi
+
+# Set magic variables for current file & dir
+# __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+
+####################
+#  Util Functions  #
+####################
+
 msg() {
     printf '%b\n' "$1" >&2
 }
 
-warning(){
+warning() {
     declare _type=$1 text=$2
     msg "\033[33mWarning:\033[0m ${_type} ${text}"
 }
@@ -24,27 +39,51 @@ error() {
     msg "\033[31m[✘]\033[0m ${_type} ${text}"
 }
 
+function no_dir_exit() {
+    declare dir=$1
+    if [ ! -d "$dir" ]; then
+        error "[INSTALL]" "Directory: $dir does not exit! Exit."
+        exit 1
+    fi
+}
+
+function check_patch() {
+    declare patch_path=$1
+    declare prefix_num=$2
+
+    if patch -p"$prefix_num" --dry-run <"$patch_path"; then
+        patch -p"$prefix_num" <"$patch_path"
+    else
+        error "[PATCH]" "Failed to apply the path file: $patch_path ."
+        exit 1
+    fi
+}
+
+####################
+#  Main Installer  #
+####################
+
 DIST=Unknown
 ARCH=$(uname -m)
 PYTHON=python3
 PIP=pip3
 
-if [[ "$ARCH" = "i686" ]]; then
+if [[ "$ARCH" == "i686" ]]; then
     error "[ARCH]" "i386 is not supported."
     exit 1
 fi
 
 test -e /etc/debian_version && DIST="Debian"
-grep Ubuntu /etc/lsb-release &> /dev/null && DIST="Ubuntu"
+grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
 if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
     # Truly non-interactive apt-get installation
     install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install'
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-    pkginst='sudo dpkg -i'
+    # pkginst='sudo dpkg -i'
     update='sudo apt-get'
     addrepo='sudo add-apt-repository'
     # Prereqs for this script
-    if ! lsb_release -v &> /dev/null; then
+    if ! lsb_release -v &>/dev/null; then
         $install lsb-release
     fi
 else
@@ -52,33 +91,34 @@ else
     exit 1
 fi
 
-
 echo "*** ComNetsEmu Installer ***"
 
 DEFAULT_REMOTE="origin"
 
 # Get the directory containing comnetsemu source code folder
-COMNETSEMU_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd -P )"
+TOP_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 # The name of the comnetsemu source code folder
 COMNETSEMU_SRC_DIR="comnetsemu"
 
-# Directory containing dependencies installed from source
-DEP_DIR="$HOME/comnetsemu_dependencies"
+# Directory containing external dependencies installed from source
+# Dependencies are downloaded into another directory because the current directory is synced to the vagrant VM by default.
+# Clone sources into this directory has privileges conflicts with host OS.
+EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
-# Tags/branch names of dependencies
+# - Installed from source, versions are tags or branch names of dependencies
 MININET_VER="e0436642a"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
-OVX_VER="0.0-MAINT"
+# - Installed by package manager (apt, pip etc.)
 DOCKER_PY_VER="3.7.2"
-DEPS_VERSIONS=("$MININET_VER" "$RYU_VER" "$OVX_VER")
-DEP_INSTALL_FUNCS=(install_mininet install_ryu install_ovx)
+
+DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
+DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
 echo " - The default git remote name: $DEFAULT_REMOTE"
-echo " - The path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
-echo " - The path to install all dependencies: $DEP_DIR"
-
+echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
+echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
 
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
@@ -94,9 +134,8 @@ function usage() {
     echo " -h: print usage"
     echo " -k: install required Linux (K)ernel modules"
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
-    echo " -n: install minimal mi(N)inet from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
-    # echo " -o: install (O)penVirtex [$OVX_VER] from source. (OpenJDK7 is installed from deb packages as dependency)"
-    # echo " -r: try to (R)emove installed dependencies - good luck!"
+    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
+    echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
     echo " -v: install de(V)elopment tools"
     echo " -y: install R(Y)u SDN controller [$RYU_VER]"
@@ -131,10 +170,10 @@ function install_docker() {
     fi
 
     $update update
-    $install docker-ce criu
+    $install docker-ce
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
-    # Enable docker experimental features (incl. CRIU)
+    # Enable docker experimental features
     sudo mkdir -p /etc/docker
     echo "{\"experimental\": true}" | sudo tee --append /etc/docker/daemon.json
     if pidof systemd; then
@@ -148,31 +187,33 @@ function upgrade_docker() {
     sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
-function install_mininet() {
-    local mininet_dir="$DEP_DIR/mininet-$MININET_VER"
+function install_mininet_with_deps() {
+    local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
+    local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
+
+    no_dir_exit "$mininet_patch_dir"
     mkdir -p "$mininet_dir"
 
-    echo "*** Install Mininet"
-    $install git
+    echo "*** Install Mininet and its minimal dependencies."
+    $install git net-tools
     cd "$mininet_dir" || exit
     git clone https://github.com/mininet/mininet.git
     cd mininet || exit
     git checkout -b dev $MININET_VER
     cd util || exit
-    PYTHON=python3 ./install.sh -nfv
+    PYTHON=python3 ./install.sh -nfvw03
 }
 
 function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
     warning "[INSTALL]" "The docker-py and Mininet MUST be already installed."
     $install python3
-    cd "$COMNETSEMU_DIR/comnetsemu" || exit
+    cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
 }
 
-
 function install_ryu() {
-    local ryu_dir="$DEP_DIR/ryu-$RYU_VER"
+    local ryu_dir="$EXTERN_DEP_DIR/ryu-$RYU_VER"
     mkdir -p "$ryu_dir"
 
     echo "*** Install Ryu SDN controller"
@@ -185,13 +226,12 @@ function install_ryu() {
 
 function install_devs() {
     echo "*** Install tools for development"
-    echo "- Install pytest for unit tests"
-    $install gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
-    sudo -H $PIP install pytest ipdb
+    echo "- Install dev python packages via PIP."
+    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype
 }
 
 function install_bcc() {
-    local bcc_dir="$DEP_DIR/bcc-$BCC_VER"
+    local bcc_dir="$EXTERN_DEP_DIR/bcc-$BCC_VER"
     mkdir -p "$bcc_dir"
 
     echo "*** Install BPF Compiler Collection"
@@ -200,40 +240,11 @@ function install_bcc() {
     git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
     cd "$bcc_dir/bcc" || exit
     git checkout -b dev $BCC_VER
-    mkdir -p build; cd build
+    mkdir -p build
+    cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3
     make
     sudo make install
-}
-
-function install_ovx() {
-    local ovx_dir="$DEP_DIR/ovx-$OVX_VER"
-    mkdir -p "$ovx_dir"
-
-    echo "*** Install OpenVirtex"
-    echo "Install Apache Maven"
-    $install maven wget git
-    cd "$ovx_dir" || exit
-    echo "Install OpenJDK7 from deb packages"
-    # MARK: Use the FTP server in Germany, students can change URL based on their location
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jdk_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/o/openjdk-7/openjdk-7-jre-headless_7u161-2.6.12-1_amd64.deb
-    wget http://ftp.de.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_1.5.2-2+b1_amd64.deb
-    # ISSUE: Failed to exit due to dependency problems. Issues are fixed with
-    # apt install -f. So force the error status to zero.
-    $pkginst ./*.deb || true
-    # Resolve potential dependency issues
-    $install -f -y
-    # Update java alternatives
-    # - IcedTeaPlugin.so plugin is unavailable
-    sudo update-java-alternatives -s java-1.7.0-openjdk-amd64
-    echo "Clone OpenVirteX source code"
-    git clone https://github.com/os-libera/OpenVirteX
-    cd OpenVirteX || exit
-    git checkout -b "$OVX_VER"
-    echo "*** OpenVirtex's dependencies installed finished."
-    echo "*** Please run: 'sh $ovx_dir/OpenVirteX/scripts/ovx.sh' to start OpenVirtex"
 }
 
 function upgrade_comnetsemu_deps() {
@@ -246,29 +257,29 @@ function upgrade_comnetsemu_deps() {
     warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
     echo ""
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
-    read -r -n 1;
+    read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo ""
         echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
 
-
+        echo ""
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
+        install_devs
 
+        echo ""
         echo "- Upgrade dependencies installed from source"
-        echo "  The upgrade script checks the version flag (format tool_name-version) in $DEP_DIR"
+        echo "  The upgrade script checks the version flag (format tool_name-version) in $EXTERN_DEP_DIR"
         echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
 
-        for (( i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++ )); do
+        for ((i = 0; i < ${#DEPS_INSTALLED_FROM_SRC[@]}; i++)); do
             dep_name=${DEPS_INSTALLED_FROM_SRC[i]}
             echo "Step $i: Check and upgrade ${DEPS_INSTALLED_FROM_SRC[i]}"
-            # TODO: Replace ls | grep with glob or for loop
-            installed_ver=$(ls "$DEP_DIR/" | grep "$dep_name-" | cut -d '-' -f 2-)
+            installed_ver=$(find "$EXTERN_DEP_DIR" -maxdepth 1 -type d -name "${dep_name}-*" | cut -d '-' -f 2-)
             req_ver=${DEPS_VERSIONS[i]}
-            echo "Installed version: $installed_ver, requested version: ${req_ver}"
-            if [[ "$installed_ver" != "$req_ver" ]]; then
-                warning "[Upgrade]" "Upgrade $dep_name from $installed_ver to $req_ver"
-                sudo rm -rf "$DEP_DIR/$dep_name-$installed_ver"
+            echo "Installed version: ${installed_ver}, requested version: ${req_ver}"
+            if [[ "${installed_ver}" != "${req_ver}" ]]; then
+                warning "[Upgrade]" "Upgrade ${dep_name} from ${installed_ver} to ${req_ver}"
+                sudo rm -rf "$EXTERN_DEP_DIR/${dep_name}-${installed_ver}"
                 ${DEP_INSTALL_FUNCS[i]}
             fi
             echo ""
@@ -276,6 +287,17 @@ function upgrade_comnetsemu_deps() {
     else
         error "[Upgrade]" "Please check and merge remote updates before upgrading."
     fi
+}
+
+function reinstall_comnetsemu_deps() {
+    echo ""
+    echo "*** Reinstall ComNetsEmu dependencies."
+    sudo rm -r "$EXTERN_DEP_DIR"
+    install_kernel_modules
+    install_mininet_with_deps
+    install_ryu
+    install_docker
+    install_devs
 }
 
 # TODO: Extend remove function for all installed packages
@@ -289,7 +311,7 @@ function remove_comnetsemu() {
 
     echo "Remove Docker and docker-py"
     $remove docker-ce
-    sudo -H $PIP uninstall -y docker  || true
+    sudo -H $PIP uninstall -y docker || true
 
     echo "Remove Mininet"
     sudo -H $PIP uninstall -y mininet || true
@@ -301,23 +323,32 @@ function remove_comnetsemu() {
     sudo -H $PIP uninstall -y ryu || true
 
     echo "Remove OVS"
-    mininet_dir="$DEP_DIR/mininet-$MININET_VER"
+    mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
     mkdir -p "$mininet_dir"
-    cd "$mininet_dir/mininet/util" || exit
     ./install.sh -r
+    cd "$mininet_dir/mininet/util" || exit
 
     # TODO: Remove BCC properly
 
     echo "Remove dependency folder"
-    sudo rm -rf "$DEP_DIR"
+    sudo rm -rf "$EXTERN_DEP_DIR"
 
+}
+
+function test_install() {
+    echo "*** Test installation. Used by ../check_installer.sh script."
+    install_mininet_with_deps
+    install_ryu
+    install_docker
+    install_devs
+    install_comnetsemu
 }
 
 function install_lightweight() {
     echo "*** Install ComNetsEmu with only light weight dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
     # MUST run at the end!
@@ -328,50 +359,47 @@ function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $update update
     install_kernel_modules
-    install_mininet
+    install_mininet_with_deps
     install_ryu
     install_docker
-    # install_ovx
     install_devs
     # MUST run at the end!
     install_comnetsemu
 }
 
 # Check if source and dependency directory exits
-if [[ ! -d "$COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR" ]]; then
+if [[ ! -d "$TOP_DIR/$COMNETSEMU_SRC_DIR" ]]; then
     error "[PATH]" "The ComNetsEmu source directory does not exist."
-    echo " The default path of the ComNetsEmu source code: $COMNETSEMU_DIR/$COMNETSEMU_SRC_DIR"
+    echo " The default path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
     echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
     exit 1
 fi
 
-if [[ ! -d "$DEP_DIR" ]]; then
+if [[ ! -d "$EXTERN_DEP_DIR" ]]; then
     warning "[PATH]" "The default dependency directory does not exist."
-    echo "Create the dependency directory : $DEP_DIR"
-    mkdir -p "$DEP_DIR"
+    echo "Create the dependency directory : $EXTERN_DEP_DIR"
+    mkdir -p "$EXTERN_DEP_DIR"
 fi
 
-if [ $# -eq 0 ]
-then
+if [ $# -eq 0 ]; then
     usage
 else
-    while getopts 'abcdhklnoruvy' OPTION
-    do
+    while getopts 'abcdhklnrtuvy' OPTION; do
         case $OPTION in
-            a) all;;
-            b) install_bcc;;
-            c) install_comnetsemu;;
-            d) install_docker;;
-            h) usage;;
-            k) install_kernel_modules;;
-            l) install_lightweight;;
-            n) install_mininet;;
-            o) install_ovx;;
-            u) upgrade_comnetsemu_deps;;
-            v) install_devs;;
-            y) install_ryu;;
-            # r) remove_comnetsemu;;
-            *) usage;;
+        a) all ;;
+        b) install_bcc ;;
+        c) install_comnetsemu ;;
+        d) install_docker ;;
+        h) usage ;;
+        k) install_kernel_modules ;;
+        l) install_lightweight ;;
+        n) install_mininet_with_deps ;;
+        r) reinstall_comnetsemu_deps ;;
+        t) test_install ;;
+        u) upgrade_comnetsemu_deps ;;
+        v) install_devs ;;
+        y) install_ryu ;;
+        *) usage ;;
         esac
     done
     shift $(($OPTIND - 1))
