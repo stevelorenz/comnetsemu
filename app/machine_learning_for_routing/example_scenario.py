@@ -23,9 +23,9 @@ from config import Config
 
 #                s2
 #  h11    10ms /     \ 10ms    h41
-#     --     s1       s4 --
+#     --     s1       s3 --
 #  h12    14ms \     / 14ms   h42
-#                s3
+#                s4
 
 ###################################################################
 ############### Scenario - 6 Hosts    #############################
@@ -119,9 +119,9 @@ def four_switches_network():
     h12 = net.addHost('h12', cls=Host, ip='10.0.0.12', defaultRoute=None)
     h13 = net.addHost('h13', cls=Host, ip='10.0.0.13', defaultRoute=None)
 
-    h41 = net.addHost('h41', cls=Host, ip='10.0.0.41', defaultRoute=None)
-    h42 = net.addHost('h42', cls=Host, ip='10.0.0.42', defaultRoute=None)
-    h43 = net.addHost('h43', cls=Host, ip='10.0.0.43', defaultRoute=None)
+    h31 = net.addHost('h31', cls=Host, ip='10.0.0.31', defaultRoute=None)
+    h32 = net.addHost('h32', cls=Host, ip='10.0.0.32', defaultRoute=None)
+    h33 = net.addHost('h33', cls=Host, ip='10.0.0.33', defaultRoute=None)
 
     info('*** Add links\n')
     linkArray.append(
@@ -141,9 +141,9 @@ def four_switches_network():
     net.addLink(h12, s1)
     net.addLink(h13, s1)
 
-    net.addLink(h41, s4)
-    net.addLink(h42, s4)
-    net.addLink(h43, s4)
+    net.addLink(h31, s4)
+    net.addLink(h32, s4)
+    net.addLink(h33, s4)
 
     info('*** Starting network\n')
     net.build()
@@ -184,9 +184,9 @@ def four_switches_network():
                 write_in_File(fileName, logs, loadLevel, iteration_split_up_flag, iteration)
             # send load level
             print("(Re)starting iperf -- loadLevel:  {}".format(loadLevel))
-            start_new_thread(startIperf, (h11, h41, 2.75, 5001, timeTotal, loadLevel))
-            start_new_thread(startIperf, (h12, h42, 1.75, 5001, timeTotal, loadLevel))
-            start_new_thread(startIperf, (h13, h43, 1.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h11, h31, 2.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h12, h32, 1.75, 5001, timeTotal, loadLevel))
+            start_new_thread(startIperf, (h13, h33, 1.75, 5001, timeTotal, loadLevel))
             i = i + 1
             time.sleep(timeTotal)
             # waiting additional 2 sec to reset states

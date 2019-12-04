@@ -180,10 +180,10 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
     iperf_client_para = {
         "server_ip": h_srv.IP(),
         "port": 9999,
-        "bw": "0.5K",
+        "bw": "5K",
         "time": time,
         "interval": 1,
-        "length": str(SYMBOL_SIZE - 60),
+        "length": str(SYMBOL_SIZE),
         "proto": "-u",
         "suffix": "> /dev/null 2>&1 &"
     }
@@ -192,8 +192,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s {} -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
-            h_srv.IP(), iperf_client_para["proto"]))
+        "iperf -s -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(iperf_client_para["proto"]))
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
         **iperf_client_para)
@@ -240,7 +239,7 @@ def create_topology(net, host_num):
             if last_sw:
                 # Connect switches
                 net.addLinkNamedIfce(switch, last_sw, use_htb=True,
-                                     bw=10, delay="1ms", loss=3)
+                                     bw=10, delay="1ms", loss=20)
             last_sw = switch
 
         return hosts

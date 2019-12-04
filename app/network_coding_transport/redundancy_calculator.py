@@ -14,9 +14,9 @@ def dec_prob_systematic_packet(k, n, p):
     return p + ((1 - p) * binom.sf(k, n - 1, p, loc=1))
 
 
-qos = 0.0
-p = 0.79
-k = 64
+qos = 0.95
+p = 0.71
+k = 10
 n = systematic_redundancy(k, p, qos=qos)
 print(1 - dec_prob_systematic_packet(k, n, p))
 print("For p: {} symbols: {} qos: {} following redundancy is needed: {} redundancy factor: {}".format(p, k, qos, int(n - k), n/k))
