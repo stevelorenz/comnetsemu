@@ -1,15 +1,24 @@
-# Machine Learning for Routing
+## Reinforcement Learning for Routing in Software-defined networks ##
+### Setup ###
 
-### Controller
+```text
+             s2 (3 MBits/s)
+   h1  10ms/    \10ms  h4
+   h2 -- s1      s3 -- h5
+   h3  14ms\    /14ms  h6
+             s4 (4 MBits/s)
+```
 
-Contains the different instances of the controller:
-remote controller - the ryu instance that gathers the network-metrics and procedures the rerouting
-learning module - stats a process that communicates cia Pipe with the ryu-controller entity and performs the learning (Tabular)
-functions - helper-functions
-routingDFS - path search via Depth first search
-config - change learning values
-#### Folder description
-/:
-state space is only defined by the flow and their possible paths
-/States_path_ids_flow_bw:
-state space also contains bandwidth and includes that into learning
+### How to run ###
+
+Terminal 1:
+```bash
+sudo python ./example.py
+``` 
+
+Terminal 2:
+```bash
+ryu-manager ./controller/remote_controller.py
+``` 
+
+### ###
