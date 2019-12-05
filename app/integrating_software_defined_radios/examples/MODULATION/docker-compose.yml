@@ -1,0 +1,40 @@
+version: "3"
+services:
+  sdr1:
+    build:
+      context: ../../
+      dockerfile: ./Dockerfile
+    image: "sdr"
+    hostname: SDR1
+#    ports:
+#      - "8082:80"
+    networks:
+      - SDR-net
+    volumes:
+      - ./:/home/GNURadio-Files/
+    command: bash "cd /home/GNURadio-Files/"
+    command: bash -c "./transceiver_ofdm.py"
+  
+  sdr2:
+    build:
+      context: ../../
+      dockerfile: ./Dockerfile
+    image: "sdr"
+    depends_on:
+      - sdr1
+    hostname: SDR2
+#    ports:
+#      - "8083:80"
+    networks:
+      - SDR-net
+    volumes:
+      - ./:/home/GNURadio-Files/
+    command: bash "cd /home/GNURadio-Files/"
+    command: bash -c "./transceiver_ofdm.py"
+      
+networks:
+  SDR-net:
+    external: true
+
+
+  
