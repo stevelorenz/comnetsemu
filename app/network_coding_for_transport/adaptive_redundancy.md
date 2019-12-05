@@ -21,10 +21,16 @@ Programs:      Client      Encoder    Loss emu.  Decoder     Server
 ```
 
 ### Running the experiment ###
+This example requires additional libraries for statistical calculations.
+These can be installed with:
+```bash
+$ sudo ./install_dependencies.sh
+```
+
 
 The experiment can be run with:
 
-```
+```bash
 $ sudo python3 adaptive_redundancy.py
 ```
 
