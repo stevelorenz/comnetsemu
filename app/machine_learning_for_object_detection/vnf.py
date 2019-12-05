@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About:
+About: Forwarding VNF via packet socket.
 """
 
 import argparse
@@ -17,16 +17,16 @@ BUFFER_SIZE = 4096
 
 def main():
     parser = argparse.ArgumentParser(description="Forwarding VNF")
-    parser.add_argument('--max', type=int, default=-1,
-                        help="Maximal number of forwarding frames")
+    parser.add_argument(
+        "--max", type=int, default=-1, help="Maximal number of forwarding frames"
+    )
     args = parser.parse_args()
 
     buf = bytearray(BUFFER_SIZE)
     count = 0
     max_count = args.max
     print("*** Maximal forwarding number: {} (-1: infinite)".format(max_count))
-    sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
-                         socket.htons(3))
+    sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
     sock.bind((IFCE_NAME, 0))
     print("*** Packet socket is bind, enter forwarding loop")
     try:
@@ -45,5 +45,5 @@ def main():
         sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
