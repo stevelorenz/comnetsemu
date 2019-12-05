@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Example of using Network Coding (NC) for transport on a multi-hop topology
+About: Example of using Network Coding (NC) for transport on a multi-hop topology.
 """
 
 
@@ -14,14 +14,11 @@ from subprocess import check_output
 
 from common import SYMBOL_SIZE
 from comnetsemu.net import Containernet, VNFManager
+from mininet.link import TCLink
 from mininet.log import error, info, setLogLevel
 from mininet.node import Controller
-from mininet.link import TCLink
 
 
-# Just for prototyping...
-# Should be replaced with SDN controller application
-# ------------------------------------------------------------------------------
 def get_ofport(ifce):
     """Get the openflow port based on iterface name
 
@@ -80,9 +77,6 @@ def dump_ovs_flows(switch_num):
         print(ret.decode("utf-8"))
 
 
-# ------------------------------------------------------------------------------
-
-
 def disable_cksum_offload(switch_num):
     """Disable RX/TX checksum offloading"""
     for i in range(switch_num):
@@ -91,10 +85,7 @@ def disable_cksum_offload(switch_num):
 
 
 def save_hosts_info(hosts):
-    """Save host's info (name, MAC, IP) in a CSV file
-
-    :param hosts:
-    """
+    """Save host's info (name, MAC, IP) in a CSV file."""
     info = list()
     for i, h in enumerate(hosts):
         mac = str(h.MAC("h{}-s{}".format(i + 1, i + 1)))
@@ -205,7 +196,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         "bw": "5K",
         "time": time,
         "interval": 1,
-        "length": str(SYMBOL_SIZE),
+        "length": str(SYMBOL_SIZE - 60),
         "proto": "-u",
         "suffix": "> /dev/null 2>&1 &",
     }
@@ -252,12 +243,15 @@ def create_topology(net, host_num):
         last_sw = None
         # Connect hosts
         for i in range(host_num):
-            # Each host gets 50%/n of system CPU
+            # Let kernel schedule all hosts based on their workload.
+            # The recoder needs more computational resources than en- and decoder.
+            # Hard-coded cfs quota can cause different results on machines with
+            # different performance.
             host = net.addDockerHost(
                 "h%s" % (i + 1),
                 dimage="dev_test",
                 ip="10.0.0.%s" % (i + 1),
-                docker_args={"cpu_quota": int(50000 / host_num)},
+                docker_args={"hostname": "h%s" % (i + 1)},
             )
             hosts.append(host)
             switch = net.addSwitch("s%s" % (i + 1))

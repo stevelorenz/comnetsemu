@@ -1,6 +1,9 @@
 # Network Coding for Transport #
+
 ## Adaptive redundancy ##
+
 ### Motivation and Setup ###
+
 This examples demonstrates how to leverage the SDN controller's knowledge about the network parameters to flexibly adapt
 the redundancy created by Random Linear Network Coding (RLNC) to repair losses in the transmission.
 
