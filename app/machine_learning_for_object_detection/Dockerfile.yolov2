@@ -25,7 +25,6 @@ RUN conda install numpy=1.15.0
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
-# Add kodo user
 RUN useradd -ms /bin/bash yolov2
 RUN adduser yolov2 sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
