@@ -58,12 +58,6 @@ class Config(object):
     # duration to stay in one load level by iperf
     duration_iperf_per_load_level_minutes = 5
 
-    # load level
-    load_levels = [10]
-
-    # number of iterations per measurement
-    iterations = 1
-
     # init_value for softmax
     softmax_init_value = - 140
     # - float('inf')

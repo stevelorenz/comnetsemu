@@ -12,8 +12,8 @@ RAM = 4096
 
 # Bento: Packer templates for building minimal Vagrant baseboxes
 # The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
-BOX = "bento/ubuntu-18.04"
-BOX_VER = "201906.18.0"
+BOX = "generic/ubuntu1804"
+BOX_VER = "2.0.6"
 VM_NAME = "ubuntu-18.04-comnetsemu"
 
 ######################
@@ -24,7 +24,7 @@ VM_NAME = "ubuntu-18.04-comnetsemu"
 $bootstrap= <<-SCRIPT
 # Install dependencies
 apt-get update
-apt-get upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
 # Essential packages used by ./util/install.sh
 apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
 # Test/Development utilities
@@ -162,6 +162,13 @@ If there are any new commits in the dev branch in the remote repository, Please 
       # MARK: The CPU should enable SSE3 or SSE4 to compile DPDK
       vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
       vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
+    end
+
+    # VirtualBox-specific configuration
+    comnetsemu.vm.provider "libvirt" do |libvirt|
+      # libvirt.hostname = VM_NAME
+      libvirt.memory = RAM
+      libvirt.cpus = CPUS
     end
   end
 end
