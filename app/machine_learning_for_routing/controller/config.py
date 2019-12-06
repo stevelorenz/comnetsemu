@@ -58,6 +58,12 @@ class Config(object):
     # duration to stay in one load level by iperf
     duration_iperf_per_load_level_minutes = 5
 
+    # load level
+    load_levels = [10]
+
+    # number of iterations per measurement
+    iterations = 1
+
     # init_value for softmax
     softmax_init_value = - 140
     # - float('inf')
@@ -118,4 +124,3 @@ class Config(object):
     # size (bytes) packet iperf udp
     # size_iperf_pkt_bytes = 100
     # bandwith, in Mbit/s
-    bw_max_dict = {1: {2: 4.0, 3: 3.0}, 2: {4: 4.0}, 3: {4: 3.0}}

@@ -249,7 +249,7 @@ def learning_module(pipe, ):
                         average_latency_list.append(get_average_latency(current_combination, latencydict))
                         rewards_list.append(reward)
                         reward_saving_list.append(reward)
-                        print("Average lat: {} reward: {}".format(average_latency_list, rewards_list))
+                        print("Average latency: {} Reward: {}".format(average_latency_list, rewards_list[0]))
                         # check if epsilon should be recalculated
                         if exploration_mode.value == ExplorationMode.FALLING_EPS.value:
                             epsilon = calc_epsilon(general_iterator)
@@ -304,7 +304,7 @@ def learning_module(pipe, ):
                                 else:
                                     current_state = get_next_state(state_transitions, current_state, action)
 
-                                print("Action: {} Next State: {} PrevState: {} PrevReward: {}".format(previous_action,
+                                print("Action: {}\n\nNext State: {} \n\nPrevState: {} PrevReward: {}".format(previous_action,
                                                                                                       current_state,
                                                                                                       previous_state,
                                                                                                       np.mean(
@@ -624,11 +624,6 @@ def get_state_transitions_direct(actions):
     return state_transition_pairs
 
 
-# k^n, k.. possibilities, n.. flows
-# 1 flows, 2 directions: 5 possibilities -> 5^2: 16
-# 2 flows, 2 directions: 5 possibilities -> 5^4: 625
-# 3 flows, 2 directions: 5 possibilities -> 5^6: 15625
-# 4 flows, 2 directions: 5 possibilities -> 5^8: 390625
 def get_possible_states(paths_per_flow):
     """
     get all possible states
@@ -1154,11 +1149,13 @@ def clearing_save_file(log_path, load_level, file_name, split_up_load_levels, it
         file.write("# iterator, reward, timestamp \n")
 
 '''
-###################### Debugging fcuntions #############################
+###################### Debugging functions #############################
 '''
 
 
 def save_q(Q, iteration=-1):
+    # debug function
+    return
     if iteration > 0:
         file_path = '../logs/{}/Q_array.json'.format(iteration)
     else:
@@ -1168,5 +1165,7 @@ def save_q(Q, iteration=-1):
 
 
 def save_q_best(Q):
+    # debug function
+    return
     with open('../Q_array_best.json', 'a') as file:
         json.dump(Q, file)  # use `json.loads` to do the reverse
