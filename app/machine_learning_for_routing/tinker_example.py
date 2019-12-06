@@ -5,14 +5,9 @@ from mininet.node import OVSKernelSwitch, UserSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
-from thread import start_new_thread
-import os, stat
-import json
-import time
-import csv
-import requests
+import os
 import sys
-import math
+
 
 sys.path.append("...")
 sys.path.append("..")
