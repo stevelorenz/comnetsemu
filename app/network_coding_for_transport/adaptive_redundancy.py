@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 """
-About: Example of using Network Coding (NC) for transport on a multi-hop topology
+About: Example of using Network Coding (NC) for transport with adaptive redundancy.
 """
 
 
@@ -20,92 +20,46 @@ from mininet.link import TCLink
 from mininet.term import makeTerm
 from mininet.cli import CLI
 
-# Just for prototyping...
-# Should be replaced with SDN controller application
-# ------------------------------------------------------------------------------
-
 
 def get_ofport(ifce):
     """Get the openflow port based on iterface name
 
-    :param ifce (str): Name of the interface
+    :param ifce (str): Name of the interface.
     """
-    return check_output(
-        split("sudo ovs-vsctl get Interface {} ofport".format(ifce))
-    ).decode("utf-8")
+    return check_output(split("ovs-vsctl get Interface {} ofport".format(ifce))).decode(
+        "utf-8"
+    )
 
 
 def add_ovs_flows(net, switch_num):
     """Add OpenFlow rules for ARP/PING packets and other general traffic"""
 
-    check_output(
-        split('sudo ovs-ofctl add-flow s1 "priority=1,in_port=1,actions=output=2"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s2 "priority=1,in_port=2,actions=output=3"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s3 "priority=1,in_port=2,actions=output=3"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s4 "priority=1,in_port=2,actions=output=3"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s5 "priority=1,in_port=2,actions=output=1"')
-    )
+    check_output(split('ovs-ofctl add-flow s1 "priority=1,in_port=1,actions=output=2"'))
+    check_output(split('ovs-ofctl add-flow s2 "priority=1,in_port=2,actions=output=3"'))
+    check_output(split('ovs-ofctl add-flow s3 "priority=1,in_port=2,actions=output=3"'))
+    check_output(split('ovs-ofctl add-flow s4 "priority=1,in_port=2,actions=output=3"'))
+    check_output(split('ovs-ofctl add-flow s5 "priority=1,in_port=2,actions=output=1"'))
 
-    check_output(
-        split('sudo ovs-ofctl add-flow s1 "priority=1,in_port=2,actions=output=1"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s2 "priority=1,in_port=3,actions=output=2"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s3 "priority=1,in_port=3,actions=output=2"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s4 "priority=1,in_port=3,actions=output=2"')
-    )
-    check_output(
-        split('sudo ovs-ofctl add-flow s5 "priority=1,in_port=1,actions=output=2"')
-    )
+    check_output(split('ovs-ofctl add-flow s1 "priority=1,in_port=2,actions=output=1"'))
+    check_output(split('ovs-ofctl add-flow s2 "priority=1,in_port=3,actions=output=2"'))
+    check_output(split('ovs-ofctl add-flow s3 "priority=1,in_port=3,actions=output=2"'))
+    check_output(split('ovs-ofctl add-flow s4 "priority=1,in_port=3,actions=output=2"'))
+    check_output(split('ovs-ofctl add-flow s5 "priority=1,in_port=1,actions=output=2"'))
 
 
 def dump_ovs_flows(switch_num):
     """Dump OpenFlow rules of first switch_num switches"""
     for i in range(switch_num):
-        ret = check_output(split("sudo ovs-ofctl dump-flows s{}".format(i + 1)))
+        ret = check_output(split("ovs-ofctl dump-flows s{}".format(i + 1)))
         info("### Flow table of the switch s{} after adding flows:\n".format(i + 1))
         print(ret.decode("utf-8"))
-
-
-# ------------------------------------------------------------------------------
 
 
 def disable_cksum_offload(switch_num):
     """Disable RX/TX checksum offloading"""
     for i in range(switch_num):
         ifce = "s%s-h%s" % (i + 1, i + 1)
-        check_output(split("sudo ethtool --offload %s rx off tx off" % ifce))
-
-
-def save_hosts_info(hosts):
-    """Save host's info (name, MAC, IP) in a CSV file
-
-    :param hosts:
-    """
-    info = list()
-    for i, h in enumerate(hosts):
-        mac = str(h.MAC("h{}-s{}".format(i + 1, i + 1)))
-        ip = str(h.IP())
-        info.append([h.name, mac, ip])
-
-    with open("hosts_info.csv", "w+") as csvfile:
-        writer = csv.writer(
-            csvfile, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL
-        )
-        for i in info:
-            writer.writerow(i)
+        check_output(split("ethtool --offload %s rx off tx off" % ifce))
 
 
 def deploy_coders(mgr, hosts):
@@ -126,7 +80,7 @@ def deploy_coders(mgr, hosts):
         "decoder",
         hosts[-2].name,
         "nc_coder",
-        "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
+        "python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
         wait=3,
         docker_args={},
     )
@@ -135,7 +89,7 @@ def deploy_coders(mgr, hosts):
         "encoder",
         hosts[1].name,
         "nc_coder",
-        "sudo python3 ./encoder.py h2-s2",
+        "python3 ./encoder.py h2-s2",
         wait=3,
         docker_args={},
     )
@@ -180,7 +134,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         "bw": "100K",
         "time": time,
         "interval": 1,
-        "length": str(SYMBOL_SIZE - 60),
+        "length": str(SYMBOL_SIZE - META_DATA_LEN),
         "proto": "-u",
         "suffix": "> /dev/null 2>&1 &",
     }
@@ -189,7 +143,9 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(UDP_PORT_DATA, iperf_client_para["proto"])
+        "iperf -s -p {} -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
+            UDP_PORT_DATA, iperf_client_para["proto"]
+        )
     )
 
     iperf_clt_cmd = """iperf -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
@@ -315,5 +271,3 @@ if __name__ == "__main__":
     coder_log_conf = {"encoder": 1, "decoder": 1, "recoder": 1}
 
     run_adaptive_redundancy(5, coder_log_conf)
-
-    check_output("../../util/emu_cleanup.sh")

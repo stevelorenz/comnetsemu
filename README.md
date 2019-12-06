@@ -53,6 +53,12 @@ Common facts about ComNetsEmu:
 
 -   ComNetsEmu is developed with **Python3.6**.
 
+-   Examples and applications in this repository are mainly developed with high-level script language for simplicity.
+    These programs are **not** performance-oriented and optimized.
+    Contact us if you want highly optimized implementation of the concepts introduced in this book.
+    For example, we have [DPDK](https://www.dpdk.org/) accelerated version (implemented with C) for low latency
+    (sub-millisecond) Network Coding (NC) as a network function.
+
 #### Main Features
 
 -   Use Docker hosts in Mininet topologies.
