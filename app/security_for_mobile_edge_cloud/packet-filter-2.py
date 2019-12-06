@@ -41,65 +41,70 @@ def testTopo():
     net.addLinkNamedIfce(s1, server, bw=100, delay="10ms")
 
     info("*** Starting network\n")
-    net.start()
 
-    info("** client -> server\n")
-    info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
+    try:
+        net.start()
 
-    info("\n")
+        info("** client -> server\n")
+        info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
 
-    # Create whitelist
-    info("*** Create whitelist\n")
-    server.cmd("nft add table inet filter")
-    server.cmd(
-        "nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }"
-    )
-    server.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
+        info("\n")
 
-    # The server can talk back to client
-    info("** server -> client\n")
-    info("** " + str(test_connection(server, "10.0.0.1")) + "\n")
-    # But he cannot talk to some other server on the internet, this is a problem
-    info("** server -> internet\n")
-    info("** " + str(test_connection(server, "8.8.8.8")) + "\n")
+        # Create whitelist
+        info("*** Create whitelist\n")
+        server.cmd("nft add table inet filter")
+        server.cmd(
+            "nft add chain inet filter input { type filter hook input priority 0 \; policy drop \; }"
+        )
+        server.cmd("nft add rule inet filter input ip saddr 10.0.0.1 accept")
 
-    info("\n")
+        # The server can talk back to client
+        info("** server -> client\n")
+        info("** " + str(test_connection(server, "10.0.0.1")) + "\n")
+        # But he cannot talk to some other server on the internet, this is a problem
+        info("** server -> internet\n")
+        info("** " + str(test_connection(server, "8.8.8.8")) + "\n")
 
-    info(
-        "*** The server can only communicate with the client because of the implemented whitelist filtering.\n"
-    )
-    info(
-        "*** When the server wants to talk to the internet the internet cannot talk back because the incoming "
-        "traffic is dropped.\n"
-    )
-    info(
-        "*** Use the connection tracking state to allow established connections to answer the server.\n"
-    )
-    info("*** Do this without removing the whitelist.\n")
+        info("\n")
 
-    while not test_connection(server, "8.8.8.8") or not test_connection(
-        client, "10.0.0.2"
-    ):
-        sleep(5)
+        info(
+            "*** The server can only communicate with the client because of the implemented whitelist filtering.\n"
+        )
+        info(
+            "*** When the server wants to talk to the internet the internet cannot talk back because the incoming "
+            "traffic is dropped.\n"
+        )
+        info(
+            "*** Use the connection tracking state to allow established connections to answer the server.\n"
+        )
+        info("*** Do this without removing the whitelist.\n")
 
-    info("** server -> internet\n")
-    info("** " + str(test_connection(server, "8.8.8.8")) + "\n")
+        while not test_connection(server, "8.8.8.8") or not test_connection(
+            client, "10.0.0.2"
+        ):
+            sleep(5)
 
-    info(
-        "*** Now we want to make sure that the client cannot overload the server with traffic.\n"
-    )
-    info("*** Drop all traffic of the client that exceeds 10 Mbit/s.\n")
+        info("** server -> internet\n")
+        info("** " + str(test_connection(server, "8.8.8.8")) + "\n")
 
-    # client is overdoing it a little and our server cannot handle all of its requests...
-    server.cmd("iperf -s &")
+        info(
+            "*** Now we want to make sure that the client cannot overload the server with traffic.\n"
+        )
+        info("*** Drop all traffic of the client that exceeds 10 Mbit/s.\n")
 
-    while try_to_flood_the_server(client):
-        sleep(5)
+        # client is overdoing it a little and our server cannot handle all of its requests...
+        server.cmd("iperf -s &")
 
-    info("\n")
+        while try_to_flood_the_server(client):
+            sleep(5)
 
-    info("*** Stopping network")
-    net.stop()
+        info("\n")
+    except KeyboardInterrupt:
+        info("** KeyboardInterrupt detected, exit the program.\n")
+
+    finally:
+        info("*** Stopping network")
+        net.stop()
 
 
 def test_connection(source_container, target_ip):

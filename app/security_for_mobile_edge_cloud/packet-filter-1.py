@@ -48,70 +48,80 @@ def testTopo():
     net.addLinkNamedIfce(s1, server, bw=10, delay="10ms")
     net.addLinkNamedIfce(s1, attacker, bw=10, delay="10ms")
 
-    info("*** Starting network\n")
-    net.start()
+    try:
+        info("*** Starting network\n")
+        net.start()
 
-    info("** client -> server\n")
-    info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
-    info("** attacker -> server\n")
-    info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
+        info("** client -> server\n")
+        info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
+        info("** attacker -> server\n")
+        info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
 
-    info("*** The client and the attacker can both communicate with the server \n\n")
+        info(
+            "*** The client and the attacker can both communicate with the server \n\n"
+        )
 
-    # Create blacklist
-    info("*** Create a blacklist that stops the attacker from accessing the server.\n")
-    info(
-        "*** First create a nftables table for IPv4 and IPv6 and then add a base chain connected to the input hook.\n"
-    )
-    info(
-        "*** Finally add a rule to the base chain that drops packets coming from the attacker (10.0.0.3).\n"
-    )
-    info("*** When the attacker is blocked the exercise continues.\n")
+        # Create blacklist
+        info(
+            "*** Create a blacklist that stops the attacker from accessing the server.\n"
+        )
+        info(
+            "*** First create a nftables table for IPv4 and IPv6 and then add a base chain connected to the input hook.\n"
+        )
+        info(
+            "*** Finally add a rule to the base chain that drops packets coming from the attacker (10.0.0.3).\n"
+        )
+        info("*** When the attacker is blocked the exercise continues.\n")
 
-    #  Check if client can connect and attacker can not.
-    while not test_connection(client, "10.0.0.2") or test_connection(
-        attacker, "10.0.0.2"
-    ):
-        sleep(5)
+        #  Check if client can connect and attacker can not.
+        while not test_connection(client, "10.0.0.2") or test_connection(
+            attacker, "10.0.0.2"
+        ):
+            sleep(5)
 
-    info("** client -> server\n")
-    info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
-    test_connection(client, "10.0.0.2")
-    info("** attacker -> server\n")
-    info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
+        info("** client -> server\n")
+        info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
+        test_connection(client, "10.0.0.2")
+        info("** attacker -> server\n")
+        info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
 
-    info("\n")
-    info("*** The attacker is blocked and the client can still access the server.\n")
-    info("*** The attacker changed her IP address to a different one!\n")
-    info(
-        "*** Implement a whitelist that only allows the client to connect to the server.\n"
-    )
+        info("\n")
+        info(
+            "*** The attacker is blocked and the client can still access the server.\n"
+        )
+        info("*** The attacker changed her IP address to a different one!\n")
+        info(
+            "*** Implement a whitelist that only allows the client to connect to the server.\n"
+        )
 
-    attacker_ip = "10.0.0." + str(random.randint(3, 250))
-    attacker.cmd("ip a f dev attacker-s1")
-    attacker.cmd("ip a a " + attacker_ip + "/24 dev attacker-s1")
+        attacker_ip = "10.0.0." + str(random.randint(3, 250))
+        attacker.cmd("ip a f dev attacker-s1")
+        attacker.cmd("ip a a " + attacker_ip + "/24 dev attacker-s1")
 
-    info("** attacker -> server\n")
-    info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
+        info("** attacker -> server\n")
+        info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
 
-    #  Check if client can connect and attacker can not.
-    while not test_connection(client, "10.0.0.2") or test_connection(
-        attacker, "10.0.0.2"
-    ):
-        sleep(5)
+        #  Check if client can connect and attacker can not.
+        while not test_connection(client, "10.0.0.2") or test_connection(
+            attacker, "10.0.0.2"
+        ):
+            sleep(5)
 
-    info("\n")
+        info("\n")
 
-    # The server can talk back to server
-    info("** client -> server\n")
-    info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
-    test_connection(client, "10.0.0.2")
-    info("** attacker -> server\n")
-    info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
+        # The server can talk back to server
+        info("** client -> server\n")
+        info("** " + str(test_connection(client, "10.0.0.2")) + "\n")
+        test_connection(client, "10.0.0.2")
+        info("** attacker -> server\n")
+        info("** " + str(test_connection(attacker, "10.0.0.2")) + "\n")
 
-    info("*** Stopping network")
-    sleep(10)
-    net.stop()
+    except KeyboardInterrupt:
+        info("** KeyboardInterrupt detected, exit the program.\n")
+
+    finally:
+        info("*** Stopping network")
+        net.stop()
 
 
 def test_connection(source_container, target_ip):
