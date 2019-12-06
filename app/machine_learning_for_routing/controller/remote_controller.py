@@ -206,7 +206,7 @@ class ControllerMain(simple_switch_13.SimpleSwitch13):
                 if len(action) > 0:
                     # one flow change
                     if self.action_mode.value == ActionMode.ONE_FLOW.value:
-                        if "NoTrans" in action[0]:
+                        if "NoTrans" not in action[0]:
                             action_id_string = action[0]
                             new_path = action[1]
                             self.reroute(action_id_string, new_path)

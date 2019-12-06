@@ -5,23 +5,16 @@ from mininet.node import OVSKernelSwitch, UserSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
-import os
 import sys
 
-
-sys.path.append("...")
-sys.path.append("..")
-sys.path.append("../controller")
-sys.path.append(".")
-print(os.getcwd())
-print(sys.path.__str__())
+sys.path.append("./controller")
 from config import Config
 
 
 #                s2
-#  h11    10ms /     \ 10ms    h31
-#     --     s1       s3 --
-#  h12    14ms \     / 14ms   h32
+#  h1    10ms /     \ 10ms  h4
+#  h2 --     s1       s3 -- h5
+#  h3    14ms \     / 14ms  h6
 #                s4
 
 

@@ -249,7 +249,7 @@ def learning_module(pipe, ):
                         average_latency_list.append(get_average_latency(current_combination, latencydict))
                         rewards_list.append(reward)
                         reward_saving_list.append(reward)
-                        print("Average latency: {} Reward: {}".format(average_latency_list, rewards_list[0]))
+                        print("Average latency: {} Reward: {}\n".format(average_latency_list, rewards_list[0]))
                         # check if epsilon should be recalculated
                         if exploration_mode.value == ExplorationMode.FALLING_EPS.value:
                             epsilon = calc_epsilon(general_iterator)
@@ -304,12 +304,12 @@ def learning_module(pipe, ):
                                 else:
                                     current_state = get_next_state(state_transitions, current_state, action)
 
-                                print("Action: {}\n\nNext State: {} \n\nPrevState: {} PrevReward: {}".format(previous_action,
-                                                                                                      current_state,
-                                                                                                      previous_state,
-                                                                                                      np.mean(
-                                                                                                          rewards_list))
-                                      )
+                                print("State: {}\n\nAction: {}\n\nNext State: {} \n\nPrevious Reward: {}".format(
+                                    previous_state,
+                                    previous_action,
+                                    current_state,
+                                    np.mean(rewards_list)))
+
                             # log output
                             if (general_iterator % 100) < 1:
                                 print("-------number of batch: {} epsilon: {}".format(general_iterator, epsilon))
@@ -768,7 +768,7 @@ def update_q_bandit(current_state, alpha, Q, reward, action, learning_mode):
                 Q[state_now_str][action_str][2].pop(0)
         # non weighted average; Q_n+1 = Q_n + 1/n * (R_n - Q_n)
         elif learning_mode.value == QMode.MULTI_ARMED_BANDIT_NO_WEIGHT.value:
-            Q[state_now_str][action_str][1] = Q[state_now_str][action_str][1] + (1 / (Q[state_now_str][action_str][0]))\
+            Q[state_now_str][action_str][1] = Q[state_now_str][action_str][1] + (1 / (Q[state_now_str][action_str][0])) \
                                               * (reward - Q[state_now_str][action_str][1])
         # total visits
         Q[state_now_str][action_str][0] = Q[state_now_str][action_str][0] + 1
@@ -1147,6 +1147,7 @@ def clearing_save_file(log_path, load_level, file_name, split_up_load_levels, it
         os.makedirs(dirStr)
     with open('{}/{}.csv'.format(dirStr, file_name), 'w') as file:
         file.write("# iterator, reward, timestamp \n")
+
 
 '''
 ###################### Debugging functions #############################
