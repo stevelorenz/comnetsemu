@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 """
-About: On the Fly NC decoder
+About: On the Fly NC Decoder.
 """
 
 import argparse
@@ -14,37 +14,43 @@ import time
 import common
 import log
 import rawsock_helpers as rsh
-from common import (BUFFER_SIZE, FIELD, IO_SLEEP, MD_TYPE_TCP_IN_UDP,
-                    MD_TYPE_UDP, META_DATA_LEN, MTU, SYMBOL_SIZE, SYMBOLS)
+from common import (
+    BUFFER_SIZE,
+    CODER_LOG_LEVEL,
+    FIELD,
+    IO_SLEEP,
+    MD_TYPE_UDP,
+    META_DATA_LEN,
+    MTU,
+    SYMBOL_SIZE,
+    SYMBOLS,
+)
 
-log.conf_logger("info")
+log.conf_logger(CODER_LOG_LEVEL)
 logger = log.logger
 
 
 def run_decoder(ifce):
     """Main IO loop"""
 
-    rx_tx_buf = bytearray(BUFFER_SIZE)
+    buf = bytearray(BUFFER_SIZE)
     generation = 0
     udp_cnt = 0
 
     try:
-        logger.info("Create a raw packet socket\n")
-        # Create a raw socket to recv and send packets, the protocol number 3
-        # means receive all types of Ethernet frames.
-        sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
-                             socket.htons(3))
+        logger.info("Create the raw packet socket.")
+        sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
     except socket.error as error:
         raise error
 
     logger.info("Bind the socket to the interface: {}".format(ifce))
     sock.bind((ifce, 0))
 
-    logger.info("Init kodo decoder...\n")
+    logger.info("Init kodo decoder.")
     # Create an encoder factory that are used to build the actual encoders
     decoder_factory = kodo.RLNCDecoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
     decoder = decoder_factory.build()
-    # Decoder buffer
+    # Mutable bytearray to store decoded symbols from decoder.
     decode_buf = bytearray(decoder.block_size())
     decoder.set_mutable_symbols(decode_buf)
     not_decoded_indces = list(range(decoder.symbols()))
@@ -53,7 +59,7 @@ def run_decoder(ifce):
 
     while True:
         time.sleep(IO_SLEEP)
-        ret = rsh.recv_ipv4(sock, rx_tx_buf, MTU)
+        ret = rsh.recv_ipv4(sock, buf, MTU)
         if not ret:
             logger.debug("Recv a non-IPv4 frame, frame is ignored.")
             continue
@@ -62,28 +68,29 @@ def run_decoder(ifce):
         if proto == rsh.IP_PROTO_UDP:
             udp_cnt += 1
             logger.debug(
-                "Recv a UDP segment, total received UDP segments: %d "
-                "frame len: %d",
-                udp_cnt, frame_len)
+                "Recv a UDP segment, total received UDP segments: %d " "frame len: %d",
+                udp_cnt,
+                frame_len,
+            )
         else:
             logger.debug("Recv a non-UDP segment. Ignore it.")
             continue
 
         # Only handle UDP segments
         udp_hd_offset, _, udp_pl_offset, udp_pl_len = rsh.parse_udp(
-            rx_tx_buf, ip_hd_offset, ip_hd_len)
-        logger.debug("UDP HD offset:%d, pl_offset:%d, pl_len:%d", udp_hd_offset,
-                     udp_pl_offset, udp_pl_len)
+            buf, ip_hd_offset, ip_hd_len
+        )
 
-        _type, cur_gen, md_pl_len = common.pull_metadata(
-            rx_tx_buf, udp_pl_offset)
+        _type, cur_gen, md_pl_len = common.pull_metadata(buf, udp_pl_offset)
         logger.debug(
-            "Generation number in payload:%d, current decode generation:%d, md_pl_len:%d",
-            cur_gen, generation, md_pl_len)
+            "Generation number in payload: %d, current decode generation: %d, md_pl_len: %d",
+            cur_gen,
+            generation,
+            md_pl_len,
+        )
 
-        # logger.info("cur_gen: {}   generation: {}".format(cur_gen, generation))
         if cur_gen > generation:
-            logger.debug("Cleanup decoder for new generation")
+            logger.debug("Cleanup decoder for a new generation.")
             decoder = decoder_factory.build()
             decode_buf = bytearray(decoder.block_size())
             decoder.set_mutable_symbols(decode_buf)
@@ -91,7 +98,7 @@ def run_decoder(ifce):
             generation = cur_gen
 
         elif cur_gen == 0 and generation == 255:
-            logger.debug("Cleanup decoder for new generation")
+            logger.debug("Cleanup decoder for a new interation.")
             decoder = decoder_factory.build()
             decode_buf = bytearray(decoder.block_size())
             decoder.set_mutable_symbols(decode_buf)
@@ -100,57 +107,50 @@ def run_decoder(ifce):
 
         head = udp_pl_offset + META_DATA_LEN
         tail = udp_pl_offset + META_DATA_LEN + udp_pl_len
-        decoder.read_payload(rx_tx_buf[head:tail])
-        logger.debug("Decode rank: %d/%d, coded symbol len:%d",
-                     decoder.rank(), decoder.symbols(), udp_pl_offset)
+        decoder.read_payload(buf[head:tail])
+        logger.debug(
+            "Decode rank: %d/%d, coded symbol len: %d",
+            decoder.rank(),
+            decoder.symbols(),
+            udp_pl_offset,
+        )
 
         # Loop over un-decoded symbols
         for i in not_decoded_indces:
             if decoder.is_symbol_uncoded(i):
                 del not_decoded_indces[not_decoded_indces.index(i)]
                 logger.debug(
-                    "Decoder symbol:%d, not_decoded_symbols_indces:%s",
-                    i, ",".join(map(str, not_decoded_indces))
+                    "Decoder symbol: %d, not_decoded_symbols_indces: %s",
+                    i,
+                    ",".join(map(str, not_decoded_indces)),
                 )
 
                 if _type == MD_TYPE_UDP:
-                    rx_tx_buf[
-                        udp_pl_offset:udp_pl_offset+md_pl_len] = decode_buf[
-                            i * SYMBOL_SIZE:i*SYMBOL_SIZE+md_pl_len]
+                    buf[udp_pl_offset : udp_pl_offset + md_pl_len] = decode_buf[
+                        i * SYMBOL_SIZE : i * SYMBOL_SIZE + md_pl_len
+                    ]
                     udp_total_len = rsh.UDP_HDL + md_pl_len
                     ip_total_len = udp_total_len + ip_hd_len
                     frame_len = ip_total_len + rsh.ETH_HDL
-                    logger.debug("[Decoder TX] UDP total len:%d, ip_total_len:%d",
-                                 udp_total_len, ip_total_len)
-                    rsh.update_ip_udp_len(rx_tx_buf, ip_hd_offset, udp_hd_offset,
-                                          ip_total_len, udp_total_len)
-                    struct.pack_into(">H", rx_tx_buf, udp_hd_offset+6, 0)
-                    rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len)
-                    sock.send(rx_tx_buf[:frame_len])
-
-                elif _type == MD_TYPE_TCP_IN_UDP:
-                    continue
-                    # Bad codes... Should be corrected by Zuo
-                    tcp_seg = decode_buf[
-                        i * SYMBOL_SIZE + rsh.UDP_HDL:(i+1)*SYMBOL_SIZE+rsh.UDP_HDL]
-                    st = ip_hd_offset + ip_hd_len
-                    ed = st + tcp_seg
-                    rx_tx_buf[st:ed] = tcp_seg[:]
-                    ip_total_len = ip_hd_len + len(tcp_seg)
-                    struct.pack_into(
-                        ">H", rx_tx_buf, ip_hd_offset+2, ip_total_len)
-                    rsh.update_cksum_ipv4(rx_tx_buf, ip_hd_offset, ip_hd_len)
-                    sock.send(rx_tx_buf[:ip_total_len+rsh.ETH_HDL])
+                    logger.debug(
+                        "[Decoder TX] UDP total len: %d, ip_total_len: %d",
+                        udp_total_len,
+                        ip_total_len,
+                    )
+                    rsh.update_ip_udp_len(
+                        buf, ip_hd_offset, udp_hd_offset, ip_total_len, udp_total_len
+                    )
+                    struct.pack_into(">H", buf, udp_hd_offset + 6, 0)
+                    rsh.update_cksum_ipv4(buf, ip_hd_offset, ip_hd_len)
+                    sock.send(buf[:frame_len])
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("ifce",
-                        help="The name of interface for recv and send frames",
-                        type=str)
+    parser.add_argument(
+        "ifce", help="The name of interface for recv and send frames.", type=str
+    )
     args = parser.parse_args()
 
-    ifce = args.ifce
-
-    run_decoder(ifce)
+    run_decoder(args.ifce)

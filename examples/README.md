@@ -2,8 +2,8 @@
 
 These examples are intended for two purposes:
 
-1. Get started using ComNetsEmu's Python API.
-2. Get started with core/essential tools/libraries/frameworks used in the [application folder](../app/).
+1.  Get started using ComNetsEmu's Python API.
+2.  Get started with core/essential tools/libraries/frameworks used in the [application folder](../app/).
 
 #### dockerhost.py and dockerhostcli.py
 
@@ -24,19 +24,8 @@ Run two bash scripts inside the folder with root privilege:
     ping, iperf and Openflow tests.
 -   [clean.sh](./mininet_demystify/clean.sh): Cleanup all network resources and processes created by run.sh.
 
-### nftables.py:
-
-This examples shows the basic setup of a firewall with nftables.
-It first creates a table and chain to filter on the netfilter input hook and then adds a rule to filter the traffic of IP address '10.0.0.2'.
-In the end the table is listed.
-
 #### tun_ebpf.py
 
 This example shows how to create TUN interface inside Docker host and attach XDP program to veth interface.
 This example requires installation of [BCC](https://github.com/iovisor/bcc) to manage eBPF programs.
 BCC can be installed from source via [installer](../util/install.sh) with `-b` option.
-
-### wireguard.py:
-
-This example demonstrates how to setup a Wireguard network tunnel between two hosts.
-First the required keys are generated and then the Wireguard interfaces are created and configured.

@@ -41,20 +41,16 @@ The topology of network should be isolated into two slices:
 ### How to Run ###
 You can simple run the emulation applications with following commands in ./app/network_slicing/.
 
-1. Enabling Ryu controller to load each application and to run background:
+1. Enabling Ryu controller to load the application and to run background:
     ```bash
     $ ryu-manager topology_slicing.py &
-    $ loading app topology_slicing.py
-    loading app ryu.controller.ofp_handler
-    instantiating app topology_slicing.py of TrafficSlicing
-    instantiating app ryu.controller.ofp_handler of OFPHandler
     ```
 2. Starting the network with Mininet:
     ```bash
     $ sudo python3 network.py
     ```
 
-Please stop the running Ryu controller before starting a new Ryu controller, e.g. 'kill pid'.
+Please stop the running Ryu controller before starting a new Ryu controller. For example, type `htop` in the terminal to show all running processes, press the key `F4` to look for the process *ryu-manager*, then press the key `F9` to stop the process, with the key `F10` to quite `htop`.
 
 ### How to verify ###
 There are three modes to verify the slice:
@@ -98,17 +94,13 @@ You can simple run the emulation applications with following commands in ./app/n
 1. Enabling Ryu controller to load each application and to run background:
     ```bash
     $ ryu-manager service_slicing.py &
-    $ loading app service_slicing.py
-    loading app ryu.controller.ofp_handler
-    instantiating app service_slicing.py of TrafficSlicing
-    instantiating app ryu.controller.ofp_handler of OFPHandler
     ```
 2. Starting the network with Mininet:
     ```bash
     $ sudo python3 network.py
     ```
 
-Please stop the running Ryu controller before starting a new Ryu controller, e.g. 'kill pid'
+Please stop the running Ryu controller before starting a new Ryu controller. For example, type `htop` in the terminal to show all running processes, press the key `F4` to look for the process *ryu-manager*, then press the key `F9` to stop the process, with the key `F10` to quite `htop`.
 
 ## How to Verify ##
 There are three modes to verify the slice:

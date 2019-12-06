@@ -11,9 +11,6 @@ $PYTHON ./dockerindocker.py
 
 if [[ "$1" == "-a" ]]; then
     echo "*** Run additional examples."
-    $PYTHON ./wireguard.py
-    $PYTHON ./nftables.py
-
     bash ./mininet_demystify/run.sh
     bash ./mininet_demystify/clean.sh
 fi
