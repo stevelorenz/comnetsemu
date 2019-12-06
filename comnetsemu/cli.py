@@ -20,7 +20,7 @@ from mininet.term import makeTerms
 from mininet.util import quietRun
 
 
-class CLI(CLI):
+class CLI(CLI):  # pylint: disable=function-redefined
 
     helpStr = (
         "You can send commands to Docker hosts with the same method of Mininet.\n"
@@ -40,12 +40,12 @@ class CLI(CLI):
             output("*** ComNetsEmu CLI usage:\n")
             output(self.helpStr)
 
-    def do_xterm(self, line, term='xterm'):
+    def do_xterm(self, line, term="xterm"):
         """Spawn xterm(s) for the given node(s).
            Usage: xterm node1 node2 ..."""
         args = line.split()
         if not args:
-            error('usage: %s node1 node2 ...\n' % term)
+            error("usage: %s node1 node2 ...\n" % term)
         else:
             for arg in args:
                 if arg not in self.mn:
@@ -74,14 +74,14 @@ class CLI(CLI):
             if self.isatty():
                 # Buffer by character, so that interactive
                 # commands sort of work
-                quietRun('stty -icanon min 1')
+                quietRun("stty -icanon min 1")
             while True:
                 try:
                     bothPoller.poll()
                     # XXX BL: this doesn't quite do what we want.
                     if False and self.inputFile:
                         key = self.inputFile.read(1)
-                        if key != '':
+                        if key != "":
                             node.write(key)
                         else:
                             self.inputFile = None
@@ -107,9 +107,10 @@ class CLI(CLI):
                     errno_, errmsg = e.args
                     # pylint: enable=unpacking-non-sequence
                     if errno_ != errno.EINTR:
-                        error("select.error: %d, %s" % (errno_, errmsg))
+                        error("select.error: %s, %s" % (errno_, errmsg))
                         error(
-                            "The command is not terminated. Please kill it manually\n")
+                            "The command is not terminated. Please kill it manually\n"
+                        )
                         node.sendInt()
                         break
 
@@ -140,19 +141,15 @@ class CLI(CLI):
         super(CLI, self).default(line)
 
 
-def spawnAttachedXterm(dhost):
-    """Spawn the xterm and attach to dhost with docker exec -it container
+def spawnAttachedXterm(dhost_name: str):
+    """Spawn the xterm and attach to a Dockerhost with docker exec -it
+    container. Bash is used as the interactive shell.
 
-    :param dhost (str): Name of the docker host
+    :param dhost_name (str): Name of the docker host
     """
-    title = '"dockerhost:%s"' % dhost
-    params = {
-        "title": title,
-        "name": "mn.%s" % dhost,
-        "shell": "/usr/bin/env sh"
-    }
-    cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(
-        **params)
+    title = '"dockerhost:%s"' % dhost_name
+    params = {"title": title, "name": dhost_name, "shell": "bash"}
+    cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(**params)
 
     term = subprocess.Popen(shlex.split(cmd))
     return term

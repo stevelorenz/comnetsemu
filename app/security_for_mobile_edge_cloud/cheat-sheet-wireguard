@@ -1,0 +1,21 @@
+# Display the status of all Wireguard interfaces
+wg show
+
+# Generate new private key
+umask 077; wg genkey > privatekey
+
+# Generate a public key for a private key stored in privatekey
+wg pubkey < privatekey > publickey
+
+# Create wireguard interface wg0
+ip link add dev wg0 type wireguard
+
+# Configures Wireguard interface wg0 to listen on port 1337 with private key privatekey.
+# Adds peer with public key PUBLIC_KEY, allowed-ips 0.0.0.0/0, and endpoint 10.0.0.2:1337.
+wg set wg0 listen-port 1337 private-key ./privatekey peer PUBLIC_KEY allowed-ips 0.0.0.0/0  endpoint 10.0.0.2:1337
+
+# Show configuration of Wireguard interface wg0
+wg showconf wg0
+
+# Create Wireguard interface wg0 with the configuration file /etc/wireguard/wg0.conf
+wg-quick up wg0

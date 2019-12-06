@@ -10,7 +10,6 @@ RUN \
     add-apt-repository ppa:ettusresearch/uhd && \
     apt-get update && \
     apt-get install -y libuhd-dev libuhd003 uhd-host
-    apt-get install -y python
 
 RUN \
     apt-get install -y 	cmake git g++ libboost-all-dev python-dev python-mako \

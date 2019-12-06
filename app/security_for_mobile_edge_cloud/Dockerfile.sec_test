@@ -1,0 +1,41 @@
+#
+# About: Test image for development
+#
+
+FROM ubuntu:18.04
+
+RUN \
+        apt-get update --fix-missing && \
+        apt-get -y upgrade && \
+        apt-get install -y build-essential && \
+        apt-get install -y net-tools iproute2 iputils-ping \
+        apt-transport-https ca-certificates curl stress nmap iperf iperf3 telnet netcat openssh-server nano vim
+
+# Install Docker from Docker Inc. repositories.
+RUN curl -sSL https://get.docker.com/ | sh
+
+# Install wireguard
+RUN 	apt-get install -y software-properties-common && \
+	add-apt-repository -y ppa:wireguard/wireguard && \
+	apt-get update && \
+	apt-get install -y wireguard
+
+# Install nftables
+RUN	apt-get update && \
+	apt-get install -y nftables
+
+# Install network sniffing and ftp server
+RUN 	apt-get update && \
+		apt-get install -y tcpdump ftp vsftpd dsniff
+
+# Add Tini --- A tiny but valid init for containers
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "-g", "--"]
+
+ENV HOME /root
+WORKDIR /root
+
+# Define default command.
+CMD ["bash"]

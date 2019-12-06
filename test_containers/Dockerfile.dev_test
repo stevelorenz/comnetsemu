@@ -10,11 +10,12 @@ RUN apk update && apk upgrade
 
 # Installed packages:
 # - bash: Used by startShell method in DockerHost, used as the default interactive shell
+# - iproute2: IP utilities to manage interfaces.
 # - busybox-extras: Includes telnet, used by running iperf with Mininet's CLI
 # - stress-ng: Updated version of stress (ref: https://www.cyberciti.biz/faq/stress-test-linux-unix-server-with-stress-ng/)
 # - tini: A tiny but valid `init` for containers (ref: https://github.com/krallin/tini)
 RUN apk add bash bash-completion
-RUN apk add iproute2 iperf busybox-extras
+RUN apk add iproute2 busybox-extras iperf
 RUN apk add stress-ng
 RUN apk add --no-cache tini
 

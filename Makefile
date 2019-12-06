@@ -1,10 +1,14 @@
+# vim:ft=make
+
 COMNETSEMU = comnetsemu/*.py
 CE_BIN = bin/ce
-TEST = comnetsemu/test/*.py
+UNITTESTS = comnetsemu/test/unit/*.py
+TESTS = $(UNITTESTS) comnetsemu/test/*.py
 EXAMPLES = examples/*.py
-PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TEST)
+PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TESTS)
 PYTHON ?= python3
-P8IGN = E251,E201,E302,E202,E126,E127,E203,E226
+PYTYPE = pytype
+CHECKERRIGNORE=E501,W605
 PREFIX ?= /usr
 DOCDIRS = doc/html doc/latex
 
@@ -16,45 +20,41 @@ clean:
 	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
 
 codecheck: $(PYSRC)
-	@echo "*** Running code check"
-	pyflakes $(PYSRC)
-	pylint --rcfile=.pylint $(PYSRC)
-	pep8 --repeat --ignore=$(P8IGN) `ls $(PYSRC)`
+	@echo "*** Running checks for code quality"
+	$(PYTHON) -m flake8 --extend-ignore=E501 --max-complexity 10 $(PYSRC)
+	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
 
 errcheck: $(PYSRC)
-	@echo "*** Running check for errors only"
-	pyflakes $(PYSRC)
-	pylint -E --rcfile=.pylint $(PYSRC)
+	@echo "*** Running checks for errors only"
+	$(PYTHON) -m flake8 --extend-ignore=$(CHECKERRIGNORE) $(PYSRC)
+	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
 
-#  TODO:  <05-08-19, Zuo> Add a runner to select examples #
-test_examples: $(COMNETSEMU)
-	@echo "*** Running basic functional examples of the emulator"
-	$(PYTHON) ./examples/dockerhost.py
-	$(PYTHON) ./examples/dockerindocker.py
-	$(PYTHON) ./examples/docker_migration.py
+typecheck: $(PYSRC)
+	@echo "*** Running type checks with $(PYTYPE)..."
+	$(PYTYPE) $(COMNETSEMU)
 
-test_examples_full: $(COMNETSEMU) $(EXAMPLES)
-	@echo "*** Running all examples added by ComNetsEmu (Exclude Mininet's official examples)"
-	@echo "*** WARN: It takes time..."
-	@echo "**** Basic functional examples of the emulator"
-	$(PYTHON) ./examples/dockerhost.py
-	$(PYTHON) ./examples/dockerindocker.py
-	$(PYTHON) ./examples/docker_migration.py
-	@echo "**** Examples for security..."
-	$(PYTHON) ./examples/nftables.py
-	$(PYTHON) ./examples/wireguard.py
+test-examples: $(COMNETSEMU) $(EXAMPLES)
+	cd ./examples && bash ./run.sh
 
-test: $(COMNETSEMU) $(TEST)
-	@echo "Running tests of ComNetsEmu python module."
-	$(PYTHON) ./comnetsemu/test/test_comnetsemu.py
+test-examples-all: $(COMNETSEMU) $(EXAMPLES)
+	cd ./examples && bash ./run.sh -a
 
-slowtest: $(COMNETSEMU) $(TEST)
-	@echo "Running tests of ComNetsEmu python module."
-	$(PYTHON) ./comnetsemu/test/runner.py -v
+test: $(COMNETSEMU) $(UNITTESTS)
+	@echo "Running all unit tests of ComNetsEmu python package."
+	$(PYTHON) ./comnetsemu/test/unit/runner.py -v
 
-check_installer: ./util/install.sh
+coverage: $(COMNETSEMU) $(UNITTESTS)
+	@echo "Running coverage tests of ComNetsEmu core functions."
+	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/unit/runner.py -v
+	$(PYTHON) -m coverage report -m
+
+installercheck: ./util/install.sh
 	@ echo "*** Check installer"
 	bash ./check_installer.sh
+
+format: $(PYSRC)
+	@echo "Format Python sources with black"
+	black $(PYSRC)
 
 
 install:
@@ -66,11 +66,12 @@ develop: $(MNEXEC) $(MANPAGES)
 .PHONY: doc
 
 doc: $(PYSRC)
-	doxygen doc/Doxyfile
+	@echo "Build documentation in HTML format"
+	cd ./doc/ && make html
 
 build-test-containers:
 	@echo "Build all test containers"
-	cd ./test_containers/ && ./build.sh
+	cd ./test_containers/ && ./build.sh -a
 
 ## Cleanup utilities
 

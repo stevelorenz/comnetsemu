@@ -1,6 +1,5 @@
 # Integrating Software-Defined Radios #
 
-
 # Data transmission using Ettus Research USRP #
 
 In this directory, you can find two examples that show the functionality of USRP systems in real
