@@ -1,0 +1,134 @@
+! ------------------------------------------------------------------------------
+! Simple Terminal (ST) Emulator Settings
+! ------------------------------------------------------------------------------
+!! Transparency (0-1):
+st.alpha: 0.95
+!! Set a default font and font size as below:
+st.font: Hack:size=13:antialias=true,autohint=true,bold=false;
+st.bold_font: 0
+
+! ------------------------------------------------------------------------------
+! Xterm Terminal Emulator Settings
+! ------------------------------------------------------------------------------
+xterm*locale: true
+xterm.utf8: true
+xterm*utf8title: true
+xterm*savelines: 3000
+xterm*faceName: Hack:size=16:antialias:True
+xterm*boldMode: false
+
+! double-click to select whole URLs
+xterm*charClass: 33:48,36-47:48,58-59:48,61:48,63-64:48,95:48,126:48
+! alt+f for ^[f
+xterm*eightBitInput: false
+
+! color scheme
+xterm*foreground: rgb:a8/a8/a8
+xterm*background: rgb:33/33/33
+xterm*color0: rgb:00/00/00
+xterm*color1: rgb:a8/00/00
+xterm*color2: rgb:00/a8/00
+xterm*color3: rgb:a8/54/00
+xterm*color4: rgb:00/00/a8
+xterm*color5: rgb:a8/00/a8
+xterm*color6: rgb:00/a8/a8
+xterm*color7: rgb:a8/a8/a8
+xterm*color8: rgb:54/54/54
+xterm*color9: rgb:fc/54/54
+xterm*color10: rgb:54/fc/54
+xterm*color11: rgb:fc/fc/54
+xterm*color12: rgb:54/54/fc
+xterm*color13: rgb:fc/54/fc
+xterm*color14: rgb:54/fc/fc
+xterm*color15: rgb:fc/fc/fc
+xterm*colorBDMode: true
+xterm*colorBD: rgb:fc/fc/fc
+
+
+! ------------------------------------------------------------------------------
+! Urxvt Terminal Emulator Settings
+! ------------------------------------------------------------------------------
+
+! --- General ---
+! ------------------------------
+urxvt.scrollBar: false
+urxvt*scrollTtyOutput: false
+urxvt*scrollWithBuffer: true
+urxvt*scrollTtyKeypress: true
+! Scroll back buffer in secondary screen
+urxvt.secondaryScreen: 1
+urxvt.secondaryScroll: 0
+
+urxvt.saveLines: 3000
+urxvt.internalborder:      0
+urxvt.externalborder:      0
+urxvt*fading:              30
+urxvt.transparent: false
+urxvt.url-launcher:        /usr/bin/firefox
+
+! Set main and alternative fonts
+urxvt*font: xft:Hack:style=regular:size=16:antialias=true, \
+                             xft:dejavu sans mono:style=book:size=17:antialias=true, \
+                             xft:wenquanyi bitmap song:size=16:antialias=true, \
+                             xft:freeserif:style=regular, \
+                             xft:unifont:style=medium:antialias=false
+! Disable bold font
+urxvt*boldFont:
+! Reduce letter space by one pixel
+urxvt.letterspace: -1
+! ------------------------------
+
+! --- Perl Extensions ---
+! ------------------------------
+urxvt.perl-ext:
+urxvt.perl-ext-common: font-size
+
+! change font size
+urxvt.keysym.C-Up:     font-size:increase
+urxvt.keysym.C-Down:   font-size:decrease
+urxvt.keysym.C-equal:  font-size:reset
+! ------------------------------
+
+! --- Color Scheme ---
+! ------------------------------
+urxvt.background:  #333333
+urxvt.foreground:  #EBEBFF
+
+*cursorcolor:   #66FF66
+
+*color0:        #1C1C1C
+*color1:        #D81860
+*color2:        #60FF60
+*color3:        #F9FD75
+*color4:        #4695C8
+*color5:        #A78EDB
+*color6:        #43AFCE
+*color7:        #F3EBE2
+*color8:        #4D4D4D
+*color9:        #F00060
+*color10:       #70FF70
+*color11:       #F9FD80
+*color12:       #5A9DC8
+*color13:       #B29FDB
+*color14:       #69B8CE
+*color15:       #EEEEEE
+! ------------------------------
+
+
+! ------------------------------------------------------------------------------
+! Rofi Program Launcher Settings
+! ------------------------------------------------------------------------------
+! Font face and size
+rofi.font:                           Hack 16
+! Use extended color scheme
+rofi.color-enabled:                  true
+! Color scheme for normal row
+rofi.color-normal:                   argb:00000000,  #D8DEE9 , argb:00000000,  #FAC863 ,  #1B2B34
+! Color scheme for urgent row
+rofi.color-urgent:                   argb:00000000,  #F99157 , argb:00000000,  #F99157 ,  #1B2B34
+! Color scheme for active row
+rofi.color-active:                   argb:00000000,  #6699CC , argb:00000000,  #6699CC ,  #1B2B34
+! Color scheme window
+rofi.color-window:                   argb:ee222222,  #FAC863 ,  #FAC863
+! Separator style (none, dash, solid)
+rofi.separator-style: solid

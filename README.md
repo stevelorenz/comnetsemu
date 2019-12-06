@@ -109,14 +109,33 @@ ComNetsEmu's [installer](./util/install.sh).
 #### Option 1: Install in a Vagrant managed VM (Highly Recommended)
 
 The comfortable way to setup the test and development environment is to run a pre-configured VM managed by [Vagrant](https://www.vagrantup.com/).
-It supports different VM hypervisor and [Virtualbox](https://www.virtualbox.org/) is used in project's [Vagrantfile](./Vagrantfile).
+Vagrant supports multiple providers including Virtualbox and [Libvirt](https://libvirt.org/) (With [vagrant-libvirt plugin](https://github.com/vagrant-libvirt/vagrant-libvirt)).
+Most examples and applications included in this repository can run on Virtualbox which is cross-platform. Therefore, you
+host OS can be any OS that supports Virtualbox (GNU/Linux, Windows and Mac OS etc.).
 
-Recommended setup:
+Mainly due to the performance and special feature requirements, some examples and applications can run **ONLY** on VM
+with [KVM](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine) as the hypervisor:
 
-- Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
-- Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+1.  [machine_learning_for_routing](./app/machine_learning_for_routing)
+1.  machine_learning_for_congestion_control (Will be added soon)
 
-In the directory of ComNetsEmu source code, you can create and manage the VM with:
+In order to run these programs, your host OS must use [Linux kernel](https://en.wikipedia.org/wiki/Linux_kernel).
+You can install a GNU/Linux distribution on your physical machine.
+
+Recommended and tested setup:
+
+-  Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
+-  Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+-  (Optional) Libvirt: v5.10 and beyond ([Download Link](https://libvirt.org/downloads.html))
+-  (Optional) Vagrant Libvirt Provider: v0.0.45 and beyond ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+
+A customized [Vagrantfile](./Vagrantfile) is provided in this repository to manage the VM.
+Both Virtualbox and Libvirt can be used to create the VM. The default provider is Virtualbox.
+Different providers uses different base boxes, please check the Vagrantfile for details.
+You can choose the provider with `--provider` option of the `vagrant up` command.
+
+To manage the Virtualbox VM, please open a terminal on your host OS and change the working directory to the directory
+containing the ComNetsEmu's source code. Use following commands to manage the VM.
 
 ```bash
 # This will create the VM at the first time (takes around 20 minutes)
@@ -131,6 +150,15 @@ $ vagrant halt comnetsemu
 # Remove/Delete the VM
 $ vagrant destory comnetsemu
 ```
+
+To create the VM with Libvirt provider. Check the [guide](https://github.com/vagrant-libvirt/vagrant-libvirt#installation) to install the plugin.
+
+After successful installation, run the following command in the ComNetsEmu's source directory:
+
+```bash
+$ vagrant up --provider libvirt comnetsemu
+```
+
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
 process. This script is executed by the vagrant user which can run sudo commands without password.
 This script can be used to add your customized tools (e.g. ZSH, Desktop environment etc) and configuration to the

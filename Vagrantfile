@@ -6,6 +6,8 @@
 #  Variables  #
 ###############
 
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
+
 CPUS = 2
 # - YOLOv2 object detection application requires 4GB RAM to run smoothly
 RAM = 4096
@@ -16,6 +18,10 @@ BOX = "bento/ubuntu-18.04"
 BOX_VER = "201906.18.0"
 VM_NAME = "ubuntu-18.04-comnetsemu"
 
+# Box for using libvirt as the provider, bento boxes do not support libvirt.
+BOX_LIBVIRT = "generic/ubuntu1804"
+BOX_LIBVIRT_VER = "2.0.6"
+
 ######################
 #  Provision Script  #
 ######################
@@ -24,7 +30,8 @@ VM_NAME = "ubuntu-18.04-comnetsemu"
 $bootstrap= <<-SCRIPT
 # Install dependencies
 apt-get update
-apt-get upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+
 # Essential packages used by ./util/install.sh
 apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
 # Test/Development utilities
@@ -69,6 +76,21 @@ SCRIPT
 #if Vagrant.has_plugin?("vagrant-vbguest")
 #  config.vbguest.auto_update = false
 #end
+#
+require 'optparse'
+
+# Parse the provider argument
+def get_provider
+  ret = nil
+  opt_parser = OptionParser.new do |opts|
+    opts.on("--provider provider") do |provider|
+      ret = provider
+    end
+  end
+  opt_parser.parse!(ARGV)
+  ret
+end
+provider = get_provider || "virtualbox"
 
 
 Vagrant.configure("2") do |config|
@@ -79,11 +101,33 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "comnetsemu" do |comnetsemu|
 
-    comnetsemu.vm.hostname = "comnetsemu"
-    comnetsemu.vm.box = BOX
-    comnetsemu.vm.box_version = BOX_VER
-    comnetsemu.vm.box_check_update = true
+    # VirtualBox-specific configuration
+    comnetsemu.vm.provider "virtualbox" do |vb|
+      vb.name = VM_NAME
+      vb.cpus = CPUS
+      vb.memory = RAM
+      # MARK: The CPU should enable SSE3 or SSE4 to compile DPDK applications.
+      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
+      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
+    end
 
+    comnetsemu.vm.provider "libvirt" do |libvirt|
+      libvirt.driver = "kvm"
+      libvirt.cpus = CPUS
+      libvirt.memory = RAM
+    end
+
+    if provider == "virtualbox"
+      comnetsemu.vm.box = BOX
+      comnetsemu.vm.box_version = BOX_VER
+    elsif provider == "libvirt"
+      comnetsemu.vm.box = BOX_LIBVIRT
+      comnetsemu.vm.box_version = BOX_LIBVIRT_VER
+    end
+
+
+    comnetsemu.vm.hostname = "comnetsemu"
+    comnetsemu.vm.box_check_update = true
     comnetsemu.vm.post_up_message = '
 VM started! Run "vagrant ssh <vmname>" to connect.
 
@@ -115,6 +159,10 @@ If there are any new commits in the dev branch in the remote repository, Please 
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
 
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
+      # Apply Xterm profile, looks nicer.
+      cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
+      xrdb -merge /home/vagrant/.Xresources
+
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
 
@@ -153,15 +201,5 @@ If there are any new commits in the dev branch in the remote repository, Please 
     # Enable X11 forwarding
     comnetsemu.ssh.forward_agent = true
     comnetsemu.ssh.forward_x11 = true
-
-    # VirtualBox-specific configuration
-    comnetsemu.vm.provider "virtualbox" do |vb|
-      vb.name = VM_NAME
-      vb.memory = RAM
-      vb.cpus = CPUS
-      # MARK: The CPU should enable SSE3 or SSE4 to compile DPDK
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
-    end
   end
 end
