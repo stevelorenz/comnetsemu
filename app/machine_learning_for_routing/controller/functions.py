@@ -122,16 +122,17 @@ def build_connection_between_hosts_id(srcIP, dstIP):
     """
     return '{}'.format(srcIP + '_' + dstIP)
 
-def build_ip_adresses(idConn):
+def build_ip_adresses(flow_id):
     """
     Returns ip addresses of an connection
     :param idConn:
     :return:
     """
-    strId = str(idConn)
+    strId = str(flow_id)
     split = strId.split("_")
     srcIP = split[0]
     dstIP = split[1]
+
     return srcIP, dstIP
 
 def get_commands_rerouting(oldPath, newPath):

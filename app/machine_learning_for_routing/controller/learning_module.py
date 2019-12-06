@@ -249,7 +249,7 @@ def learning_module(pipe, ):
                         average_latency_list.append(get_average_latency(current_combination, latencydict))
                         rewards_list.append(reward)
                         reward_saving_list.append(reward)
-                        print("Average lat: {} reward: {}".format(average_latency_list, rewards_list))
+                        print("Average latency: {} Reward: {}\n".format(average_latency_list, rewards_list[0]))
                         # check if epsilon should be recalculated
                         if exploration_mode.value == ExplorationMode.FALLING_EPS.value:
                             epsilon = calc_epsilon(general_iterator)
@@ -304,12 +304,12 @@ def learning_module(pipe, ):
                                 else:
                                     current_state = get_next_state(state_transitions, current_state, action)
 
-                                print("Action: {} Next State: {} PrevState: {} PrevReward: {}".format(previous_action,
-                                                                                                      current_state,
-                                                                                                      previous_state,
-                                                                                                      np.mean(
-                                                                                                          rewards_list))
-                                      )
+                                print("State: {}\n\nAction: {}\n\nNext State: {} \n\nPrevious Reward: {}".format(
+                                    previous_state,
+                                    previous_action,
+                                    current_state,
+                                    np.mean(rewards_list)))
+
                             # log output
                             if (general_iterator % 100) < 1:
                                 print("-------number of batch: {} epsilon: {}".format(general_iterator, epsilon))
@@ -624,11 +624,6 @@ def get_state_transitions_direct(actions):
     return state_transition_pairs
 
 
-# k^n, k.. possibilities, n.. flows
-# 1 flows, 2 directions: 5 possibilities -> 5^2: 16
-# 2 flows, 2 directions: 5 possibilities -> 5^4: 625
-# 3 flows, 2 directions: 5 possibilities -> 5^6: 15625
-# 4 flows, 2 directions: 5 possibilities -> 5^8: 390625
 def get_possible_states(paths_per_flow):
     """
     get all possible states
@@ -773,7 +768,7 @@ def update_q_bandit(current_state, alpha, Q, reward, action, learning_mode):
                 Q[state_now_str][action_str][2].pop(0)
         # non weighted average; Q_n+1 = Q_n + 1/n * (R_n - Q_n)
         elif learning_mode.value == QMode.MULTI_ARMED_BANDIT_NO_WEIGHT.value:
-            Q[state_now_str][action_str][1] = Q[state_now_str][action_str][1] + (1 / (Q[state_now_str][action_str][0]))\
+            Q[state_now_str][action_str][1] = Q[state_now_str][action_str][1] + (1 / (Q[state_now_str][action_str][0])) \
                                               * (reward - Q[state_now_str][action_str][1])
         # total visits
         Q[state_now_str][action_str][0] = Q[state_now_str][action_str][0] + 1
@@ -1153,12 +1148,15 @@ def clearing_save_file(log_path, load_level, file_name, split_up_load_levels, it
     with open('{}/{}.csv'.format(dirStr, file_name), 'w') as file:
         file.write("# iterator, reward, timestamp \n")
 
+
 '''
-###################### Debugging fcuntions #############################
+###################### Debugging functions #############################
 '''
 
 
 def save_q(Q, iteration=-1):
+    # debug function
+    return
     if iteration > 0:
         file_path = '../logs/{}/Q_array.json'.format(iteration)
     else:
@@ -1168,5 +1166,7 @@ def save_q(Q, iteration=-1):
 
 
 def save_q_best(Q):
+    # debug function
+    return
     with open('../Q_array_best.json', 'a') as file:
         json.dump(Q, file)  # use `json.loads` to do the reverse

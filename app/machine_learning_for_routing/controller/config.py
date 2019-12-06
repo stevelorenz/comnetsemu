@@ -124,4 +124,3 @@ class Config(object):
     # size (bytes) packet iperf udp
     # size_iperf_pkt_bytes = 100
     # bandwith, in Mbit/s
-    bw_max_dict = {1: {2: 4.0, 3: 3.0}, 2: {4: 4.0}, 3: {4: 3.0}}
