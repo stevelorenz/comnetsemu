@@ -8,7 +8,6 @@ About: Example of using Network Coding (NC) for transport on a multi-hop topolog
 
 
 import argparse
-import csv
 import time
 from shlex import split
 from subprocess import check_output
@@ -19,16 +18,16 @@ from mininet.link import TCLink
 from mininet.log import error, info, setLogLevel
 from mininet.node import Controller
 
-NET = None
-
 
 def get_ofport(ifce: str):
     """Get the openflow port based on iterface name
 
     :param ifce (str): Name of the interface.
     """
-    return check_output(split("ovs-vsctl get Interface {} ofport".format(ifce))).decode(
-        "utf-8"
+    return (
+        check_output(split("ovs-vsctl get Interface {} ofport".format(ifce)))
+        .decode("utf-8")
+        .strip()
     )
 
 
@@ -40,45 +39,49 @@ def config_ipv6(action: str):
     check_output(split(f"sysctl -w net.ipv6.conf.default.disable_ipv6={value}"))
 
 
+def add_forward_flow(switch_name, in_port, out_port, proto):
+    """Add one forwarding flow."""
+    add_flow_cmd = (
+        'ovs-ofctl add-flow {sw} "{proto},in_port={in_port},actions={out_port}"'
+    )
+    check_output(
+        split(
+            add_flow_cmd.format(
+                **{
+                    "sw": switch_name,
+                    "in_port": in_port,
+                    "out_port": out_port,
+                    "proto": proto,
+                }
+            )
+        )
+    )
+
+
 def add_ovs_flows(net, switch_num):
-    """Add OpenFlow rules for UDP traffic redirection."""
+    """Add OpenFlow rules for UDP traffic redirection.
+    Since the topology and redirection rules in this example are static,
+    ovs-ofctl is used to add them statically. Dynamic scenario requires using a
+    SDN controller.
+    """
 
-    proto = "udp"
-
-    for i in range(switch_num - 1):
-        check_output(split("ovs-ofctl del-flows s{}".format(i + 1)))
-        in_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
-        out_port = get_ofport("s{}-s{}".format((i + 1), (i + 2)))
-        check_output(
-            split(
-                'ovs-ofctl add-flow s{sw} "{proto},in_port={in_port},actions=output={out_port}"'.format(
-                    **{
-                        "sw": (i + 1),
-                        "in_port": in_port,
-                        "out_port": out_port,
-                        "proto": proto,
-                    }
-                )
-            )
-        )
-
-        if i == 0:
-            continue
-
-        in_port = get_ofport("s{}-s{}".format((i + 1), i))
-        out_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
-        check_output(
-            split(
-                'ovs-ofctl add-flow s{sw} "{proto},in_port={in_port},actions=output={out_port}"'.format(
-                    **{
-                        "sw": (i + 1),
-                        "in_port": in_port,
-                        "out_port": out_port,
-                        "proto": proto,
-                    }
-                )
-            )
-        )
+    proto_list = ["udp"]
+    for proto in proto_list:
+        # Add forwards redirection
+        for i in range(switch_num - 1):
+            check_output(split("ovs-ofctl del-flows s{}".format(i + 1)))
+            in_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
+            out_port = get_ofport("s{}-s{}".format((i + 1), (i + 2)))
+            add_forward_flow(f"s{i+1}", in_port, out_port, proto)
+            if i == 0:
+                continue
+            in_port = get_ofport("s{}-s{}".format((i + 1), i))
+            out_port = get_ofport("s{}-h{}".format((i + 1), (i + 1)))
+            add_forward_flow(f"s{i+1}", in_port, out_port, proto)
+    in_port = get_ofport("s{}-s{}".format(switch_num, switch_num - 1))
+    out_port = get_ofport("s{}-h{}".format(switch_num, switch_num))
+    add_forward_flow(f"s{switch_num}", in_port, out_port, proto)
+    dump_ovs_flows(switch_num)
 
 
 def dump_ovs_flows(switch_num):
@@ -121,7 +124,7 @@ def deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map):
             name,
             hosts[i].name,
             "nc_coder",
-            " ".join(("python3 ./recoder.py", rec_cli)),
+            " ".join(("sudo python3 ./recoder.py", rec_cli)),
             wait=3,
             docker_args={},
         )
@@ -132,7 +135,7 @@ def deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map):
         "decoder",
         hosts[-2].name,
         "nc_coder",
-        "python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
+        "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
         wait=3,
         docker_args={},
     )
@@ -141,7 +144,7 @@ def deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map):
         "encoder",
         hosts[1].name,
         "nc_coder",
-        "python3 ./encoder.py h2-s2",
+        "sudo python3 ./encoder.py h2-s2",
         wait=3,
         docker_args={},
     )
@@ -221,6 +224,21 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         print(ret)
 
 
+# def run_sockperf_test(h_clt, h_srv, time=10, print_clt_log=False):
+#     """Run Iperf tests between h_clt and h_srv (DockerHost) and print the output"""
+
+#     h_srv.cmd("iperf3 -s -p 9999 -i 1 {} > /tmp/sockperf_server.log 2>&1 &")
+
+#     sockperf_clt_cmd = """iperf3 -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
+#         **iperf_client_para
+#     )
+#     print("Iperf client command: {}".format(sockperf_clt_cmd))
+#     ret = h_clt.cmd(sockperf_clt_cmd)
+
+#     info("*** Output of Sockperf server:\n")
+#     print(h_srv.cmd("cat /tmp/sock_server.log"))
+
+
 def create_topology(net, host_num):
     """Create the multi-hop topology
 
@@ -257,7 +275,7 @@ def create_topology(net, host_num):
             # Losses are emulated with links between switches.
             net.addLinkNamedIfce(switch, host, delay="20ms")
             if last_sw:
-                net.addLinkNamedIfce(switch, last_sw, delay="20ms", loss=20)
+                net.addLinkNamedIfce(switch, last_sw, delay="20ms", loss=10)
             last_sw = switch
 
         return hosts
@@ -271,7 +289,6 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
 
     config_ipv6(action="disable")
     net = Containernet(controller=Controller, link=TCLink, autoStaticArp=True)
-    NET = net
     mgr = VNFManager(net)
     hosts = create_topology(net, host_num)
     # Number of relays in the middle.
@@ -288,6 +305,7 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
 
         if profile == PROFILES["mobile_recoder_deterministic"]:
             info("*** Run mobile recoder experiment.\n")
+
             for i in range(relay_num):
                 action_map = ["forward"] * relay_num
                 if not ALL_FOWARD:
@@ -299,7 +317,7 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
                 coders = deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map)
                 # Wait for coders to be ready
                 time.sleep(3)
-                run_iperf_test(hosts[0], hosts[-1], "udp", 30)
+                run_iperf_test(hosts[0], hosts[-1], "udp", 10)
                 print_coders_log(coders, coder_log_conf)
                 remove_coders(mgr, coders)
 
@@ -326,8 +344,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--all_forward",
         action="store_true",
-        help="All relays perform only store and forward."
-        "Used to test encoder and decoder.",
+        help="All recoders perform only store-and-forward. Used to get the measurement result without any recoding.",
     )
 
     # Default global parameters

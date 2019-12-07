@@ -2,17 +2,7 @@ ComNetsEmu
 ==========
 *A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice*
 
-
 **This project is currently under heavy development [beta]**.
-
-This project is currently hosted both on [Bitbucket](https://bitbucket.org/comnets/comnetsemu/src/master/) and [Comnets
-Gitlab](https://git.comnets.net/book/comnetsemu) (on the server of [The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/)).
-The master and dev branches are synchronized.
-The **master** branch contains latest stable sources, the **dev** branch is used as blessed branch for development.
-
-Issues and pull requests can be created on **both** repositories.
-Please create an issues if there are any problems or feature requirement of the tested.
-It will be answered more quickly than Emails.
 
 #### Table of Contents
 
@@ -320,7 +310,9 @@ $ firefox ./doc/build/html/index.html
 This project exists thanks to all people who contribute.
 [List](./CONTRIBUTORS) of all contributors.
 
-TODO: Add separate contributing guide
+Contributing to this repository requires an account of the internal Gitlab server hosted by
+[The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/).
+Please contact us by Email if you want to have an account.
 
 ### Contact
 

@@ -64,8 +64,9 @@ packet losses.
 You can simple run the automated emulation of mobile\_recoder\_deterministic profile with following commands:
 
 ```bash
-# All recoders perform only store-and-forward.
+# All recoders perform only store-and-forward. Used to get the measurement result without any recoding.
 $ sudo python3 ./multihop_topo.py --all_foward
+# Place the recoder from left to right one by one. And print the measurement result of each placement.
 $ sudo python3 ./multihop_topo.py
 ```
 

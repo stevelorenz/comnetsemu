@@ -80,7 +80,7 @@ def deploy_coders(mgr, hosts):
         "decoder",
         hosts[-2].name,
         "nc_coder",
-        "python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
+        "sudo python3 ./decoder.py h%d-s%d" % (len(hosts) - 1, len(hosts) - 1),
         wait=3,
         docker_args={},
     )
@@ -89,7 +89,7 @@ def deploy_coders(mgr, hosts):
         "encoder",
         hosts[1].name,
         "nc_coder",
-        "python3 ./encoder.py h2-s2",
+        "sudo python3 ./encoder.py h2-s2",
         wait=3,
         docker_args={},
     )
