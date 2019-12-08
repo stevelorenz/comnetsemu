@@ -1,17 +1,14 @@
 #
-# Dockerfile for NC encoder
+# Dockerfile for NC coders.
 #
 
-# Pull base image.
+# The Python version of this image should be the same of the OS that builds the kodo-python.
+# Otherwise, Python program for coders can not run inside container.
 FROM ubuntu:18.04
 
-# Install KODO python
-RUN \
-        apt-get update && \
-        apt-get install -y build-essential git sudo && \
-        apt-get install -y net-tools iproute2 && \
-        apt-get install -y python3 libpython3-dev python3-dev && \
-        apt-get install -y tcpdump iperf
+RUN apt-get update && \
+    apt-get install -y sudo net-tools iproute2 python3 libpython3-dev python3-dev \
+    iperf tcpdump
 
 # Add kodo user
 RUN useradd -ms /bin/bash kodo
@@ -41,6 +38,6 @@ RUN chmod 700 /home/kodo/*.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
-USER root
-# Define default command.
+USER kodo
+
 CMD ["bash"]

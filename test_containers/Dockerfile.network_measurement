@@ -1,0 +1,24 @@
+#
+# About: Docker container for network measurement.
+#
+# Build and installed tools:
+#
+# - Sockperf (https://github.com/mellanox/sockperf): Network benchmarking
+# utility over socket API that was designed for testing performance (NETWORK
+# and throughput) of high-performance systems.
+#
+
+FROM bitnami/minideb:buster
+
+RUN install_packages wget ca-certificates iproute2 net-tools telnet tcpdump iputils-ping procps \
+        iperf iperf3
+
+ENV NETWORK_MEASUREMENT_SRC /opt/network_measurement
+RUN mkdir -p ${NETWORK_MEASUREMENT_SRC}
+WORKDIR ${NETWORK_MEASUREMENT_SRC}
+# MARK: Compile Sockperf from source code require much resources... Therefore, download deb from this link
+RUN wget http://ftp.br.debian.org/debian/pool/main/s/sockperf/sockperf_3.6-2_amd64.deb -O ./sockperf.deb \
+    && dpkg -i ./sockperf.deb \
+    && rm ./sockperf.deb
+
+CMD ["bash"]

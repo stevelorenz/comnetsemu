@@ -285,7 +285,7 @@ class DockerHost(Host):
         ret = ifce.setIP(ip, prefixLen, **kwargs)
         if ret.startswith("ifconfig: bad"):
             # warn("\nFailed to set IP address with ifconfig\n")
-            info("Use iproute2 instead of ifconfig (used by Mininet).\n")
+            debug("Use iproute2 instead of ifconfig (used by Mininet).\n")
             if "/" in ip:
                 ifce.ip, ifce.prefixLen = ip.split("/")
                 ret = self.cmd("ip addr add {} dev {}".format(ip, ifce.name))

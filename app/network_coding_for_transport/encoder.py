@@ -57,7 +57,7 @@ def run_encoder(ifce):
     encoder = encoder_factory.build()
     symbol_storage = [b""] * SYMBOLS
     # Use systematic encoding.
-    encoder.set_systematic_on()
+    encoder.set_systematic_off()
 
     logger.info("Entering IO loop.")
     while True:
@@ -134,7 +134,7 @@ def run_encoder(ifce):
             ] = enc_out[:]
             frame_len = frame_len + (len(enc_out) - udp_pl_len) + META_DATA_LEN
             logger.debug(
-                "Encoder output: output len: %d, UDP payload length: %d",
+                "Encoder output: output length: %d, UDP payload length: %d",
                 len(enc_out),
                 udp_pl_len,
             )
@@ -160,7 +160,7 @@ def run_encoder(ifce):
             )
             encoder = encoder_factory.build()
             assert encoder.rank() == 0
-            encoder.set_systematic_on()
+            encoder.set_systematic_off()
             if generation < 255:
                 generation += 1
             else:
