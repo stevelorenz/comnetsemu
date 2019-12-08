@@ -53,20 +53,14 @@ $ sudo bash ./build_docker_images.sh
 $ sudo ./install_dependencies.sh
 ```
 
-## Profile 1: Multi-hop Topology with Mobile Recoder ###
+## Profile 1: Multi-hop Topology with Forwarding vs Recoding ###
 
-In this scenario, due to the latency/computation overhead. Only one recoder can enable the recode-and-forward mode.
-Other recoders perform store-and-forward.
-For this deterministic scenario, the recode function is enabled from left to right one by one.
-For each placement of the recoder, UDP traffic is generated from client to server with Iperf to measure throughput and
-packet losses.
+In this scenario, the relays in the middle can either store-and-forward or recode-and-forward.
+For each setup, UDP traffic is generated from client to server with Iperf to measure the packet losses.
 
-You can simple run the automated emulation of mobile\_recoder\_deterministic profile with following commands:
+You can simple run the automated emulation of forward\_vs\_recode profile with following commands:
 
 ```bash
-# All recoders perform only store-and-forward. Used to get the measurement result without any recoding.
-$ sudo python3 ./multihop_topo.py --all_foward
-# Place the recoder from left to right one by one. And print the measurement result of each placement.
 $ sudo python3 ./multihop_topo.py
 ```
 

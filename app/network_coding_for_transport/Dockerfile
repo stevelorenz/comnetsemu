@@ -2,14 +2,13 @@
 # Dockerfile for NC coders.
 #
 
+# The Python version of this image should be the same of the OS that builds the kodo-python.
+# Otherwise, Python program for coders can not run inside container.
 FROM ubuntu:18.04
 
-RUN \
-        apt-get update && \
-        apt-get install -y build-essential git sudo && \
-        apt-get install -y net-tools iproute2 && \
-        apt-get install -y python3 libpython3-dev python3-dev && \
-        apt-get install -y tcpdump iperf iperf3
+RUN apt-get update && \
+    apt-get install -y sudo net-tools iproute2 python3 libpython3-dev python3-dev \
+    iperf tcpdump
 
 # Add kodo user
 RUN useradd -ms /bin/bash kodo

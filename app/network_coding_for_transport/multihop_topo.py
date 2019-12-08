@@ -7,7 +7,6 @@ About: Example of using Network Coding (NC) for transport on a multi-hop topolog
 """
 
 
-import argparse
 import time
 from shlex import split
 from subprocess import check_output
@@ -186,16 +185,17 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
     :param print_clt_log (Bool): If true, print the log of the Iperf client
     """
     info(
-        "Run Iperf test between {} (Client) and {} (Server), protocol: {}\n".format(
-            h_clt.name, h_srv.name, proto
+        "Run Iperf test between {} (Client) and {}(Server), protocol: {},"
+        "target bandwith: {}, duration: {} seconds.\n".format(
+            h_clt.name, h_srv.name, proto, IPERF_BANDWIDTH, IPERF_TEST_DURATION
         )
     )
     iperf_client_para = {
         "server_ip": h_srv.IP(),
         "port": 9999,
-        "bw": "50K",
+        "bw": IPERF_BANDWIDTH,
         "time": time,
-        "interval": 1,
+        "interval": IPERF_TEST_DURATION,
         "length": str(SYMBOL_SIZE - META_DATA_LEN),
         "proto": "-u",
         "suffix": "> /dev/null 2>&1 &",
@@ -205,8 +205,8 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         iperf_client_para["suffix"] = ""
 
     h_srv.cmd(
-        "iperf -s -p 9999 -i 1 {} > /tmp/iperf_server.log 2>&1 &".format(
-            iperf_client_para["proto"]
+        "iperf -s -p 9999 -i {} {} > /tmp/iperf_server.log 2>&1 &".format(
+            iperf_client_para["interval"], iperf_client_para["proto"]
         )
     )
 
@@ -223,20 +223,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
         info("*** Output of Iperf client:\n")
         print(ret)
 
-
-# def run_sockperf_test(h_clt, h_srv, time=10, print_clt_log=False):
-#     """Run Iperf tests between h_clt and h_srv (DockerHost) and print the output"""
-
-#     h_srv.cmd("iperf3 -s -p 9999 -i 1 {} > /tmp/sockperf_server.log 2>&1 &")
-
-#     sockperf_clt_cmd = """iperf3 -c {server_ip} -p {port} -t {time} -i {interval} -b {bw} -l {length} {proto} {suffix}""".format(
-#         **iperf_client_para
-#     )
-#     print("Iperf client command: {}".format(sockperf_clt_cmd))
-#     ret = h_clt.cmd(sockperf_clt_cmd)
-
-#     info("*** Output of Sockperf server:\n")
-#     print(h_srv.cmd("cat /tmp/sock_server.log"))
+    h_srv.cmd("killall iperf")
 
 
 def create_topology(net, host_num):
@@ -275,7 +262,12 @@ def create_topology(net, host_num):
             # Losses are emulated with links between switches.
             net.addLinkNamedIfce(switch, host, delay="20ms")
             if last_sw:
-                net.addLinkNamedIfce(switch, last_sw, delay="20ms", loss=10)
+                if last_sw == "s1" or switch == f"s{host_num}":
+                    net.addLinkNamedIfce(switch, last_sw, delay="20ms", loss=0)
+                else:
+                    net.addLinkNamedIfce(
+                        switch, last_sw, delay="20ms", loss=RELAY_LINK_LOSS
+                    )
             last_sw = switch
 
         return hosts
@@ -303,26 +295,21 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
         info("*** Disable Checksum offloading\n")
         disable_cksum_offload(host_num)
 
-        if profile == PROFILES["mobile_recoder_deterministic"]:
-            info("*** Run mobile recoder experiment.\n")
+        if profile == PROFILES["forward_vs_recode"]:
+            info("*** Run experiment to compare forwarding and recoding.\n")
 
-            for i in range(relay_num):
-                action_map = ["forward"] * relay_num
-                if not ALL_FOWARD:
-                    action_map[i] = "recode"
+            for action in ["forward", "recode"]:
+                action_map = [action] * relay_num
                 info(
-                    "Number of recoders: %s, the action map: %s\n"
+                    "Number of relays: %s, the action map: %s\n"
                     % (relay_num, ", ".join(action_map))
                 )
                 coders = deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map)
                 # Wait for coders to be ready
                 time.sleep(3)
-                run_iperf_test(hosts[0], hosts[-1], "udp", 10)
+                run_iperf_test(hosts[0], hosts[-1], "udp", IPERF_TEST_DURATION)
                 print_coders_log(coders, coder_log_conf)
                 remove_coders(mgr, coders)
-
-                if ALL_FOWARD:
-                    break
 
         info("*** Emulation stops...\n")
 
@@ -338,26 +325,17 @@ def run_multihop_nc_test(host_num, profile, coder_log_conf):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        description="Example of using Network Coding (NC) for transport on a multi-hop topology."
-    )
-    parser.add_argument(
-        "--all_forward",
-        action="store_true",
-        help="All recoders perform only store-and-forward. Used to get the measurement result without any recoding.",
-    )
-
     # Default global parameters
-    ALL_FOWARD = False
     HOST_NUM = 7
-
-    args = parser.parse_args()
-    ALL_FOWARD = args.all_forward
+    # Duration of the Iperf traffic in seconds.
+    IPERF_TEST_DURATION = 15
+    IPERF_BANDWIDTH = "10K"
+    # The loss rate between each relay, there is no losses between the client,
+    # encoder and decoder, server.
+    RELAY_LINK_LOSS = 10
 
     setLogLevel("info")
     coder_log_conf = {"encoder": False, "decoder": False, "recoder": False}
 
-    PROFILES = {"mobile_recoder_deterministic": 0}
-    run_multihop_nc_test(
-        HOST_NUM, PROFILES["mobile_recoder_deterministic"], coder_log_conf
-    )
+    PROFILES = {"forward_vs_recode": 0}
+    run_multihop_nc_test(HOST_NUM, PROFILES["forward_vs_recode"], coder_log_conf)
