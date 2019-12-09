@@ -6,6 +6,19 @@ YOLOv2 is a deep learning based method and uses Convolutional Neutral Network (C
 image.  To goal of this example is to show that the object detection latency can be reduced by offloading a part of CNN
 processing on the network edge. 
 
+[Tensorflow](https://www.tensorflow.org/) is used in this example as the deep learning framework.
+In order to accelerate the training and inference speed purely on CPU (Assume that not all devices on the network edge
+have powerful built-in GPUs available).
+The Tensorflow version with [Intel optimization](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide) is
+installed.
+A significant acceleration for inference can be detected if this example run bare-mental or inside a para-virtualization
+enabled VM on a physical machine with Intel CPUs.
+Sine [this project](https://github.com/zrbzrb1106/yolov2) started as a full development environment for deep learning
+algorithms, the built Docker image size is relative big.
+It can be reduced with target-specific customization or multi-stage build.
+Please check the Dockerfile for detailed packages information.
+Thanks for your understanding.
+
 The test topology described in [topology.py](./topology.py) is a simple chain with three nodes connected directly to a
 single switch:
 
@@ -31,6 +44,7 @@ to run all tests smoothly. If the memory space is not enough, the detection prog
 (be killed by the OOM) automatically.
 
 ```bash
+# This step takes much time, many packages are downloaded and installed.
 $ sudo bash ./build_docker_images.sh
 $ sudo python3 ./topology.py
 ```
