@@ -40,6 +40,9 @@ SCRIPT
 $setup_x11_server= <<-SCRIPT
 apt-get install -y xorg
 apt-get install -y openbox
+# Make the SSH X forwarding work on libvirt managed VM.
+sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
+systemctl restart sshd.service
 SCRIPT
 
 # Use v4.19 LTS, EOL: Dec, 2020
