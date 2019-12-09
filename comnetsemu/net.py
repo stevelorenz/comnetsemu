@@ -87,6 +87,7 @@ class VNFManager(object):
     """
 
     docker_args_default = {
+        "init": True,
         "tty": True,  # -t
         "detach": True,  # -d
         # Used for cleanups

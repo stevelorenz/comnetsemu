@@ -38,10 +38,4 @@ ENV BUILD_NUMBER docker
 RUN fvconfig load /etc/flowvisor/config.json && \
     chown -R flowvisor:flowvisor /usr/share/db/flowvisor/
 
-# Add Tini --- A tiny but valid init for containers
-ENV TINI_VERSION v0.18.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "-g", "--"]
-
 CMD ["bash"]
