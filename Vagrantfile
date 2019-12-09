@@ -6,8 +6,6 @@
 #  Variables  #
 ###############
 
-ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
-
 CPUS = 2
 # - YOLOv2 object detection application requires 4GB RAM to run smoothly
 RAM = 4096

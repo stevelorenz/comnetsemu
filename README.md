@@ -6,8 +6,6 @@ ComNetsEmu
 
 #### Table of Contents
 
-TOC only supports Gitlab.
-
 <!-- vim-markdown-toc GitLab -->
 
 * [Description](#description)
@@ -111,6 +109,7 @@ with [KVM](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine) as the hy
 
 In order to run these programs, your host OS must use [Linux kernel](https://en.wikipedia.org/wiki/Linux_kernel).
 You can install a GNU/Linux distribution on your physical machine.
+WARN: Two providers can not be used at the same time. Same VM can be created either by Virtualbox or KVM.
 
 Recommended and tested setup:
 
@@ -147,12 +146,15 @@ After successful installation, run the following command in the ComNetsEmu's sou
 
 ```bash
 $ vagrant up --provider libvirt comnetsemu
+# Remove the VM managed by libvirt, the default provider is Virtualbox. Use VAGRANT_DEFAULT_PROVIDER to force vagrant to
+# use libvirt.
+$ VAGRANT_DEFAULT_PROVIDER=libvirt vagrant destroy comnetsemu
 ```
 
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
 process. This script is executed by the vagrant user which can run sudo commands without password.
 This script can be used to add your customized tools (e.g. ZSH, Desktop environment etc) and configuration to the
-ComNetsEmu VM. Since the vagrant VM uses Ubuntu LTS, apt should be used to manage the packages.
+ComNetsEmu VM. Since the vagrant VM uses Ubuntu 18.04 LTS, apt should be used to manage the packages.
 
 Example of `vm_customize.sh`:
 ```bash
