@@ -81,7 +81,7 @@ external source dependencies in $TOP_DIR/comnetsemu_dependencies.
 
 ```bash
 $ cd $TOP_DIR
-$ git clone https://bitbucket.org/comnets/comnetsemu.git comnetsemu
+$ git clone https://git.comnets.net/public-repo/comnetsemu.git comnetsemu
 ```
 
 ComNetsEmu's [installer](./util/install.sh) tries to install dependencies with package manager (apt, pip etc.) if they
@@ -113,15 +113,17 @@ WARN: Two providers can not be used at the same time. Same VM can be created eit
 
 Recommended and tested setup:
 
--  Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
--  Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
--  (Optional) Libvirt: v5.10 and beyond ([Download Link](https://libvirt.org/downloads.html))
--  (Optional) Vagrant Libvirt Provider: v0.0.45 and beyond ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+-   Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
+-   Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+-   (Optional) Libvirt: v5.10 and beyond ([Download Link](https://libvirt.org/downloads.html))
+-   (Optional) Vagrant Libvirt Provider: v0.0.45 and beyond ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
 
 A customized [Vagrantfile](./Vagrantfile) is provided in this repository to manage the VM.
 Both Virtualbox and Libvirt can be used to create the VM. The default provider is Virtualbox.
 Different providers uses different base boxes, please check the Vagrantfile for details.
 You can choose the provider with `--provider` option of the `vagrant up` command.
+
+*   Use Virtualbox as Provider
 
 To manage the Virtualbox VM, please open a terminal on your host OS and change the working directory to the directory
 containing the ComNetsEmu's source code. Use following commands to manage the VM.
@@ -140,6 +142,8 @@ $ vagrant halt comnetsemu
 $ vagrant destory comnetsemu
 ```
 
+*   Use Libvirt as Provider
+
 To create the VM with Libvirt provider. Check the [guide](https://github.com/vagrant-libvirt/vagrant-libvirt#installation) to install the plugin.
 
 After successful installation, run the following command in the ComNetsEmu's source directory:
@@ -150,6 +154,14 @@ $ vagrant up --provider libvirt comnetsemu
 # use libvirt.
 $ VAGRANT_DEFAULT_PROVIDER=libvirt vagrant destroy comnetsemu
 ```
+
+[Rsync mode](https://www.vagrantup.com/docs/synced-folders/rsync.html) is used in the Libvirt provider for unidirectional (host->guest) sync.
+The syncing does not automatically start after the `vagrant up`.
+Open a shell and run `$ vagrant rsync-auto comnetsemu` after the VM  is booted to start syncing.
+For bidirectional sync, [NFS](https://www.vagrantup.com/docs/synced-folders/nfs.html) need to be configured and used as
+the sync type.
+
+*   Customization Shell Script
 
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
 process. This script is executed by the vagrant user which can run sudo commands without password.
@@ -259,20 +271,26 @@ See the [README](./examples/README.md) to get information about all built-in exa
 
 ### File Catalog
 
-- [app](./app/): All application programs are classified in this directory. Each subdirectory contains a brief
-    introduction, source codes, Dockerfiles for internal containers and utility scripts of the application.
+To keep the VM size small, the Vagrantfile and test_containers contain only MINIMAL dependencies to bootstrap the VM and
+able to run all built-in examples.
+Dependencies of specific applications (e.g. Python packages like numpy, scipy etc.) should be installed by the script or
+instructions provided in the corresponded application folder.
+Therefore, the user need to install them only if she or he wants to run that application.
 
-- [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python package.
+-   [app](./app/): All application programs are classified in this directory. Each subdirectory contains a brief
+      introduction, source codes, Dockerfiles for internal containers and utility scripts of the application.
 
-- [examples](./examples/): Example programs for functionalities of the ComNetsEmu emulator.
+-   [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python package.
 
-- [patch](./patch/): Patches for external dependencies that are installed from source via [installer](./util/install.sh).
+-   [examples](./examples/): Example programs for functionalities of the ComNetsEmu emulator.
 
-- [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
+-   [patch](./patch/): Patches for external dependencies that are installed from source via [installer](./util/install.sh).
 
-- [utils](./util/): Utility and helper scripts.
+-   [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
 
-- [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
+-   [utils](./util/): Utility and helper scripts.
+
+-   [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
 
 ### Development Guide and API Documentation
 

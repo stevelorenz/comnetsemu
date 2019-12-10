@@ -121,34 +121,38 @@ Vagrant.configure("2") do |config|
     if provider == "virtualbox"
       comnetsemu.vm.box = BOX
       comnetsemu.vm.box_version = BOX_VER
+      # Sync ./ to home dir of vagrant to simplify the install script
+      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
+      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'virtualbox'
     elsif provider == "libvirt"
       comnetsemu.vm.box = BOX_LIBVIRT
       comnetsemu.vm.box_version = BOX_LIBVIRT_VER
+      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
+      # Rync is used for simplicity, it's unidirectional (host -> guest).
+      # It does NOT run $ vagrant rsync-auto by default.
+      # More options here: https://github.com/vagrant-libvirt/vagrant-libvirt#synced-folders
+      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'rsync'
     end
 
 
     comnetsemu.vm.hostname = "comnetsemu"
     comnetsemu.vm.box_check_update = true
     comnetsemu.vm.post_up_message = '
-VM started! Run "vagrant ssh <vmname>" to connect.
+VM already started! Run "$ vagrant ssh comnetsemu" to ssh into the runnung VM.
 
-INFO! For ComNetsEmu users:
+INFO! For all ComNetsEmu users and developers:
 
-If there are any new commits in the dev branch in the remote repository, Please do following steps to upgrade dependencies:
+If there are new commits in the master branch in the remote repository, Please do following steps to upgrade ComNetsEmu and its dependencies:
 
-- [On the host system] Fetch and merge new commits from upstream dev branch and solve potential conflicts.
-  By default, ComNetsEmu Python module is installed using develop mode inside VM, so the updates of the module should be applied automatically inside VM. No re-install is required.
+- [On the host system] Fetch and merge new commits from upstream master branch.
+  By default, ComNetsEmu Python3 module is installed using develop mode inside VM, so the updates of this module should be applied automatically inside VM. No re-installation is required.
 
 - [Inside Vagrant VM] Change current path to "/home/vagrant/comnetsemu/util" and run "$ PYTHON=python3 ./install.sh -u" to check and upgrade all dependencies when required.
 
-- [Inside Vagrant VM] Rebuild the containers in "test_containers" with "build.sh" (The dockerfile may be modified in the latest updates)
+- [Inside Vagrant VM] Rebuild the test containers in "test_containers" with "build.sh" (Dockerfiles in that folder may be modified in the latest commits.)
 
-- [On the host system] If the Vagrant file is modified in the lastest updates. run "$ vagrant provision" to re-provision the created VM.
+- [On the host system] If this Vagrantfile is modified in the lastest updates. Please run "$ vagrant provision" to re-provision the already created VM.
     '
-
-    # Sync ./ to home dir of vagrant to simplify the install script
-    comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
-    comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu"
 
     # Workaround for vbguest plugin issue
     comnetsemu.vm.provision "shell", run: "always", inline: <<-WORKAROUND
