@@ -123,6 +123,14 @@ Both Virtualbox and Libvirt can be used to create the VM. The default provider i
 Different providers uses different base boxes, please check the Vagrantfile for details.
 You can choose the provider with `--provider` option of the `vagrant up` command.
 
+*   VM Resource Allocation (**Important**)
+
+By default, this VM is allocated with **2** vCPUs and **4GB** RAM to run all examples and applications smoothly.
+If you machine does not have enough resources, you need to change the variable *CPUS* and *RAM* in the Vagrantfile
+**before** created the VM.
+Some applications (e.g. machine_learning_for_object_detection) require minimal 4GB RAM to run smoothly without crash.
+That's the only reason why this resource allocation is used by default.
+
 *   Use Virtualbox as Provider
 
 To manage the Virtualbox VM, please open a terminal on your host OS and change the working directory to the directory
