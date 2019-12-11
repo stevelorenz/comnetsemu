@@ -107,7 +107,10 @@ EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
-MININET_VER="e0436642a"
+# For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
+MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
+MININET_BRANCH="comnetsemu-stable"
+MININET_VER="2b8d254"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 # - Installed by package manager (apt, pip etc.)
@@ -197,9 +200,10 @@ function install_mininet_with_deps() {
     echo "*** Install Mininet and its minimal dependencies."
     $install git net-tools
     cd "$mininet_dir" || exit
-    git clone https://github.com/mininet/mininet.git
+    git clone $MININET_GIT_URL
     cd mininet || exit
-    git checkout -b dev $MININET_VER
+    git checkout $MININET_BRANCH
+    git checkout $MININET_VER
     cd util || exit
     PYTHON=python3 ./install.sh -nfvw03
 }

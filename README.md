@@ -30,7 +30,10 @@ ComNetsEmu
 ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks: From Theory to Practice".
 The design focus on emulating all examples and applications on a single computer, e.g. on a single laptop.
 ComNetsEmu extends the famous [Mininet](http://mininet.org/) emulator to support better emulation of versatile NFV/SDN network **applications**.
-See the detailed comparison between upstream Mininet [here](./doc/comparison.md).
+It learns and promotes the great concepts and  work in the [Containernet](https://containernet.github.io/) project.
+It uses a slightly different approach to extend the Mininet compared to Containernet.
+It's main focus is to use "sibling containers" to emulate network systems with computing.
+See the detailed comparison between upstream Mininet and Containernet [here](./doc/comparison.md).
 
 Common facts about ComNetsEmu:
 
