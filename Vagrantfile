@@ -166,7 +166,8 @@ If there are new commits in the master branch in the remote repository, Please d
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
       # Apply Xterm profile, looks nicer.
       cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
-      xrdb -merge /home/vagrant/.Xresources
+      # xrdb can not run directly during vagrant up. Auto-works after reboot.
+      # xrdb -merge /home/vagrant/.Xresources
 
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a

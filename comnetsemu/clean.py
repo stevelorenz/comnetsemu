@@ -14,7 +14,7 @@ import shutil
 import docker
 from mininet.log import info
 from mininet.clean import cleanup as mn_cleanup
-from comnetsemu.net import VNFMANGER_MOUNTED_DIR
+from comnetsemu.net import APPCONTAINERMANGER_MOUNTED_DIR
 
 
 def sh(cmd, check=True):
@@ -31,7 +31,7 @@ def cleanup():
     cleanup_docker_containers()
     cleanup_netdevs()
     info("*** Remove temp directories\n")
-    shutil.rmtree(VNFMANGER_MOUNTED_DIR, ignore_errors=True)
+    shutil.rmtree(APPCONTAINERMANGER_MOUNTED_DIR, ignore_errors=True)
 
 
 def cleanup_docker_containers():

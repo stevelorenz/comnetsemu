@@ -15,9 +15,9 @@ from mininet.term import cleanUpScreens, makeTerms
 from mininet.util import BaseString
 
 # ComNetsEmu version: should be consistent with README and LICENSE
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 
-VNFMANGER_MOUNTED_DIR = "/tmp/comnetsemu/vnfmanager"
+APPCONTAINERMANGER_MOUNTED_DIR = "/tmp/comnetsemu/appcontainermanger"
 
 
 class Containernet(Mininet):
@@ -67,17 +67,11 @@ class Containernet(Mininet):
         )
 
 
-# MARK(Zuo): Maybe "AppContainerManager" is a better name.
-#            So we have DockerHost emulating physicall machines and AppContainer
-#            for applications. So Docker-In-Docker. Naming is difficult...
-class VNFManager(object):
-    """Manager for VNFs deployed on Mininet hosts (Docker-in-Docker)
+class AppContainerManager(object):
+    """Manager for application containers (sibling containers) deployed on Mininet hosts.
 
     - To make is simple. It uses docker-py APIs to manage internal containers
       from host system.
-
-    - It should communicate with SDN controller to manage internal containers
-      adaptively.
 
     - Internal methods (starts with an underscore) should be documented after
       tests and before stable releases.
@@ -96,7 +90,10 @@ class VNFManager(object):
         "security_opt": ["seccomp:unconfined"],
         # Shared directory in host OS
         "volumes": {
-            VNFMANGER_MOUNTED_DIR: {"bind": VNFMANGER_MOUNTED_DIR, "mode": "rw"}
+            APPCONTAINERMANGER_MOUNTED_DIR: {
+                "bind": APPCONTAINERMANGER_MOUNTED_DIR,
+                "mode": "rw",
+            }
         },
     }
 
@@ -104,7 +101,7 @@ class VNFManager(object):
     retry_delay_secs = 0.1
 
     def __init__(self, net: Mininet):
-        """Init the VNFManager
+        """Init the AppContainerManager.
 
         :param net (Mininet): The mininet object, used to manage hosts via Mininet's API.
         """
@@ -115,7 +112,7 @@ class VNFManager(object):
         # Fast search for added containers.
         self._name_container_map = dict()
 
-        os.makedirs(VNFMANGER_MOUNTED_DIR, exist_ok=True)
+        os.makedirs(APPCONTAINERMANGER_MOUNTED_DIR, exist_ok=True)
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
         # Override the essential parameters
@@ -194,7 +191,8 @@ class VNFManager(object):
         :param dimage (str): Name of the docker image
         :param dcmd (str): Command to run after the creation
         :param docker_args (dict): All other keyword arguments supported by Docker-py.
-            e.g. CPU and memory related limitations. Some parameters are overriden for VNFManager's functionalities.
+            e.g. CPU and memory related limitations.
+            Some parameters are overriden for AppContainerManager's functionalities.
         :param wait (Bool): Wait until the container has the running state if True.
 
         Check cls.docker_args_default.
@@ -289,7 +287,7 @@ class VNFManager(object):
     #     container = self._name_container_map.get(container, None)
     #     if not container:
     #         raise ValueError(f"Can not found container with name: {container}")
-    #     ckpath = os.path.join(VNFMANGER_MOUNTED_DIR, f"{container.name}")
+    #     ckpath = os.path.join(APPCONTAINERMANGER_MOUNTED_DIR, f"{container.name}")
     #     # MARK: Docker-py does not provide API for checkpoint and restore,
     #     # Docker CLI is directly used with subprocess as a temp workaround.
     #     subprocess.run(split(
@@ -303,7 +301,7 @@ class VNFManager(object):
 
     def stop(self):
         debug(
-            "STOP: {} containers in the VNF queue: {}\n".format(
+            "STOP: {} containers in the App container queue: {}\n".format(
                 len(self._container_queue),
                 ", ".join((c.name for c in self._container_queue)),
             )
@@ -315,4 +313,10 @@ class VNFManager(object):
             c.dins.remove(force=True)
 
         self.dclt.close()
-        shutil.rmtree(VNFMANGER_MOUNTED_DIR)
+        shutil.rmtree(APPCONTAINERMANGER_MOUNTED_DIR)
+
+
+class VNFManager(AppContainerManager):
+    """App container for Virtualized Network Functions"""
+
+    pass
