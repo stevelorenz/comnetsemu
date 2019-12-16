@@ -16,6 +16,11 @@ This example demonstrate how to use ComNetsEmu's API to deploy Docker container 
 Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization.
 The Dockerhost with internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
 
+#### DPDK
+
+A basic example of running [DPDK](https://www.dpdk.org/) application inside Docker container and deploying it on ComNetsEmu.
+Check the [doc](./dpdk/README.md) in the subdirectory for details.
+
 #### mininet_demystify
 
 Demystify technologies used in Mininet for lightweight network emulation.
