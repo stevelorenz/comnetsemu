@@ -126,6 +126,12 @@ Both Virtualbox and Libvirt can be used to create the VM. The default provider i
 Different providers uses different base boxes, please check the Vagrantfile for details.
 You can choose the provider with `--provider` option of the `vagrant up` command.
 
+*   Some Known Issues
+
+Please follow the documentation to setup the VM with proper resource allocation.
+If the `vagrant up` command fails to setup the VM fully correct which you can test by running the basic *Docker-in-Docker* example.
+Please firstly check the [known VM setup issues](./doc/vm_setup_issues.md) for potential solutions.
+
 *   VM Resource Allocation (**Important**)
 
 By default, this VM is allocated with **2** vCPUs and **4GB** RAM to run all examples and applications smoothly.
