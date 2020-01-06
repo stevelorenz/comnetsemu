@@ -110,7 +110,7 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
 MININET_BRANCH="comnetsemu-stable"
-MININET_VER="2b8d254"
+MININET_VER="2b8d254c"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
 # - Installed by package manager (apt, pip etc.)

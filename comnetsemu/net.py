@@ -7,7 +7,7 @@ import shutil
 from time import sleep
 
 import docker
-from comnetsemu.cli import spawnAttachedXterm
+from comnetsemu.cli import spawnXtermDocker
 from comnetsemu.node import DockerContainer, DockerHost
 from mininet.log import debug, error, info
 from mininet.net import Mininet
@@ -45,7 +45,7 @@ class Containernet(Mininet):
         self.terms += makeTerms(self.switches, "switch")
         dhosts = [h for h in self.hosts if isinstance(h, DockerHost)]
         for d in dhosts:
-            self.terms.append(spawnAttachedXterm(d.name))
+            self.terms.append(spawnXtermDocker(d.name))
         rest = [h for h in self.hosts if h not in dhosts]
         self.terms += makeTerms(rest, "host")
 

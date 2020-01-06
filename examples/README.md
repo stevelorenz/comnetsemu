@@ -12,9 +12,14 @@ supported) for them.
 
 #### dockerindocker.py
 
-This example demonstrate how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
+This example demonstrates how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
 Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization.
 The Dockerhost with internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
+
+#### Echo Server as a Service (./echo_server/)
+
+This basic example demonstrates how to build and deploy a containerized service (a simple echo server) as an internal
+container on ComNetsEmu.
 
 #### DPDK
 

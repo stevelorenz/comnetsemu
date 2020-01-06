@@ -167,7 +167,7 @@ If there are new commits in the master branch in the remote repository, Please d
       # Apply Xterm profile, looks nicer.
       cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
       # xrdb can not run directly during vagrant up. Auto-works after reboot.
-      # xrdb -merge /home/vagrant/.Xresources
+      xrdb -merge /home/vagrant/.Xresources
 
       cd /home/vagrant/comnetsemu/util || exit
       PYTHON=python3 ./install.sh -a
@@ -203,6 +203,9 @@ If there are new commits in the master branch in the remote repository, Please d
 
     # VM networking
     comnetsemu.vm.network "forwarded_port", guest: 8888, host: 8888, host_ip: "127.0.0.1"
+    # - Uncomment the underlying line to add a private network to the VM.
+    #   If VirtualBox is used as the hypervisor, this means adding or using (if already created) a host-only interface to the VM.
+    # comnetsemu.vm.network "private_network", ip: "192.168.0.2"
 
     # Enable X11 forwarding
     comnetsemu.ssh.forward_agent = true

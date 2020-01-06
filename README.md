@@ -43,6 +43,9 @@ Common facts about ComNetsEmu:
     emulation results. For example, use e.g. 100ms as link delay instead of 1ms for large scale topology.
 
 -   ComNetsEmu is developed with **Python3.6**.
+    To reduce the complexity of dependencies (third-party packages, frameworks etc.), ComNetsEmu tries to leverage as
+    much of the powerful Python standard library as possible, and prefers simple third-party dependencies when
+    necessary.
 
 -   Examples and applications in this repository are mainly developed with high-level script language for simplicity.
     These programs are **not** performance-oriented and optimized.
@@ -60,6 +63,8 @@ Common facts about ComNetsEmu:
 
 -   A collection of application examples for "Computing In Communication Networks" with sample codes and
     detailed documentation. All examples can be easily reproduced and extended.
+
+Check the [Roadmap](./doc/roadmap.md) for planed and WIP features.
 
 ### Installation
 
@@ -116,10 +121,15 @@ WARN: Two providers can not be used at the same time. Same VM can be created eit
 
 Recommended and tested setup:
 
--   Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
--   Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
--   (Optional) Libvirt: v5.10 and beyond ([Download Link](https://libvirt.org/downloads.html))
--   (Optional) Vagrant Libvirt Provider: v0.0.45 and beyond ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+-   Vagrant: v2.2.5 ([Download Link](https://www.vagrantup.com/downloads.html))
+-   Virtualbox: v6.0 ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+-   (Optional) Libvirt: v5.10 ([Download Link](https://libvirt.org/downloads.html))
+-   (Optional) Vagrant Libvirt Provider: v0.0.45 ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+
+Warning: The latest version of Virtualbox/Libvirt may not work properly with latest Vagrant.
+For example, the Vagrant 2.2.6 does not fully support Virtualbox 6.1. (see the issue [here](https://github.com/oracle/vagrant-boxes/issues/178))
+Therefore, it is recommended to use **tested** versions listed above and the ComNetsEmu dev team will update the
+recommended versions after tests.
 
 A customized [Vagrantfile](./Vagrantfile) is provided in this repository to manage the VM.
 Both Virtualbox and Libvirt can be used to create the VM. The default provider is Virtualbox.
