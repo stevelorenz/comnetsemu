@@ -9,6 +9,7 @@ import shlex
 import time
 
 import docker
+
 from mininet.log import debug, error, info, warn
 from mininet.node import Host
 
@@ -75,7 +76,7 @@ class DockerHost(Host):
         self.resources = dict()
 
         # Override the essential parameters
-        for key in self.docker_args_default.keys():
+        for key in self.docker_args_default:
             if key in docker_args:
                 error(
                     f"Given argument: {key} will be overridden by the default "
@@ -104,7 +105,7 @@ class DockerHost(Host):
             "dns": [],
         }
         # Check legacy options in **kwargs, for backward capacity
-        for arg in legacy_opts.keys():
+        for arg in legacy_opts:
             if arg in kwargs.keys():
                 error(f"Argument {arg} should be given in docker_args dictionary!\n")
 
@@ -121,7 +122,7 @@ class DockerHost(Host):
         super(DockerHost, self).__init__(name, **kwargs)
 
     # Command support via shell process in namespace
-    def startShell(self, *args, **kwargs):
+    def startShell(self):
         "Start a shell process for running commands"
         if self.shell:
             error("%s: shell is already running\n" % self.name)
@@ -216,9 +217,6 @@ class DockerHost(Host):
             return
         Host.sendCmd(self, *args, **kwargs)
 
-    def sendInt(self):
-        super(DockerHost, self).sendInt()
-
     def popen(self, *args, **kwargs):
         """Return a Popen() object in node's namespace
            args: Popen() args, single list, or string
@@ -228,7 +226,7 @@ class DockerHost(Host):
                 "ERROR: Can't connect to Container '%s'' for docker host '%s'!\n"
                 % (self.dins.id, self.name)
             )
-            return
+            return None
         # MARK: Use -t option to allocate pseudo-TTY for each DockerHost
         mncmd = ["docker", "exec", "-t", f"{self.name}"]
         return Host.popen(self, *args, mncmd=mncmd, **kwargs)
@@ -301,7 +299,7 @@ class DockerHost(Host):
 
 
 # TODO(Zuo): Rename this to AppContainer when other developers finish app examples.
-class DockerContainer(object):
+class DockerContainer:
 
     """Docker container running INSIDE Docker host"""
 
@@ -323,6 +321,7 @@ class DockerContainer(object):
         self.dins = dins
 
     def getCurrentStats(self):
+        """Get decoded current stats of the Docker container."""
         return self.dins.stats(decode=False, stream=False)
 
     def getLogs(self):

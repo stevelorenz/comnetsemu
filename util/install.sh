@@ -332,8 +332,6 @@ function remove_comnetsemu() {
     ./install.sh -r
     cd "$mininet_dir/mininet/util" || exit
 
-    # TODO: Remove BCC properly
-
     echo "Remove dependency folder"
     sudo rm -rf "$EXTERN_DEP_DIR"
 

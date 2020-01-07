@@ -4,9 +4,11 @@ About: ComNetsEmu Network
 
 import os
 import shutil
+import threading
 from time import sleep
 
 import docker
+
 from comnetsemu.cli import spawnXtermDocker
 from comnetsemu.node import DockerContainer, DockerHost
 from mininet.log import debug, error, info
@@ -24,7 +26,9 @@ class Containernet(Mininet):
     """Network emulation with containerized network nodes."""
 
     def __init__(self, **params):
-        """Create Containernet object with same parameters provided by Mininet."""
+        """Create a Containernet object with the same parameters provided by
+        Mininet.
+        """
         Mininet.__init__(self, **params)
 
     def addDockerHost(self, name, **params):  # pragma: no cover
@@ -67,8 +71,9 @@ class Containernet(Mininet):
         )
 
 
-class AppContainerManager(object):
-    """Manager for application containers (sibling containers) deployed on Mininet hosts.
+class AppContainerManager:
+    """Manager for application containers (sibling containers) deployed on
+    Mininet hosts.
 
     - To make is simple. It uses docker-py APIs to manage internal containers
       from host system.
@@ -103,11 +108,13 @@ class AppContainerManager(object):
     def __init__(self, net: Mininet):
         """Init the AppContainerManager.
 
-        :param net (Mininet): The mininet object, used to manage hosts via Mininet's API.
+        :param net (Mininet): The mininet object, used to manage hosts via
+        Mininet's API.
         """
         self.net = net
         self.dclt = docker.from_env()
 
+        # TODO: Add comments
         self._container_queue = list()
         # Fast search for added containers.
         self._name_container_map = dict()
@@ -115,12 +122,10 @@ class AppContainerManager(object):
         os.makedirs(APPCONTAINERMANGER_MOUNTED_DIR, exist_ok=True)
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
+        """Create a Docker container."""
         # Override the essential parameters
-        for key in self.docker_args_default.keys():
+        for key in self.docker_args_default:
             if key in docker_args:
-                import ipdb
-
-                ipdb.set_trace()
                 error(
                     f"Given argument: {key} will be overridden by the default "
                     f"value: {self.docker_args_default[key]}\n"
@@ -300,6 +305,7 @@ class AppContainerManager(object):
     #     return ckpath
 
     def stop(self):
+        """Stop the AppContainerManager."""
         debug(
             "STOP: {} containers in the App container queue: {}\n".format(
                 len(self._container_queue),

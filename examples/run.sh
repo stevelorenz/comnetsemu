@@ -18,11 +18,14 @@ if [[ "$1" == "-a" ]]; then
     bash ./mininet_demystify/run.sh
     bash ./mininet_demystify/clean.sh
 
+    pushd $PWD
+    cd ./echo_server/
     echo "- Run ./echo_server."
     if [[ "$(docker images -q echo_server:latest 2>/dev/null)" == "" ]]; then
-        cd ./echo_server/ && bash ./build_docker_images.sh
+        bash ./build_docker_images.sh
     fi
-    cd ./echo_server && $PYTHON ./topology.py
+    $PYTHON ./topology.py
+    popd
 fi
 
 export COMNETSEMU_AUTOTEST_MODE=0

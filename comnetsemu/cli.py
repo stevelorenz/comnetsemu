@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 About: ComNetsEmu simple command-line interface
 
@@ -24,6 +25,7 @@ from mininet.util import quietRun
 
 
 class CLI(CLI):  # pylint: disable=function-redefined
+    """Mininet's CLI subclass with support for Docker containers."""
 
     helpStr = (
         "You can send commands to Docker hosts with the same method of Mininet.\n"
