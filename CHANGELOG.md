@@ -15,7 +15,7 @@ And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--   Use AppContainerManager as the base class for all types of sibling containers including VNFContainer.
+-   Use APPContainerManager as the base class for all types of sibling containers including VNFContainer.
 
 ## v0.1.6 - 2019-11-05
 

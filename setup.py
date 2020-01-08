@@ -42,6 +42,7 @@ setup(
     install_requires=[
         "setuptools>=39.0.1,<40.0.0",
         "docker>=3.7.2,<4.0.0",
+        "pyroute2>=0.5.7,<0.6.0",
         # Not available on PyPi
         "mininet>=2.3.0d6",
     ],

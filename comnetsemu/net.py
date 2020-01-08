@@ -2,12 +2,17 @@
 About: ComNetsEmu Network
 """
 
+import http.server
+
+import json
 import os
 import shutil
 import threading
+from functools import partial
 from time import sleep
 
 import docker
+import pyroute2
 
 from comnetsemu.cli import spawnXtermDocker
 from comnetsemu.node import DockerContainer, DockerHost
@@ -71,7 +76,82 @@ class Containernet(Mininet):
         )
 
 
-class AppContainerManager:
+class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
+    """Basic implementation of a REST API for app containers."""
+
+    _container_resource_path = "/container"
+
+    def __init__(self, appcontainermanager, *args, **kargs):
+        self.mgr = appcontainermanager
+        super(APPContainerManagerRequestHandler, self).__init__(*args, **kargs)
+
+    def _send_bad_request(self):
+        self.send_response(400)
+        self.end_headers()
+
+    def do_GET(self):
+        if self.path == self._container_resource_path:
+            self.send_response(200)
+            self.end_headers()
+            ret = json.dumps(self.mgr.getAllContainers()).encode("utf-8")
+            self.wfile.write(ret)
+        else:
+            self._send_bad_request()
+
+    @staticmethod
+    def _post_sanity_check(post_dict):
+        # Check for essential keys.
+        for k in ["name", "dhost", "dimage", "dcmd", "docker_args"]:
+            if k not in post_dict:
+                return False
+        else:
+            return True
+
+    def do_POST(self):
+        """Create a new APP container."""
+        if self.path == self._container_resource_path:
+            content_length = int(self.headers.get("content-length", 0))
+            if content_length == 0:
+                self._send_bad_request()
+            else:
+                post_data = self.rfile.read(content_length).decode("utf-8")
+                container_para = json.loads(post_data)
+                if not self._post_sanity_check(container_para):
+                    self._send_bad_request()
+                else:
+                    self.mgr.addContainer(**container_para)
+                    self.send_response(200)
+                    self.end_headers()
+        else:
+            self._send_bad_request()
+
+    @staticmethod
+    def _delete_sanity_check(delete_dict):
+        # Check for essential keys.
+        if "name" not in delete_dict:
+            return False
+        else:
+            return True
+
+    def do_DELETE(self):
+        if self.path == self._container_resource_path:
+            content_length = int(self.headers.get("content-length", 0))
+            if content_length == 0:
+                self._send_bad_request()
+            else:
+                post_data = self.rfile.read(content_length).decode("utf-8")
+                post_dict = json.loads(post_data)
+                if not self._delete_sanity_check(post_dict):
+                    self._send_bad_request()
+                else:
+                    self.mgr.removeContainer(post_dict["name"])
+                    self.send_response(200)
+                    self.end_headers()
+        else:
+            self._send_bad_request()
+
+
+class APPContainerManager:
     """Manager for application containers (sibling containers) deployed on
     Mininet hosts.
 
@@ -106,7 +186,7 @@ class AppContainerManager:
     retry_delay_secs = 0.1
 
     def __init__(self, net: Mininet):
-        """Init the AppContainerManager.
+        """Init the APPContainerManager.
 
         :param net (Mininet): The mininet object, used to manage hosts via
         Mininet's API.
@@ -114,10 +194,15 @@ class AppContainerManager:
         self.net = net
         self.dclt = docker.from_env()
 
-        # TODO: Add comments
+        # Following resources can be shared by main and httpd threads.
+        # A simple lock is used.
+        self._container_queue_lock = threading.Lock()
         self._container_queue = list()
         # Fast search for added containers.
         self._name_container_map = dict()
+
+        self._http_server_started = False
+        self._http_server_thread = None
 
         os.makedirs(APPCONTAINERMANGER_MOUNTED_DIR, exist_ok=True)
 
@@ -167,13 +252,40 @@ class AppContainerManager:
             return None
         return dins
 
-    def getContainers(self, dhost: str) -> list:
+    def getContainerInstance(self, name: str, default=None) -> DockerContainer:
+        """Get the DockerContainer instance with the given name.
+
+        :param name: The name of the given container.
+        :type name: str
+        :param default: The default return value if not found.
+        :rtype: DockerContainer
+        """
+        with self._container_queue_lock:
+            for c in self._container_queue:
+                if c.name == name:
+                    return c
+            else:
+                return default
+
+    def getContainersDhost(self, dhost: str) -> list:
         """Get containers deployed on the given DockerHost.
 
-        :param dhost: Name of the DockerHost
-        :return: A list of DockerContainer instances on given DockerHost
+        :param dhost: Name of the DockerHost.
+        :type dhost: str
+        :return: A list of DockerContainer instances on given DockerHost.
+        :rtype: list
         """
-        return [c for c in self._container_queue if c.dhost == dhost]
+        with self._container_queue_lock:
+            clist = [c.name for c in self._container_queue if c.dhost == dhost]
+            return clist
+
+    def getAllContainers(self) -> list:
+        """Get a list of names of all containers in current container queue.
+
+        :rtype: list
+        """
+        with self._container_queue_lock:
+            return [c.name for c in self._container_queue]
 
     def addContainer(
         self,
@@ -186,35 +298,31 @@ class AppContainerManager:
     ) -> DockerContainer:
         """Create and run a new container inside a Mininet DockerHost.
 
-        The manager retries with retry_cnt times to create the container if the
-        dhost can not be found via docker-py API, but can be found in the
-        Mininet host list. This happens during e.g. updating the CPU limitation
-        of a running DockerHost instance.
-
-        :param name (str): Name of the container
-        :param dhost (str): Name of the host used for deployment
-        :param dimage (str): Name of the docker image
-        :param dcmd (str): Command to run after the creation
+        :param name (str): Name of the container.
+        :param dhost (str): Name of the host used for deployment.
+        :param dimage (str): Name of the docker image.
+        :param dcmd (str): Command to run after the creation.
         :param docker_args (dict): All other keyword arguments supported by Docker-py.
             e.g. CPU and memory related limitations.
-            Some parameters are overriden for AppContainerManager's functionalities.
+            Some parameters are overriden for APPContainerManager's functionalities.
         :param wait (Bool): Wait until the container has the running state if True.
 
         Check cls.docker_args_default.
 
-        :return (DockerContainer): Added DockerContainer instance
-        :raise KeyError: dhost is not found in the network
+        :return (DockerContainer): Added DockerContainer instance or None if the
+        creation process failed.
         """
-
+        container = None
         dhost = self.net.get(dhost)
-        dins = self._createContainer(name, dhost, dimage, dcmd, docker_args)
-        dins.start()
-        if wait:
-            self._waitContainerStart(name)
-        container = DockerContainer(name, dhost.name, dimage, dins)
-        self._container_queue.append(container)
-        self._name_container_map[container.name] = container
-        return container
+        with self._container_queue_lock:
+            dins = self._createContainer(name, dhost, dimage, dcmd, docker_args)
+            dins.start()
+            if wait:
+                self._waitContainerStart(name)
+            container = DockerContainer(name, dhost.name, dimage, dins)
+            self._container_queue.append(container)
+            self._name_container_map[container.name] = container
+            return container
 
     def removeContainer(self, container: str, wait: bool = True) -> bool:
         """Remove the given internal container.
@@ -223,19 +331,19 @@ class AppContainerManager:
         :param wait (Bool): Wait until the container is fully removed if True.
 
         :return (bool): Return True/False for success/fail remove.
-        :raise ValueError: container is not found
         """
+        with self._container_queue_lock:
+            container = self._name_container_map.get(container, None)
+            if not container:
+                raise ValueError(f"Can not find container with name: {container}")
 
-        container = self._name_container_map.get(container, None)
-        if not container:
-            raise ValueError("Can not find container with name: {container}")
+            self._container_queue.remove(container)
+            container.dins.remove(force=True)
+            if wait:
+                self._waitContainerRemoved(container.name)
+            del self._name_container_map[container.name]
 
-        self._container_queue.remove(container)
-        container.dins.remove(force=True)
-        if wait:
-            self._waitContainerRemoved(container.name)
-        del self._name_container_map[container.name]
-        return True
+            return True
 
     @staticmethod
     def _calculate_cpu_percent(stats):
@@ -259,7 +367,7 @@ class AppContainerManager:
     def monResourceStats(
         self, container: str, sample_num: int = 3, sample_period: float = 1.0
     ) -> list:
-        """Monitor the resource stats of a container within a given time
+        """Monitor the resource stats of a container within a given time.
 
         :param container (name): Name of the container
         :param sample_num (int): Number of samples
@@ -304,25 +412,49 @@ class AppContainerManager:
 
     #     return ckpath
 
-    def stop(self):
-        """Stop the AppContainerManager."""
-        debug(
-            "STOP: {} containers in the App container queue: {}\n".format(
-                len(self._container_queue),
-                ", ".join((c.name for c in self._container_queue)),
-            )
-        )
+    def _runHTTPServer(self, ip_addr, port):
+        """_runHTTPServer"""
+        handler = partial(APPContainerManagerRequestHandler, self)
+        httpd = http.server.HTTPServer((ip_addr, port), handler)
+        info(f"Start REST API server on address: {ip_addr}:{port}.\n")
+        httpd.serve_forever()
 
-        # Avoid missing delete internal containers manually before stop
-        for c in self._container_queue:
-            c.terminate()
-            c.dins.remove(force=True)
+    def runHTTPServerThread(self, interface="docker0", port=8000):
+        self._http_server_started = True
+        ip_route = pyroute2.IPRoute()
+        listen_ip = ip_route.get_addr(label=interface)[0].get_attr("IFA_ADDRESS")
+        if not listen_ip:
+            raise ValueError(
+                f"Can not get the IP address of the interface: {interface}."
+            )
+
+        self._http_server_thread = threading.Thread(
+            target=self._runHTTPServer, args=(listen_ip, port)
+        )
+        # It will die if all non-daemon threads (including main) exist.
+        self._http_server_thread.daemon = True
+        self._http_server_thread.start()
+
+    def stop(self):
+        """Stop the APPContainerManager."""
+        if len(self._container_queue) > 0:
+            info(
+                "Stop {} containers in the App container queue: {}\n".format(
+                    len(self._container_queue),
+                    ", ".join((c.name for c in self._container_queue)),
+                )
+            )
+
+            # Avoid missing delete internal containers manually before stop
+            for c in self._container_queue:
+                c.terminate()
+                c.dins.remove(force=True)
 
         self.dclt.close()
         shutil.rmtree(APPCONTAINERMANGER_MOUNTED_DIR)
 
 
-class VNFManager(AppContainerManager):
+class VNFManager(APPContainerManager):
     """App container for Virtualized Network Functions"""
 
     pass

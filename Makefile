@@ -52,6 +52,9 @@ installercheck: ./util/install.sh
 	@ echo "*** Check installer"
 	bash ./check_installer.sh
 
+# PLEASE run following tests before any pushes to master/dev branches.
+run-tests-before-push-dev: errcheck typecheck test test-examples-all
+
 format: $(PYSRC)
 	@echo "Format Python sources with black"
 	black $(PYSRC)

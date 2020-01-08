@@ -26,6 +26,10 @@ if [[ "$1" == "-a" ]]; then
     fi
     $PYTHON ./topology.py
     popd
+
+    echo "- Run ./dockerhost_manage_appcontainer.py"
+    $PYTHON ./dockerhost_manage_appcontainer.py
+
 fi
 
 export COMNETSEMU_AUTOTEST_MODE=0

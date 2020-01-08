@@ -110,11 +110,10 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
 MININET_BRANCH="comnetsemu-stable"
-MININET_VER="2b8d254c"
+MININET_VER="2.3.0d6"
 RYU_VER="v4.32"
 BCC_VER="v0.9.0"
-# - Installed by package manager (apt, pip etc.)
-DOCKER_PY_VER="3.7.2"
+# ComNetsEmu's dependency python packages are listed in ./requirements.txt.
 
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
 DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
@@ -131,17 +130,17 @@ function usage() {
     echo ""
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
-    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
-    echo " -c: install (C)omNetsEmu Python module. Docker-Py and Mininet MUST be ALREADY installed."
-    echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
-    echo " -h: print usage"
-    echo " -k: install required Linux (K)ernel modules"
+    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]."
+    echo " -c: install (C)omNetsEmu Python module and dependency packages."
+    echo " -d: install (D)ocker CE [stable]."
+    echo " -h: print usage."
+    echo " -k: install required Linux (K)ernel modules."
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -r: (R)einstall all dependencies for ComNetsEmu."
     echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
-    echo " -v: install de(V)elopment tools"
-    echo " -y: install R(Y)u SDN controller [$RYU_VER]"
+    echo " -v: install de(V)elopment tools."
+    echo " -y: install R(Y)u SDN controller [$RYU_VER]."
     exit 2
 }
 
@@ -174,7 +173,6 @@ function install_docker() {
 
     $update update
     $install docker-ce
-    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
     # Enable docker experimental features
     sudo mkdir -p /etc/docker
@@ -187,7 +185,6 @@ function install_docker() {
 function upgrade_docker() {
     $update update
     $install docker-ce
-    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
 function install_mininet_with_deps() {
@@ -210,10 +207,19 @@ function install_mininet_with_deps() {
 
 function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
-    warning "[INSTALL]" "The docker-py and Mininet MUST be already installed."
-    $install python3
+    $install python3 python3-pip
+    echo "- Install ComNetsEmu dependency packages."
+    cd "$TOP_DIR/comnetsemu/util" || exit
+    sudo -H pip3 install -r ./requirements.txt
+    echo "- Install ComNetsEmu Python package."
     cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
+}
+
+function upgrade_comnetsemu_deps_python_pkgs() {
+    echo "- Upgrade ComNetsEmu dependency packages."
+    cd "$TOP_DIR/comnetsemu/util" || exit
+    sudo -H pip3 install -r ./requirements.txt
 }
 
 function install_ryu() {
@@ -269,6 +275,7 @@ function upgrade_comnetsemu_deps() {
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
         install_devs
+        upgrade_comnetsemu_deps_python_pkgs
 
         echo ""
         echo "- Upgrade dependencies installed from source"
