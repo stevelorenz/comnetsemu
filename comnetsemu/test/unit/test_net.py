@@ -7,7 +7,11 @@ About: Test core features implemented in ComNetsEmu
 
 import functools
 import sys
+import time
 import unittest
+
+import pyroute2
+import requests
 
 from comnetsemu.clean import cleanup
 from comnetsemu.net import Containernet, VNFManager
@@ -54,8 +58,9 @@ class TestVNFManager(unittest.TestCase):
         cls.mgr.addContainer("zombie", "h1", "dev_test", "/bin/bash", {})
         cls.net.stop()
         cls.mgr.stop()
-        if sys.exc_info() != (None, None, None):
-            cleanup()
+        cleanup()
+        # if sys.exc_info() != (None, None, None):
+        # cleanup()
 
     @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
     def test_ping(self):
@@ -143,7 +148,50 @@ class TestVNFManager(unittest.TestCase):
     #     self.mgr.removeContainer("c1")
 
     def test_appcontainermanager_rest_api(self):
-        pass
+        ip_route = pyroute2.IPRoute()
+        mgr_api_ip = ip_route.get_addr(label="docker0")[0].get_attr("IFA_ADDRESS")
+        mgr_api_port = 8000
+        base_url = f"http://{mgr_api_ip}:{mgr_api_port}/containers"
+
+        self.mgr.addContainer("c1", "h1", "dev_test", "bash", docker_args={})
+        self.mgr.runRESTServerThread(ip=mgr_api_ip, port=mgr_api_port, enable_log=False)
+        time.sleep(0.5)
+
+        r = requests.get(base_url + "foo")
+        self.assertEqual(r.status_code, 400)
+        r = requests.get(base_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["c1"])
+        self.mgr.removeContainer("c1")
+
+        r = requests.post(base_url)
+        self.assertEqual(r.status_code, 400)
+        r = requests.post(base_url + "foo", json={})
+        self.assertEqual(r.status_code, 400)
+        cdata = {
+            "name": "c1",
+            "dhost": "h1",
+            "dimage": "dev_test",
+            # "dcmd": "bash",
+            "docker_args": {},
+        }
+        r = requests.post(base_url, json=cdata)
+        self.assertEqual(r.status_code, 400)
+        cdata["dcmd"] = "bash"
+        # Test the lock: c2 must be created earlier than c1.
+        self.mgr.addContainer("c2", "h1", "dev_test", "bash", docker_args={})
+        r = requests.post(base_url, json=cdata)
+        self.assertEqual(r.status_code, 200)
+        r = requests.get(base_url)
+        self.assertEqual(r.json(), ["c2", "c1"])
+        r = requests.delete(base_url + "/c3")
+        self.assertEqual(r.status_code, 400)
+        r = requests.delete(base_url + "/foo/bar")
+        self.assertEqual(r.status_code, 400)
+        r = requests.delete(base_url + "/c1")
+        self.assertEqual(r.status_code, 200)
+
+        self.mgr.removeContainer("c2")
 
 
 if __name__ == "__main__":

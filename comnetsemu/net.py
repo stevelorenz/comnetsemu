@@ -1,18 +1,17 @@
 """
-About: ComNetsEmu Network
+About: ComNetsEmu Network Module.
 """
 
 import http.server
-
 import json
 import os
+import os.path
 import shutil
 import threading
 from functools import partial
 from time import sleep
 
 import docker
-import pyroute2
 
 from comnetsemu.cli import spawnXtermDocker
 from comnetsemu.node import DockerContainer, DockerHost
@@ -77,17 +76,29 @@ class Containernet(Mininet):
 
 
 class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
-    """Basic implementation of a REST API for app containers."""
+    """Basic implementation of a REST API for app containers.
 
-    _container_resource_path = "/container"
+    Python's built-in http server only does basic security checks and this class
+    has basic and limited sanity checks on the requests. Designed only for
+    teaching.
+    """
 
-    def __init__(self, appcontainermanager, *args, **kargs):
+    _container_resource_path = "/containers"
+
+    def __init__(self, appcontainermanager, enable_log=True, *args, **kargs):
         self.mgr = appcontainermanager
+        self.enable_log = enable_log
         super(APPContainerManagerRequestHandler, self).__init__(*args, **kargs)
 
     def _send_bad_request(self):
         self.send_response(400)
         self.end_headers()
+
+    def log_message(self, format, *args):
+        if not self.enable_log:
+            return
+        else:  # pragma no cover
+            super(APPContainerManagerRequestHandler, self).log_message(format, *args)
 
     def do_GET(self):
         if self.path == self._container_resource_path:
@@ -125,28 +136,21 @@ class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self._send_bad_request()
 
-    @staticmethod
-    def _delete_sanity_check(delete_dict):
-        # Check for essential keys.
-        if "name" not in delete_dict:
-            return False
-        else:
-            return True
+    def _delete_sanity_check(self, container_name):
+        # Check if container exists.
+        c = self.mgr.getContainerInstance(container_name, None)
+        return True if c else False
 
     def do_DELETE(self):
-        if self.path == self._container_resource_path:
-            content_length = int(self.headers.get("content-length", 0))
-            if content_length == 0:
+        paths = os.path.split(self.path)
+        if len(paths) == 2 and paths[0] == self._container_resource_path:
+            container_name = paths[1]
+            if not self._delete_sanity_check(container_name):
                 self._send_bad_request()
             else:
-                post_data = self.rfile.read(content_length).decode("utf-8")
-                post_dict = json.loads(post_data)
-                if not self._delete_sanity_check(post_dict):
-                    self._send_bad_request()
-                else:
-                    self.mgr.removeContainer(post_dict["name"])
-                    self.send_response(200)
-                    self.end_headers()
+                self.mgr.removeContainer(container_name)
+                self.send_response(200)
+                self.end_headers()
         else:
             self._send_bad_request()
 
@@ -210,7 +214,7 @@ class APPContainerManager:
         """Create a Docker container."""
         # Override the essential parameters
         for key in self.docker_args_default:
-            if key in docker_args:
+            if key in docker_args:  # pragma no cover
                 error(
                     f"Given argument: {key} will be overridden by the default "
                     f"value: {self.docker_args_default[key]}\n"
@@ -412,24 +416,34 @@ class APPContainerManager:
 
     #     return ckpath
 
-    def _runHTTPServer(self, ip_addr, port):
-        """_runHTTPServer"""
-        handler = partial(APPContainerManagerRequestHandler, self)
+    def _runHTTPServer(self, ip_addr, port, enable_log):
+        """Generate HTTPServer with partial parameters and run it forever."""
+        handler = partial(APPContainerManagerRequestHandler, self, enable_log)
         httpd = http.server.HTTPServer((ip_addr, port), handler)
         info(f"Start REST API server on address: {ip_addr}:{port}.\n")
         httpd.serve_forever()
 
-    def runHTTPServerThread(self, interface="docker0", port=8000):
-        self._http_server_started = True
-        ip_route = pyroute2.IPRoute()
-        listen_ip = ip_route.get_addr(label=interface)[0].get_attr("IFA_ADDRESS")
-        if not listen_ip:
-            raise ValueError(
-                f"Can not get the IP address of the interface: {interface}."
-            )
+    def runRESTServerThread(
+        self, ip: str, port: int = 8000, enable_log: bool = True
+    ) -> None:
+        """Run the REST API server in a separate daemon thread.
+        threading is used to avoid blocking the main thread in the emulation
+        scripts. Since to be performed operation is more IO-bounded and this
+        server should have no impact on the concurrency approach of main thread,
+        the threading with a Lock is used instead of multi-processing or
+        asyncio.
 
+        :param ip: Listening IP address.
+        :type ip: str
+        :param port: Port number.
+        :type port: int
+        :param enable_log: Print logs using stdout if True.
+        :type enable_log: bool
+        :rtype: None
+        """
+        self._http_server_started = True
         self._http_server_thread = threading.Thread(
-            target=self._runHTTPServer, args=(listen_ip, port)
+            target=self._runHTTPServer, args=(ip, port, enable_log)
         )
         # It will die if all non-daemon threads (including main) exist.
         self._http_server_thread.daemon = True

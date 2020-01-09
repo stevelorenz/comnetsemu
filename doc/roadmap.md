@@ -4,7 +4,7 @@
 
 *   Version 0.1.8, 0.1.9:
 
-    -  Refactor current CLI implementation.
-    -  Add basic internal container migration APIs.
     -  Expose VNF manager APIs to DockerHost for practical cluster emulation.
     -  Add an basic usage example of practical packet generator (possible candidates: Flent, Trex or MoonGen) for network latency benchmark.
+    -  Add basic internal container migration APIs.
+    -  Refactor current CLI implementation.
