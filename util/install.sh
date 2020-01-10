@@ -238,6 +238,9 @@ function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
     sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype black
+    cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
+    echo "- Install packages to build HTML documentation."
+    sudo -H $PIP install -r ./requirements.txt
 }
 
 function install_bcc() {
@@ -265,6 +268,7 @@ function upgrade_comnetsemu_deps() {
     warning "[Upgrade]" "The upgrade function checks information written in the installer script and only upgrade dependencies."
     warning "[Upgrade]" "The repository of all examples, application codes and source code of the Python module is not updated. Please check and merge updates manually."
     warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
+    warning "[Upgrade]" "If the develop mode is used (In the Vagrant VM, develop mode is used.), please run make develop again after any updates(To apply potential version chanages of ComNetsEmu python package)."
     echo ""
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1

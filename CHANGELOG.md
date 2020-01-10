@@ -7,6 +7,20 @@ And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v0.1.8 - 2020-01-10
+
+### Added
+
+-  Add REST APIs in APPContainerManager.
+-  Add two built-in examples ./examples/dockerhost_manage_appcontainer.py and ./examples/network_measurement.py .
+
+### Changed
+
+-   Change the version of Mininet to v2.3.0d6.
+-   Add the built-in test container rebuilding in the update function of the install.sh.
+-   Rename DockerContainer class in node.py to APPContainer.
+-   Improve the documentation and parameter names in ./comnetsemu/net.py.
+
 ## v0.1.7 - 2019-12-13
 
 ### Added
