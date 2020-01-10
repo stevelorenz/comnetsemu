@@ -4,6 +4,15 @@ ComNetsEmu
 
 **This project is currently under heavy development [beta]**.
 
+**For all ComNetsEmu users:**
+
+Please run the upgrade process described [here](upgrade-comnetsemu-and-dependencies) when there is a new release
+published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
+New features, fixes and other improvements require run the upgrade script **manually**.
+But the script will check and perform upgrade automatically and it does not take much time if you have a good network
+connection.
+Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
+
 #### Table of Contents
 
 <!-- vim-markdown-toc GitLab -->
@@ -234,7 +243,7 @@ $ sudo apt install git make pkg-config sudo python3 libpython3-dev python3-dev p
 
 ```bash
 $ cd $TOP_DIR/comnetsemu/util
-$ PYTHON=python3 bash ./install.sh -a
+$ bash ./install.sh -a
 ```
 
 #### Post-Installation
@@ -258,35 +267,51 @@ $ bash ./build.sh
 
 The **master** branch contains stable/tested sources for ComNetsEmu's python package, utility scripts, examples and
 applications.
-It is **recommended** to upgraded to **latest** commit of the **master** branch.
+It is **recommended** to upgraded to **latest** commit of the **master** branch or the latest tag published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
 
-The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software automatically.
-This script **ONLY** works on supported distributions and has some default variables:
+The [installer script](./util/install.sh) has a function to **ONLY** upgrade ComNetsEmu's dependencies software automatically.
+And the installer script also needs to be updated firstly.
+Therefore, it takes **three** steps to upgrade everything.
+It is assumed here the ComNetsEmu is installed using option 1 with Vagrant.
 
-1. The ComNetsEmu's source files are located in "$TOP_DIR/comnetsemu"
-2. The dependencies installed from source are located in "$TOP_DIR/comnetsemu_dependencies"
+#### Step 1: Upgrade source code of ComNetsEmu Python package, examples and applications on your host OS.
 
-You can modify these variables in the installer script for your customized installation.
-
-**WARNING**: The upgrade function does not re-install(upgrade) the Python package of ComNetsEmu. If the Vagrant VM is
-used, the develop mode and sync folder are used to apply changes automatically. Otherwise, the package should be
-re-installed manually.
-
-Before running the upgrade function, the source code repository (by default, "$TOP_DIR/comnetsemu") should be updated to the latest
-commit in master branch via git (fix conflicts if required):
+Use git to pull (or fetch+merge if you want to) the latest commit in master branch:
 
 ```bash
-$ cd $TOP_DIR/comnetsemu
+$ cd ~/comnetsemu
 $ git checkout master
 $ git pull origin master
 ```
 
-Then run following commands to upgrade automatically (good luck ^_^):
+#### Step 2: Upgrade ComNetsEmu Python module and all dependencies automatically inside VM.
+
+The [installer script](./util/install.sh) is used to perform this step.
+This script **ONLY** works on supported distributions and has some default variables:
+
+1. The ComNetsEmu's source files are located in "~/comnetsemu"
+2. The dependencies installed from source are located in "~/comnetsemu_dependencies"
+
+Run following command to upgrade automatically:
 
 ```bash
-$ cd $TOP_DIR/comnetsemu/util
-$ PYTHON=python3 bash ./install.sh -u
+$ cd ~/comnetsemu/util
+$ bash ./install.sh -u
 ```
+
+The script will ask you to input yes or no several times, please read the terminal output for information.
+
+#### Step 3: Check if the upgrading is successful inside VM.
+
+Run following commands to start basic tests:
+
+```bash
+$ cd ~/comnetsemu/
+$ sudo make test && sudo make test-examples
+```
+
+If all tests pass without any errors or exceptions, the upgrading was successful.
+Otherwise, it is recommended to redo the upgrade process or rebuild the Vagrant VM if the situation is bad...
 
 ### Run the Docker-in-Docker example
 

@@ -140,20 +140,12 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.post_up_message = '
 VM already started! Run "$ vagrant ssh comnetsemu" to ssh into the runnung VM.
 
-INFO! For all ComNetsEmu users and developers:
+**IMPORTANT!!!**: For all ComNetsEmu users and developers:
 
-**IMPORTANT!!!**: Please run the update function via the command: "cd /home/vagrant/comnetsemu/util && bash ./install.sh -u" after every fetching of remote updates in the master branch to avoid dependency issues.
-
-If there are new commits in the master branch in the remote repository, Please do following steps to upgrade ComNetsEmu and its dependencies:
-
-- [On the host system] Fetch and merge new commits from upstream master branch.
-  By default, ComNetsEmu Python3 module is installed using develop mode inside VM, so the updates of this module should be applied automatically inside VM. No re-installation is required.
-
-- [Inside Vagrant VM] Change current path to "/home/vagrant/comnetsemu/util" and run "$ bash ./install.sh -u" to check and upgrade all dependencies when required.
-
-- [Inside Vagrant VM] Rebuild the test containers in "test_containers" with "build.sh" (Dockerfiles in that folder may be modified in the latest commits.)
-
-- [On the host system] If this Vagrantfile is modified in the lastest updates. Please run "$ vagrant provision" to re-provision the already created VM.
+**Please** run the upgrade process described [here](https://git.comnets.net/public-repo/comnetsemu#upgrade-comnetsemu-and-dependencies) when there is a new release
+published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
+New features, fixes and other improvements require run the upgrade script **manually**.
+But the script will check and perform upgrade automatically and it does not take much time if you have a good network connection.
     '
 
     # Workaround for vbguest plugin issue

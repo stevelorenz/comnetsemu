@@ -138,7 +138,7 @@ function usage() {
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -r: (R)einstall all dependencies for ComNetsEmu."
-    echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
+    echo " -u: (U)pgrade ComNetsEmu's Python package and all dependencies. "
     echo " -v: install de(V)elopment tools."
     echo " -y: install R(Y)u SDN controller [$RYU_VER]."
     exit 2
@@ -260,16 +260,10 @@ function install_bcc() {
     sudo make install
 }
 
-function upgrade_comnetsemu_deps() {
+function upgrade_comnetsemu() {
     local dep_name
     local installed_ver
     local req_ver
-
-    warning "[Upgrade]" "The upgrade function checks information written in the installer script and only upgrade dependencies."
-    warning "[Upgrade]" "The repository of all examples, application codes and source code of the Python module is not updated. Please check and merge updates manually."
-    warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
-    warning "[Upgrade]" "If the develop mode is used (In the Vagrant VM, develop mode is used.), please run make develop again after any updates(To apply potential version chanages of ComNetsEmu python package)."
-    echo ""
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -299,6 +293,12 @@ function upgrade_comnetsemu_deps() {
             fi
             echo ""
         done
+
+        echo "- Reinstall ComNetsEmu python package with develop mode."
+        # Check here (https://stackoverflow.com/questions/19048732/python-setup-py-develop-vs-install)
+        # for difference between install and develop
+        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/" || exit
+        sudo make develop
 
         echo "- Rebuild test containers if there are changes in their Dockerfiles."
         cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/test_containers" || exit
@@ -416,7 +416,7 @@ else
         n) install_mininet_with_deps ;;
         r) reinstall_comnetsemu_deps ;;
         t) test_install ;;
-        u) upgrade_comnetsemu_deps ;;
+        u) upgrade_comnetsemu ;;
         v) install_devs ;;
         y) install_ryu ;;
         *) usage ;;
