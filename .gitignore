@@ -126,3 +126,6 @@ app/realizing_mobile_edge_clouds/*.txt
 util/vm_customize.sh
 
 extern_deps/
+
+examples/**/*.png
+examples/**/*.gz

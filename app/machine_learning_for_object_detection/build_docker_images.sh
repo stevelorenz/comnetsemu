@@ -6,5 +6,5 @@ if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Build docker images for YOLOv2 object detection..."
     # --squash: Squash newly built layers into a single new layer
     # Used to reduce built image size.
-    sudo docker build --squash -t yolov2:latest --file ./Dockerfile.yolov2 .
+    docker build --squash -t yolov2:latest --file ./Dockerfile.yolov2 .
 fi

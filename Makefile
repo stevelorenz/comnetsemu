@@ -84,7 +84,7 @@ rm-all-containers:
 
 rm-dangling-images:
 	@echo "Remove all dangling docker images"
-	docker rmi $$(docker images -f "dangling=true" -q)
+	docker image prune -f
 
 pp-empty-dirs:
 	@echo "Print empty directories"

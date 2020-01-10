@@ -7,11 +7,10 @@ About: Test comnetsemu.node module
 """
 
 import functools
-import sys
 import unittest
 
 from comnetsemu.clean import cleanup
-from comnetsemu.net import Containernet
+from comnetsemu.net import Containernet, APPContainerManager
 from comnetsemu.node import DockerHost
 from mininet.log import setLogLevel
 from mininet.node import OVSBridge
@@ -32,7 +31,7 @@ class TestTopo(Topo):
             self.addLink(host, switch)
 
 
-class TestVNFManager(unittest.TestCase):
+class TestComNetsEmuNode(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         dargs = {"dimage": "dev_test"}
@@ -46,18 +45,16 @@ class TestVNFManager(unittest.TestCase):
             autoStaticArp=True,
         )
         cls.net.start()
+        cls.mgr = APPContainerManager(cls.net)
 
-    def test_dockerhost_crud(self):
-        d1 = self.net.addDockerHost(
-            "d1", dimage="dev_test", ip="10.0.1.1/24", docker_args={}
-        )
-        self.net.addLink(d1.name, "s1")
+    def test_appcontainer(self):
+        _ = self.mgr.addContainer("c1", "h1", "dev_test", "tcpdump", docker_args={})
 
     @classmethod
     def tearDownClass(cls):
         cls.net.stop()
-        if sys.exc_info() != (None, None, None):
-            cleanup()
+        cls.mgr.stop()
+        cleanup()
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ from time import sleep
 import docker
 
 from comnetsemu.cli import spawnXtermDocker
-from comnetsemu.node import DockerContainer, DockerHost
+from comnetsemu.node import APPContainer, DockerHost
 from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.term import cleanUpScreens, makeTerms
@@ -33,12 +33,14 @@ class Containernet(Mininet):
         """Create a Containernet object with the same parameters provided by
         Mininet.
         """
+        self._appcontainers = list()
         Mininet.__init__(self, **params)
 
-    def addDockerHost(self, name, **params):  # pragma: no cover
+    def addDockerHost(self, name: str, **params):  # pragma: no cover
         """Wrapper for addHost method that adds a Docker container as a host.
 
-        :param name (str): Name of the host.
+        :param name: Name of the host.
+        :type name: str
         """
         return self.addHost(name, cls=DockerHost, **params)
 
@@ -177,6 +179,9 @@ class APPContainerManager:
         "labels": {"comnetsemu": "dockercontainer"},
         # Required for CRIU checkpoint
         "security_opt": ["seccomp:unconfined"],
+    }
+
+    docker_volumes_default = {
         # Shared directory in host OS
         "volumes": {
             APPCONTAINERMANGER_MOUNTED_DIR: {
@@ -212,6 +217,12 @@ class APPContainerManager:
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
         """Create a Docker container."""
+        # TODO (zuo): Add unit test.
+        if "volumes" in docker_args:
+            debug(
+                f"Update the default volumes {self.docker_volumes_default} to the already given volumes config.\n"
+            )
+            docker_args["volumes"].update(self.docker_volumes_default)
         # Override the essential parameters
         for key in self.docker_args_default:
             if key in docker_args:  # pragma no cover
@@ -246,7 +257,7 @@ class APPContainerManager:
             sleep(self.retry_delay_secs)
 
     def _getDockerIns(self, name):
-        """Get the DockerContainer instance by name.
+        """Get the APPContainer instance by name.
 
         :param name (str): Name of the container
         """
@@ -256,13 +267,13 @@ class APPContainerManager:
             return None
         return dins
 
-    def getContainerInstance(self, name: str, default=None) -> DockerContainer:
-        """Get the DockerContainer instance with the given name.
+    def getContainerInstance(self, name: str, default=None) -> APPContainer:
+        """Get the APPContainer instance with the given name.
 
         :param name: The name of the given container.
         :type name: str
         :param default: The default return value if not found.
-        :rtype: DockerContainer
+        :rtype: APPContainer
         """
         with self._container_queue_lock:
             for c in self._container_queue:
@@ -276,7 +287,7 @@ class APPContainerManager:
 
         :param dhost: Name of the DockerHost.
         :type dhost: str
-        :return: A list of DockerContainer instances on given DockerHost.
+        :return: A list of APPContainer instances on given DockerHost.
         :rtype: list
         """
         with self._container_queue_lock:
@@ -299,22 +310,28 @@ class APPContainerManager:
         dcmd: str,
         docker_args: dict,
         wait: bool = True,
-    ) -> DockerContainer:
+    ) -> APPContainer:
         """Create and run a new container inside a Mininet DockerHost.
 
-        :param name (str): Name of the container.
-        :param dhost (str): Name of the host used for deployment.
-        :param dimage (str): Name of the docker image.
-        :param dcmd (str): Command to run after the creation.
-        :param docker_args (dict): All other keyword arguments supported by Docker-py.
+        :param name: Name of the container.
+        :type name: str
+        :param dhost: Name of the host used for deployment.
+        :type name: str
+        :param dimage: Name of the docker image.
+        :type dimage: str
+        :param dcmd: Command to run after the creation.
+        :type dcmd: str
+        :param docker_args: All other keyword arguments supported by Docker-py.
             e.g. CPU and memory related limitations.
             Some parameters are overriden for APPContainerManager's functionalities.
-        :param wait (Bool): Wait until the container has the running state if True.
+        :type docker_args: dict
+        :param wait: Wait until the container has the running state if True.
+        :type wait: bool
 
         Check cls.docker_args_default.
 
-        :return (DockerContainer): Added DockerContainer instance or None if the
-        creation process failed.
+        :return: Added APPContainer instance or None if the creation process failed.
+        :rtype: APPContainer
         """
         container = None
         dhost = self.net.get(dhost)
@@ -323,31 +340,31 @@ class APPContainerManager:
             dins.start()
             if wait:
                 self._waitContainerStart(name)
-            container = DockerContainer(name, dhost.name, dimage, dins)
+            container = APPContainer(name, dhost.name, dimage, dins)
             self._container_queue.append(container)
             self._name_container_map[container.name] = container
+            self.net._appcontainers.append(name)
             return container
 
-    def removeContainer(self, container: str, wait: bool = True) -> bool:
-        """Remove the given internal container.
+    def removeContainer(self, name: str, wait: bool = True):
+        """Remove the APP container with the given name.
 
-        :param container (str): Name of the to be removed container
-        :param wait (Bool): Wait until the container is fully removed if True.
-
-        :return (bool): Return True/False for success/fail remove.
+        :param name: Name of the to be removed container.
+        :type name: str
+        :param wait: Wait until the container is fully removed if True.
+        :type wait: bool
         """
         with self._container_queue_lock:
-            container = self._name_container_map.get(container, None)
+            container = self._name_container_map.get(name, None)
             if not container:
                 raise ValueError(f"Can not find container with name: {container}")
 
-            self._container_queue.remove(container)
             container.dins.remove(force=True)
             if wait:
                 self._waitContainerRemoved(container.name)
-            del self._name_container_map[container.name]
-
-            return True
+            self._container_queue.remove(container)
+            self.net._appcontainers.remove(name)
+            del self._name_container_map[name]
 
     @staticmethod
     def _calculate_cpu_percent(stats):
@@ -369,19 +386,26 @@ class APPContainerManager:
         return cpu_percent
 
     def monResourceStats(
-        self, container: str, sample_num: int = 3, sample_period: float = 1.0
+        self, name: str, sample_num: int = 3, sample_period: float = 1.0
     ) -> list:
-        """Monitor the resource stats of a container within a given time.
+        """Monitor the resource stats of a container within the given name.
+        This function measure the CPU and memory usages sample_num times and
+        sleep for sample_period between each time. All measurement results are
+        returned as a list.
 
-        :param container (name): Name of the container
-        :param sample_num (int): Number of samples
-        :param sample_period (float): Sleep period for each sample
+        :param container: Name of the container
+        :type container: str
+        :param sample_num: Number of samples.
+        :type sample_num: int
+        :param sample_period: Sleep period for each sample
+        :type sample_period: float
 
-        :return (list): A list of resource usages. Each item is a tuple (cpu_usg, mem_usg)
+        :return: A list of resource usages. Each item is a tuple (cpu_usg, mem_usg)
+        :rtype: list
         :raise ValueError: container is not found
         """
 
-        container = self._name_container_map.get(container, None)
+        container = self._name_container_map.get(name, None)
         if not container:
             raise ValueError(f"Can not found container with name: {container}")
 
@@ -439,7 +463,6 @@ class APPContainerManager:
         :type port: int
         :param enable_log: Print logs using stdout if True.
         :type enable_log: bool
-        :rtype: None
         """
         self._http_server_started = True
         self._http_server_thread = threading.Thread(
@@ -461,7 +484,7 @@ class APPContainerManager:
 
             # Avoid missing delete internal containers manually before stop
             for c in self._container_queue:
-                c.terminate()
+                c._terminate()
                 c.dins.remove(force=True)
 
         self.dclt.close()

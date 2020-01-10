@@ -298,21 +298,28 @@ class DockerHost(Host):
         return ret
 
 
-# TODO(Zuo): Rename this to AppContainer when other developers finish app examples.
-class DockerContainer:
+class APPContainer:
 
-    """Docker container running INSIDE Docker host"""
+    """Application containers that should run inside a DockerHost.
+
+    A wrapper class to hide the implementation details of used container
+    runtime. For example, it should expose the same API for different container
+    runtimes like Docker, LXC or CRI-O (If ComNetsEmu project decides to support
+    them).
+    """
 
     def __init__(self, name: str, dhost: str, dimage: str, dins, dcmd: str = None):
-        """Create a AppContainer.
+        """Create a APPContainer.
 
-        :param name: Name of the AppContainer.
-        :param dhost: Name of the DockerHost on which the AppContainer is deployed.
-        :param dimage: Name of the Docker image.
-        :param dins: DockerHost's dins object.
-        :param dcmd: Command to execute when container starts.
-
-        :var dins: DockerHost's dins object.
+        :param name: Name of the APP container.
+        :type name: str
+        :param dhost: Name of the DockerHost on which APP container will be deployed.
+        :type dhost: str
+        :param dimage: Name of the image.
+        :type dimage: str
+        :param dins: The Docker container instance.
+        :param dcmd: The Docker command.
+        :type dcmd: str
         """
         self.name = name
         self.dhost = dhost
@@ -328,6 +335,6 @@ class DockerContainer:
         """Get logs from this container."""
         return self.dins.logs(timestamps=True).decode("utf-8")
 
-    def terminate(self):
-        """Internal container specific cleanup"""
+    def _terminate(self):
+        """APPContainer specific cleanups."""
         pass

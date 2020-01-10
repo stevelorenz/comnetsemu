@@ -45,6 +45,11 @@ class CLI(CLI):  # pylint: disable=function-redefined
             output("*** ComNetsEmu CLI usage:\n")
             output(self.helpStr)
 
+    def do_appcontainers(self, _):
+        """List deployed app containers."""
+        appcontainers = " ".join(self.mn._appcontainers)
+        output("deployed app containers are: \n%s\n" % appcontainers)
+
     def do_xterm(self, line, term="xterm"):
         """Spawn xterm(s) for the given node(s).
            Usage: xterm node1 node2 ..."""

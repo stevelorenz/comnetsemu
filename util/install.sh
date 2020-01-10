@@ -237,7 +237,7 @@ function install_ryu() {
 function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype
+    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype black
 }
 
 function install_bcc() {
@@ -295,6 +295,13 @@ function upgrade_comnetsemu_deps() {
             fi
             echo ""
         done
+
+        echo "- Rebuild test containers if there are changes in their Dockerfiles."
+        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/test_containers" || exit
+        bash ./build.sh
+        echo "- Run removing unused images. This can reduce the disk usage."
+        docker image prune
+
     else
         error "[Upgrade]" "Please check and merge remote updates before upgrading."
     fi

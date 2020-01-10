@@ -4,5 +4,6 @@
 #
 
 echo "*** Build minimal test images."
-sudo docker build -t dev_test -f ./Dockerfile.dev_test .
-sudo docker build -t network_measurement -f ./Dockerfile.network_measurement .
+docker build -t dev_test -f ./Dockerfile.dev_test .
+docker build -t network_measurement -f ./Dockerfile.network_measurement .
+docker image prune --force
