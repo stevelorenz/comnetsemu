@@ -183,12 +183,10 @@ class APPContainerManager:
 
     docker_volumes_default = {
         # Shared directory in host OS
-        "volumes": {
-            APPCONTAINERMANGER_MOUNTED_DIR: {
-                "bind": APPCONTAINERMANGER_MOUNTED_DIR,
-                "mode": "rw",
-            }
-        },
+        APPCONTAINERMANGER_MOUNTED_DIR: {
+            "bind": APPCONTAINERMANGER_MOUNTED_DIR,
+            "mode": "rw",
+        }
     }
 
     # Default delay between tries for Docker API
@@ -217,7 +215,6 @@ class APPContainerManager:
 
     def _createContainer(self, name, dhost, dimage, dcmd, docker_args):
         """Create a Docker container."""
-        # TODO (zuo): Add unit test.
         if "volumes" in docker_args:
             debug(
                 f"Update the default volumes {self.docker_volumes_default} to the already given volumes config.\n"

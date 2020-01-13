@@ -5,6 +5,7 @@
 About: Test core features implemented in ComNetsEmu
 """
 
+import os
 import functools
 import sys
 import time
@@ -109,6 +110,27 @@ class TestVNFManager(unittest.TestCase):
         self.mgr.removeContainer("d1")
         d2 = self.mgr.getContainerInstance("d2", None)
         self.assertEqual(d2, None)
+
+        cwd = os.getcwd()
+        d1 = self.mgr.addContainer(
+            "d1",
+            "h1",
+            "dev_test",
+            "bash",
+            docker_args={"volumes": {f"{cwd}": {"bind": "/foo", "mode": "rw"}}},
+        )
+        mounts = d1.dins.attrs["Mounts"]
+        for m in mounts:
+            if m["Destination"] == "/foo":
+                self.assertEqual(m["Source"], f"{cwd}")
+            elif m["Destination"] == "/tmp/comnetsemu/appcontainermanger":
+                self.assertEqual(m["Source"], "/tmp/comnetsemu/appcontainermanger")
+            elif m["Destination"] == "/var/lib/docker":
+                pass
+            else:
+                print(m)
+                raise ValueError("Unkown mount is added!")
+        self.mgr.removeContainer("d1")
 
     @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
     def test_container_isolation(self):
