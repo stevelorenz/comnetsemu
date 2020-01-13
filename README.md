@@ -265,6 +265,10 @@ $ bash ./build.sh
 
 ### Upgrade ComNetsEmu and Dependencies
 
+Example screenshots for running the upgrade process in terminal:
+
+![Screenshots for Running Upgrade Process](./doc/comnetsemu_upgrade.gif)
+
 The **master** branch contains stable/tested sources for ComNetsEmu's python package, utility scripts, examples and
 applications.
 It is **recommended** to upgraded to **latest** commit of the **master** branch or the latest tag published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
