@@ -8,9 +8,9 @@ ComNetsEmu
 
 Please run the upgrade process described [here](upgrade-comnetsemu-and-dependencies) when there is a new release
 published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
-New features, fixes and other improvements require run the upgrade script **manually**.
-But the script will check and perform upgrade automatically and it does not take much time if you have a good network
-connection.
+New features, fixes and other improvements require running the upgrade script **manually**.
+But the script will check and perform the upgrade automatically and it does not take much time if you have a good
+network connection.
 Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
 
 #### Table of Contents
@@ -36,7 +36,7 @@ Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
 
 ### Description
 
-ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks: From Theory to Practice".
+ComNetsEmu is a testbed and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks: From Theory to Practice".
 The design focus on emulating all examples and applications on a single computer, e.g. on a single laptop.
 ComNetsEmu extends the famous [Mininet](http://mininet.org/) network emulator to support better emulation of versatile
 **Computing In The Network (COIN) applications**.

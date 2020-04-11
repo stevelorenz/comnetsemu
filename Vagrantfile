@@ -7,7 +7,9 @@
 ###############
 
 CPUS = 2
-# - YOLOv2 object detection application requires 4GB RAM to run smoothly
+# - 2GB RAM should be sufficient for most examples and applications.
+# - Currently only YOLOv2 object detection application requires 4GB RAM to run smoothly.
+# - Reduce the memory number (in MB) here if you physical machine does not have enough physical memory.
 RAM = 4096
 
 # Bento: Packer templates for building minimal Vagrant baseboxes
