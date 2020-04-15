@@ -3,9 +3,9 @@
 ## Installed from source code
 
 -   Mininet: Use the mirror/fork repository [here](https://git.comnets.net/public-repo/mininet).
-    **Branch**: comnetsemu-stable, **Commit**: e0436642.
+    **Branch**: comnetsemu-stable, **Tag**: 2.3.0d6.
 
--   [Ryu SDN controller](https://github.com/osrg/ryu): v4.32
+-   [Ryu SDN controller](https://github.com/osrg/ryu): v4.34.
 
 ## Installed with package manager
 

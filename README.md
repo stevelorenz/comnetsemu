@@ -6,7 +6,7 @@ ComNetsEmu
 
 **For all ComNetsEmu users:**
 
-Please run the upgrade process described [here](upgrade-comnetsemu-and-dependencies) when there is a new release
+Please run the upgrade process described [here](#upgrade-comnetsemu-and-dependencies) when there is a new release
 published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
 New features, fixes and other improvements require running the upgrade script **manually**.
 But the script will check and perform the upgrade automatically and it does not take much time if you have a good
@@ -21,7 +21,7 @@ Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
   * [Main Features](#main-features)
 * [Installation](#installation)
   * [Option 1: Install in a Vagrant managed VM (Highly Recommended)](#option-1-install-in-a-vagrant-managed-vm-highly-recommended)
-  * [Option 2: Bare-mental Installation](#option-2-bare-mental-installation)
+  * [Option 2: Install on user's custom VM or directly on host OS](#option-2-install-on-users-custom-vm-or-directly-on-host-os)
   * [Post-Installation](#post-installation)
 * [Upgrade ComNetsEmu and Dependencies](#upgrade-comnetsemu-and-dependencies)
 * [Run the Docker-in-Docker example](#run-the-docker-in-docker-example)
@@ -229,7 +229,18 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python package is installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Option 2: Bare-mental Installation
+#### Option 2: Install on user's custom VM or directly on host OS
+
+As described in [here](#installation), installation on user's custom VM or directly on the host OS has several
+disadvantages. It is not convenient to manage the test environment compared to the option 1.
+For this option, it is recommended to install Ubuntu 18.04 LTS **freshly** inside the VM or as the host OS to avoid
+potential package conflicts.
+Currently, this option is not well-tested compared to the option 1.
+
+**Supported/Tested distributions**:
+
+1.  Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
+1.  GNU/Debian 10 (Buster)
 
 - Install essential packages required by the installer from your package management systems:
 
