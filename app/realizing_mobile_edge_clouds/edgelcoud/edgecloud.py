@@ -12,7 +12,7 @@ import socket
 
 from comnetsemu.net import Containernet, VNFManager
 from comnetsemu.cli import CLI
-from comnetsemu.node import DockerHost, DockerContainer
+from comnetsemu.node import DockerHost, APPContainer
 
 from mininet.node import RemoteController, OVSSwitch, OVSController, Controller
 from mininet.log import setLogLevel, info
@@ -166,14 +166,14 @@ def start() -> None:
     net.pingAll()  # optional
 
     info("\n*** Adding Docker Containers\n")
-    client1_container: DockerContainer = mgr.addContainer(
+    client1_container: APPContainer = mgr.addContainer(
         name="client1_container",
         dhost="client1",
         dimage="mec_test",
         docker_args={},
         dcmd="python3.6 /tmp/client.py",
     )
-    probe1_container: DockerContainer = mgr.addContainer(
+    probe1_container: APPContainer = mgr.addContainer(
         name="probe1_container",
         dhost="probe1",
         dimage="mec_test",
@@ -181,28 +181,28 @@ def start() -> None:
         dcmd="python3.6 /tmp/probe_agent.py",
     )
 
-    probing_server1_container: DockerContainer = mgr.addContainer(
+    probing_server1_container: APPContainer = mgr.addContainer(
         name="probing_server1_container",
         dhost="server1",
         dimage="mec_test",
         docker_args={},
         dcmd="python3.6 /tmp/probe_server.py",
     )
-    probing_server2_container: DockerContainer = mgr.addContainer(
+    probing_server2_container: APPContainer = mgr.addContainer(
         name="probing_server2_container",
         dhost="server2",
         dimage="mec_test",
         docker_args={},
         dcmd="python3.6 /tmp/probe_server.py",
     )
-    probing_server3_container: DockerContainer = mgr.addContainer(
+    probing_server3_container: APPContainer = mgr.addContainer(
         name="probing_server3_container",
         dhost="server3",
         dimage="mec_test",
         docker_args={},
         dcmd="python3.6 /tmp/probe_server.py",
     )
-    probing_server4_container: DockerContainer = mgr.addContainer(
+    probing_server4_container: APPContainer = mgr.addContainer(
         name="probing_server4_container",
         dhost="server4",
         dimage="mec_test",
@@ -210,28 +210,28 @@ def start() -> None:
         dcmd="python3.6 /tmp/probe_server.py",
     )
     if full_tree:
-        probing_server5_container: DockerContainer = mgr.addContainer(
+        probing_server5_container: APPContainer = mgr.addContainer(
             name="probing_server5_container",
             dhost="server5",
             dimage="mec_test",
             docker_args={},
             dcmd="python3.6 /tmp/probe_server.py",
         )
-        probing_server6_container: DockerContainer = mgr.addContainer(
+        probing_server6_container: APPContainer = mgr.addContainer(
             name="probing_server6_container",
             dhost="server6",
             dimage="mec_test",
             docker_args={},
             dcmd="python3.6 /tmp/probe_server.py",
         )
-        probing_server7_container: DockerContainer = mgr.addContainer(
+        probing_server7_container: APPContainer = mgr.addContainer(
             name="probing_server7_container",
             dhost="server7",
             dimage="mec_test",
             docker_args={},
             dcmd="python3.6 /tmp/probe_server.py",
         )
-        probing_server8_container: DockerContainer = mgr.addContainer(
+        probing_server8_container: APPContainer = mgr.addContainer(
             name="probing_server8_container",
             dhost="server8",
             dimage="mec_test",
@@ -261,7 +261,7 @@ def start() -> None:
     # CLI(net)
     time.sleep(30)
 
-    server_container: DockerContainer = None
+    server_container: APPContainer = None
 
     info(
         "\n*** Await REST instruction from Controller\n"
@@ -274,7 +274,7 @@ def start() -> None:
             mgr.removeContainer(server_container.name)
             time.sleep(2)  # prevent hang on waitContainerStart()
             print("removing container")
-        server_container: DockerContainer = mgr.addContainer(
+        server_container: APPContainer = mgr.addContainer(
             name="server_container",
             # update dhost appropriate to target host
             dhost=f"server{_[_.__len__()-1]}",

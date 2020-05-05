@@ -46,33 +46,38 @@ def testTopo():
     net.addLinkNamedIfce(s1, server, bw=10, delay="10ms")
     net.addLinkNamedIfce(s1, attacker, bw=10, delay="10ms")
 
-    info("*** Starting network\n")
-    net.start()
+    try:
+        info("*** Starting network\n")
+        net.start()
 
-    info("*** Attacker, Client and Server setup\n")
-    client.cmd("ping -c 10 10.0.0.2")
-    attacker.cmd(
-        "printf -- '#!/bin/bash\narpspoof -i attacker-s1 -t 10.0.0.1 10.0.0.2 >> /dev/null &\narpspoof -i attacker-s1 -t 10.0.0.2 10.0.0.1 >> /dev/null &' > spoof.sh; chmod +x spoof.sh; ./spoof.sh"
-    )
-    sleep(10)
-    attacker.cmd("tcpdump -vvv -i attacker-s1 -B 100000 ip >> messages.log &")
-    sleep(10)
-    server.cmd("mkdir -p /var/run/vsftpd/empty")
-    server.cmd("vsftpd &")
-
-    info("*** Setup a tunnel to protect the ftp request from the MitM attacker!\n")
-    info(
-        "*** First create key pairs for the client and server and then establish a WireGuard tunnel between them\n"
-    )
-    info("*** Use the inner tunnel ip 192.168.0.2 for the server!\n")
-
-    x = 0
-    while not check_secure_network_tunnel(attacker, client, x):
+        info("*** Attacker, Client and Server setup\n")
+        client.cmd("ping -c 10 10.0.0.2")
+        attacker.cmd(
+            "printf -- '#!/bin/bash\narpspoof -i attacker-s1 -t 10.0.0.1 10.0.0.2 >> /dev/null &\narpspoof -i attacker-s1 -t 10.0.0.2 10.0.0.1 >> /dev/null &' > spoof.sh; chmod +x spoof.sh; ./spoof.sh"
+        )
         sleep(10)
-        x = x + 1
+        attacker.cmd("tcpdump -vvv -i attacker-s1 -B 100000 ip >> messages.log &")
+        sleep(10)
+        server.cmd("mkdir -p /var/run/vsftpd/empty")
+        server.cmd("vsftpd &")
 
-    info("*** Stopping network\n")
-    net.stop()
+        info("*** Setup a tunnel to protect the ftp request from the MitM attacker!\n")
+        info(
+            "*** First create key pairs for the client and server and then establish a WireGuard tunnel between them\n"
+        )
+        info("*** Use the inner tunnel ip 192.168.0.2 for the server!\n")
+
+        x = 0
+        while not check_secure_network_tunnel(attacker, client, x):
+            sleep(10)
+            x = x + 1
+
+    except KeyboardInterrupt:
+        info("** KeyboardInterrupt detected, exit the program.\n")
+
+    finally:
+        info("*** Stopping network")
+        net.stop()
 
 
 def check_secure_network_tunnel(attacker, client, index):

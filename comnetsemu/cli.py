@@ -1,9 +1,13 @@
+# flake8: noqa
 """
 About: ComNetsEmu simple command-line interface
 
 This module sub-class the Mininet's CLI class to add some ComNetsEmu's specific
 properly for DockerHost instances.
 commands, and also add fixes to some Mininet's default methods to make it work
+
+ISSUE: Current approach has too much Mininet codes included... Make it dependent
+       on the upstream. A better solution should be added.
 """
 
 import errno
@@ -21,6 +25,7 @@ from mininet.util import quietRun
 
 
 class CLI(CLI):  # pylint: disable=function-redefined
+    """Mininet's CLI subclass with support for Docker containers."""
 
     helpStr = (
         "You can send commands to Docker hosts with the same method of Mininet.\n"
@@ -40,6 +45,11 @@ class CLI(CLI):  # pylint: disable=function-redefined
             output("*** ComNetsEmu CLI usage:\n")
             output(self.helpStr)
 
+    def do_appcontainers(self, _):
+        """List deployed app containers."""
+        appcontainers = " ".join(self.mn._appcontainers)
+        output("deployed app containers are: \n%s\n" % appcontainers)
+
     def do_xterm(self, line, term="xterm"):
         """Spawn xterm(s) for the given node(s).
            Usage: xterm node1 node2 ..."""
@@ -53,7 +63,7 @@ class CLI(CLI):  # pylint: disable=function-redefined
                 else:
                     node = self.mn[arg]
                     if isinstance(node, DockerHost):
-                        self.mn.terms.append(spawnAttachedXterm(node))
+                        self.mn.terms.append(spawnXtermDocker(node))
                     else:
                         self.mn.terms += makeTerms([node], term=term)
 
@@ -141,14 +151,14 @@ class CLI(CLI):  # pylint: disable=function-redefined
         super(CLI, self).default(line)
 
 
-def spawnAttachedXterm(dhost_name: str):
-    """Spawn the xterm and attach to a Dockerhost with docker exec -it
+def spawnXtermDocker(dcontainer_name: str):
+    """Spawn the xterm and attach to a Docker container with docker exec -it
     container. Bash is used as the interactive shell.
 
-    :param dhost_name (str): Name of the docker host
+    :param dcontainer_name (str): Name of a Docker container.
     """
-    title = '"dockerhost:%s"' % dhost_name
-    params = {"title": title, "name": dhost_name, "shell": "bash"}
+    title = '"dockercontainer:%s"' % dcontainer_name
+    params = {"title": title, "name": dcontainer_name, "shell": "bash"}
     cmd = "xterm -title {title} -e 'docker exec -it {name} {shell}'".format(**params)
 
     term = subprocess.Popen(shlex.split(cmd))

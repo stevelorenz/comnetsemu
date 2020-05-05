@@ -20,7 +20,7 @@ for img in "${TEST_IMAGES[@]}"; do
     for opt in "${TEST_OPTIONS[@]}"; do
         echo "*** Check the installation on $img with option $opt"
 
-        sudo docker build -t "test_comnetsemu_install_$img" -f- . <<EOF
+        docker build -t "test_comnetsemu_install_$img" -f- . <<EOF
 FROM $img
 
 ENV COMNETSEMU_DIR=/root/comnetsemu
@@ -40,6 +40,6 @@ RUN bash ./install.sh $opt
 
 CMD ["bash"]
 EOF
-        sudo docker image rm "test_comnetsemu_install_$img"
+        docker image rm "test_comnetsemu_install_$img"
     done
 done

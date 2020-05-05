@@ -9,6 +9,7 @@ import shlex
 import time
 
 import docker
+
 from mininet.log import debug, error, info, warn
 from mininet.node import Host
 
@@ -22,6 +23,7 @@ class DockerHost(Host):
     """
 
     docker_args_default = {
+        "init": True,
         "tty": True,  # -t
         "detach": True,  # -d
         # Used for cleanups
@@ -74,7 +76,7 @@ class DockerHost(Host):
         self.resources = dict()
 
         # Override the essential parameters
-        for key in self.docker_args_default.keys():
+        for key in self.docker_args_default:
             if key in docker_args:
                 error(
                     f"Given argument: {key} will be overridden by the default "
@@ -103,7 +105,7 @@ class DockerHost(Host):
             "dns": [],
         }
         # Check legacy options in **kwargs, for backward capacity
-        for arg in legacy_opts.keys():
+        for arg in legacy_opts:
             if arg in kwargs.keys():
                 error(f"Argument {arg} should be given in docker_args dictionary!\n")
 
@@ -120,7 +122,7 @@ class DockerHost(Host):
         super(DockerHost, self).__init__(name, **kwargs)
 
     # Command support via shell process in namespace
-    def startShell(self, *args, **kwargs):
+    def startShell(self):
         "Start a shell process for running commands"
         if self.shell:
             error("%s: shell is already running\n" % self.name)
@@ -215,9 +217,6 @@ class DockerHost(Host):
             return
         Host.sendCmd(self, *args, **kwargs)
 
-    def sendInt(self):
-        super(DockerHost, self).sendInt()
-
     def popen(self, *args, **kwargs):
         """Return a Popen() object in node's namespace
            args: Popen() args, single list, or string
@@ -227,7 +226,7 @@ class DockerHost(Host):
                 "ERROR: Can't connect to Container '%s'' for docker host '%s'!\n"
                 % (self.dins.id, self.name)
             )
-            return
+            return None
         # MARK: Use -t option to allocate pseudo-TTY for each DockerHost
         mncmd = ["docker", "exec", "-t", f"{self.name}"]
         return Host.popen(self, *args, mncmd=mncmd, **kwargs)
@@ -285,7 +284,7 @@ class DockerHost(Host):
         ret = ifce.setIP(ip, prefixLen, **kwargs)
         if ret.startswith("ifconfig: bad"):
             # warn("\nFailed to set IP address with ifconfig\n")
-            info("Use iproute2 instead of ifconfig (used by Mininet).\n")
+            debug("Use iproute2 instead of ifconfig (used by Mininet).\n")
             if "/" in ip:
                 ifce.ip, ifce.prefixLen = ip.split("/")
                 ret = self.cmd("ip addr add {} dev {}".format(ip, ifce.name))
@@ -299,21 +298,28 @@ class DockerHost(Host):
         return ret
 
 
-# TODO(Zuo): Rename this to AppContainer when other developers finish app examples.
-class DockerContainer(object):
+class APPContainer:
 
-    """Docker container running INSIDE Docker host"""
+    """Application containers that should run inside a DockerHost.
+
+    A wrapper class to hide the implementation details of used container
+    runtime. For example, it should expose the same API for different container
+    runtimes like Docker, LXC or CRI-O (If ComNetsEmu project decides to support
+    them).
+    """
 
     def __init__(self, name: str, dhost: str, dimage: str, dins, dcmd: str = None):
-        """Create a AppContainer.
+        """Create a APPContainer.
 
-        :param name: Name of the AppContainer.
-        :param dhost: Name of the DockerHost on which the AppContainer is deployed.
-        :param dimage: Name of the Docker image.
-        :param dins: DockerHost's dins object.
-        :param dcmd: Command to execute when container starts.
-
-        :var dins: DockerHost's dins object.
+        :param name: Name of the APP container.
+        :type name: str
+        :param dhost: Name of the DockerHost on which APP container will be deployed.
+        :type dhost: str
+        :param dimage: Name of the image.
+        :type dimage: str
+        :param dins: The Docker container instance.
+        :param dcmd: The Docker command.
+        :type dcmd: str
         """
         self.name = name
         self.dhost = dhost
@@ -322,12 +328,13 @@ class DockerContainer(object):
         self.dins = dins
 
     def getCurrentStats(self):
+        """Get decoded current stats of the Docker container."""
         return self.dins.stats(decode=False, stream=False)
 
     def getLogs(self):
         """Get logs from this container."""
         return self.dins.logs(timestamps=True).decode("utf-8")
 
-    def terminate(self):
-        """Internal container specific cleanup"""
+    def _terminate(self):
+        """APPContainer specific cleanups."""
         pass

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
+# flake8: noqa
 """
 About: Test high-fidelity compatibility between ComNetsEmu and upstream Mininet
 
@@ -40,9 +41,9 @@ class SingleSwitchOptionsTopo(Topo):
         if not lopts:
             lopts = {}
         Topo.__init__(self, hopts=hopts, lopts=lopts)
-        switch = self.addSwitch('s1')
+        switch = self.addSwitch("s1")
         for h in range(n):
-            host = self.addHost('h%s' % (h + 1))
+            host = self.addHost("h%s" % (h + 1))
             self.addLink(switch, host)
 
 
@@ -65,15 +66,17 @@ class testOptionsTopoCommon(object):
         """Check that a given value is within a tolerance of expected
         tolerance_frac: less-than-1.0 value; 0.8 would yield 20% tolerance.
         """
-        upperBound = (float(expected) + (1 - tolerance_frac) * float(expected))
+        upperBound = float(expected) + (1 - tolerance_frac) * float(expected)
         lowerBound = float(expected) * tolerance_frac
-        info = ('measured value is out of bounds\n'
-                'expected value: %s\n'
-                'measured value: %s\n'
-                'failure tolerance: %s\n'
-                'upper bound: %s\n'
-                'lower bound: %s\n' %
-                (expected, measured, tolerance_frac, upperBound, lowerBound))
+        info = (
+            "measured value is out of bounds\n"
+            "expected value: %s\n"
+            "measured value: %s\n"
+            "failure tolerance: %s\n"
+            "upper bound: %s\n"
+            "lower bound: %s\n"
+            % (expected, measured, tolerance_frac, upperBound, lowerBound)
+        )
         msg += info
 
         self.assertGreaterEqual(float(measured), lowerBound, msg=msg)
@@ -86,12 +89,14 @@ class testOptionsTopoCommon(object):
         DELAY_MS = 100
         DELAY_TOLERANCE = 0.6  # Delay fraction below which test should fail
         REPS = 3
-        lopts = {'delay': '%sms' % DELAY_MS, 'use_htb': True}
-        mn = Mininet(topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
-                     link=TCLink,
-                     switch=self.switchClass,
-                     autoStaticArp=True,
-                     waitConnected=True)
+        lopts = {"delay": "%sms" % DELAY_MS, "use_htb": True}
+        mn = Mininet(
+            topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
+            link=TCLink,
+            switch=self.switchClass,
+            autoStaticArp=True,
+            waitConnected=True,
+        )
         mn.start()
         for _ in range(REPS):
             ping_delays = mn.pingFull()
@@ -100,57 +105,59 @@ class testOptionsTopoCommon(object):
         # pylint: disable=W0612
         node, dest, ping_outputs = test_outputs
         sent, received, rttmin, rttavg, rttmax, rttdev = ping_outputs
-        pingFailMsg = 'sent %s pings, only received %s' % (sent, received)
+        pingFailMsg = "sent %s pings, only received %s" % (sent, received)
         self.assertEqual(sent, received, msg=pingFailMsg)
         # pylint: enable=W0612
-        loptsStr = ', '.join('%s: %s' % (opt, value)
-                             for opt, value in lopts.items())
-        msg = ('\nTesting Link Delay of %s ms\n'
-               'ping results across 4 links:\n'
-               '(Sent, Received, rttmin, rttavg, rttmax, rttdev)\n'
-               '%s\n'
-               'Topo = SingleSwitchTopo, %s hosts\n'
-               'Link = TCLink\n'
-               'lopts = %s\n'
-               'host = default'
-               'switch = %s\n' %
-               (DELAY_MS, ping_outputs, N, loptsStr, self.switchClass))
+        loptsStr = ", ".join("%s: %s" % (opt, value) for opt, value in lopts.items())
+        msg = (
+            "\nTesting Link Delay of %s ms\n"
+            "ping results across 4 links:\n"
+            "(Sent, Received, rttmin, rttavg, rttmax, rttdev)\n"
+            "%s\n"
+            "Topo = SingleSwitchTopo, %s hosts\n"
+            "Link = TCLink\n"
+            "lopts = %s\n"
+            "host = default"
+            "switch = %s\n" % (DELAY_MS, ping_outputs, N, loptsStr, self.switchClass)
+        )
 
         mn.stop()
         for rttval in [rttmin, rttavg, rttmax]:
             # Multiply delay by 4 to cover there & back on two links
-            self.assertWithinTolerance(rttval, DELAY_MS * 4.0, DELAY_TOLERANCE,
-                                       msg)
+            self.assertWithinTolerance(rttval, DELAY_MS * 4.0, DELAY_TOLERANCE, msg)
 
     def testLinkLoss(self):
         "Verify that we see packet drops with a high configured loss rate."
         LOSS_PERCENT = 99
         REPS = 1
-        lopts = {'loss': LOSS_PERCENT, 'use_htb': True}
-        mn = Mininet(topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
-                     host=DockerHostTest,
-                     link=TCLink,
-                     switch=self.switchClass,
-                     waitConnected=True)
+        lopts = {"loss": LOSS_PERCENT, "use_htb": True}
+        mn = Mininet(
+            topo=SingleSwitchOptionsTopo(n=N, lopts=lopts),
+            host=DockerHostTest,
+            link=TCLink,
+            switch=self.switchClass,
+            waitConnected=True,
+        )
         # Drops are probabilistic, but the chance of no dropped packets is
         # 1 in 100 million with 4 hops for a link w/99% loss.
         dropped_total = 0
         mn.start()
         for _ in range(REPS):
-            dropped_total += mn.ping(timeout='1')
+            dropped_total += mn.ping(timeout="1")
         mn.stop()
 
-        loptsStr = ', '.join('%s: %s' % (opt, value)
-                             for opt, value in lopts.items())
-        msg = ('\nTesting packet loss with %d%% loss rate\n'
-               'number of dropped pings during mininet.ping(): %s\n'
-               'expected number of dropped packets: 1\n'
-               'Topo = SingleSwitchTopo, %s hosts\n'
-               'Link = TCLink\n'
-               'lopts = %s\n'
-               'host = default\n'
-               'switch = %s\n' %
-               (LOSS_PERCENT, dropped_total, N, loptsStr, self.switchClass))
+        loptsStr = ", ".join("%s: %s" % (opt, value) for opt, value in lopts.items())
+        msg = (
+            "\nTesting packet loss with %d%% loss rate\n"
+            "number of dropped pings during mininet.ping(): %s\n"
+            "expected number of dropped packets: 1\n"
+            "Topo = SingleSwitchTopo, %s hosts\n"
+            "Link = TCLink\n"
+            "lopts = %s\n"
+            "host = default\n"
+            "switch = %s\n"
+            % (LOSS_PERCENT, dropped_total, N, loptsStr, self.switchClass)
+        )
 
         self.assertGreater(dropped_total, 0, msg)
 
@@ -161,6 +168,7 @@ class testOptionsTopoCommon(object):
 class testOptionsTopoOVSKernel(testOptionsTopoCommon, unittest.TestCase):
     """Verify ability to create networks with host and link options
        (OVS kernel switch)."""
+
     longMessage = True
     switchClass = OVSSwitch
 
@@ -173,22 +181,24 @@ class testOptionsTopoOVSKernel(testOptionsTopoCommon, unittest.TestCase):
 #     switchClass = partial(OVSSwitch, datapath='user')
 
 
-@unittest.skipUnless(quietRun('which ivs-ctl'), 'IVS is not installed')
+@unittest.skipUnless(quietRun("which ivs-ctl"), "IVS is not installed")
 class testOptionsTopoIVS(testOptionsTopoCommon, unittest.TestCase):
     "Verify ability to create networks with host and link options (IVS)."
     longMessage = True
     switchClass = IVSSwitch
 
 
-@unittest.skipUnless(quietRun('which ofprotocol'),
-                     'Reference user switch is not installed')
+@unittest.skipUnless(
+    quietRun("which ofprotocol"), "Reference user switch is not installed"
+)
 class testOptionsTopoUserspace(testOptionsTopoCommon, unittest.TestCase):
     """Verify ability to create networks with host and link options
      (UserSwitch)."""
+
     longMessage = True
     switchClass = UserSwitch
 
 
-if __name__ == '__main__':
-    setLogLevel('warning')
-    unittest.main(warnings='ignore')
+if __name__ == "__main__":
+    setLogLevel("warning")
+    unittest.main(warnings="ignore")

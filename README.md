@@ -2,21 +2,18 @@ ComNetsEmu
 ==========
 *A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice*
 
-
 **This project is currently under heavy development [beta]**.
 
-This project is currently hosted both on [Bitbucket](https://bitbucket.org/comnets/comnetsemu/src/master/) and [Comnets
-Gitlab](https://git.comnets.net/book/comnetsemu) (on the server of [The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/)).
-The master and dev branches are synchronized.
-The **master** branch contains latest stable sources, the **dev** branch is used as blessed branch for development.
+**For all ComNetsEmu users:**
 
-Issues and pull requests can be created on **both** repositories.
-Please create an issues if there are any problems or feature requirement of the tested.
-It will be answered more quickly than Emails.
+Please run the upgrade process described [here](#upgrade-comnetsemu-and-dependencies) when there is a new release
+published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
+New features, fixes and other improvements require running the upgrade script **manually**.
+But the script will check and perform the upgrade automatically and it does not take much time if you have a good
+network connection.
+Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
 
 #### Table of Contents
-
-TOC only supports Gitlab.
 
 <!-- vim-markdown-toc GitLab -->
 
@@ -24,7 +21,7 @@ TOC only supports Gitlab.
   * [Main Features](#main-features)
 * [Installation](#installation)
   * [Option 1: Install in a Vagrant managed VM (Highly Recommended)](#option-1-install-in-a-vagrant-managed-vm-highly-recommended)
-  * [Option 2: Bare-mental Installation](#option-2-bare-mental-installation)
+  * [Option 2: Install on user's custom VM or directly on host OS](#option-2-install-on-users-custom-vm-or-directly-on-host-os)
   * [Post-Installation](#post-installation)
 * [Upgrade ComNetsEmu and Dependencies](#upgrade-comnetsemu-and-dependencies)
 * [Run the Docker-in-Docker example](#run-the-docker-in-docker-example)
@@ -39,10 +36,14 @@ TOC only supports Gitlab.
 
 ### Description
 
-ComNetsEmu is a tested and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks: From Theory to Practice".
+ComNetsEmu is a testbed and network emulator designed for the NFV/SDN teaching book "Computing in Communication Networks: From Theory to Practice".
 The design focus on emulating all examples and applications on a single computer, e.g. on a single laptop.
-ComNetsEmu extends the famous [Mininet](http://mininet.org/) emulator to support better emulation of versatile NFV/SDN network **applications**.
-See the detailed comparison between upstream Mininet [here](./doc/comparison.md).
+ComNetsEmu extends the famous [Mininet](http://mininet.org/) network emulator to support better emulation of versatile
+**Computing In The Network (COIN) applications**.
+It extends and puts forward the concepts and work in the [Containernet](https://containernet.github.io/) project.
+It uses a slightly different approach to extend the Mininet compared to Containernet.
+It's main focus is to use "sibling containers" to emulate network systems with computing.
+See the detailed comparison between upstream Mininet and Containernet [here](./doc/comparison.md).
 
 Common facts about ComNetsEmu:
 
@@ -52,6 +53,9 @@ Common facts about ComNetsEmu:
     emulation results. For example, use e.g. 100ms as link delay instead of 1ms for large scale topology.
 
 -   ComNetsEmu is developed with **Python3.6**.
+    To reduce the complexity of dependencies (third-party packages, frameworks etc.), ComNetsEmu tries to leverage as
+    much of the powerful Python standard library as possible, and prefers simple third-party dependencies when
+    necessary.
 
 -   Examples and applications in this repository are mainly developed with high-level script language for simplicity.
     These programs are **not** performance-oriented and optimized.
@@ -69,6 +73,8 @@ Common facts about ComNetsEmu:
 
 -   A collection of application examples for "Computing In Communication Networks" with sample codes and
     detailed documentation. All examples can be easily reproduced and extended.
+
+Check the [Roadmap](./doc/roadmap.md) for planed and WIP features.
 
 ### Installation
 
@@ -93,7 +99,7 @@ external source dependencies in $TOP_DIR/comnetsemu_dependencies.
 
 ```bash
 $ cd $TOP_DIR
-$ git clone https://bitbucket.org/comnets/comnetsemu.git comnetsemu
+$ git clone https://git.comnets.net/public-repo/comnetsemu.git comnetsemu
 ```
 
 ComNetsEmu's [installer](./util/install.sh) tries to install dependencies with package manager (apt, pip etc.) if they
@@ -121,18 +127,40 @@ with [KVM](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine) as the hy
 
 In order to run these programs, your host OS must use [Linux kernel](https://en.wikipedia.org/wiki/Linux_kernel).
 You can install a GNU/Linux distribution on your physical machine.
+WARN: Two providers can not be used at the same time. Same VM can be created either by Virtualbox or KVM.
 
 Recommended and tested setup:
 
--  Vagrant: v2.2.5 and beyond ([Download Link](https://www.vagrantup.com/downloads.html))
--  Virtualbox: v6.0 and beyond ([Download Link](https://www.virtualbox.org/wiki/Downloads))
--  (Optional) Libvirt: v5.10 and beyond ([Download Link](https://libvirt.org/downloads.html))
--  (Optional) Vagrant Libvirt Provider: v0.0.45 and beyond ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+-   Vagrant: v2.2.5 ([Download Link](https://www.vagrantup.com/downloads.html))
+-   Virtualbox: v6.0 ([Download Link](https://www.virtualbox.org/wiki/Downloads))
+-   (Optional) Libvirt: v5.10 ([Download Link](https://libvirt.org/downloads.html))
+-   (Optional) Vagrant Libvirt Provider: v0.0.45 ([Download Link](https://github.com/vagrant-libvirt/vagrant-libvirt#installation))
+
+Warning: The latest version of Virtualbox/Libvirt may not work properly with latest Vagrant.
+For example, the Vagrant 2.2.6 does not fully support Virtualbox 6.1. (see the issue [here](https://github.com/oracle/vagrant-boxes/issues/178))
+Therefore, it is recommended to use **tested** versions listed above and the ComNetsEmu dev team will update the
+recommended versions after tests.
 
 A customized [Vagrantfile](./Vagrantfile) is provided in this repository to manage the VM.
 Both Virtualbox and Libvirt can be used to create the VM. The default provider is Virtualbox.
 Different providers uses different base boxes, please check the Vagrantfile for details.
 You can choose the provider with `--provider` option of the `vagrant up` command.
+
+*   Some Known Issues
+
+Please follow the documentation to setup the VM with proper resource allocation.
+If the `vagrant up` command fails to setup the VM fully correct which you can test by running the basic *Docker-in-Docker* example.
+Please firstly check the [known VM setup issues](./doc/vm_setup_issues.md) for potential solutions.
+
+*   VM Resource Allocation (**Important**)
+
+By default, this VM is allocated with **2** vCPUs and **4GB** RAM to run all examples and applications smoothly.
+If you machine does not have enough resources, you need to change the variable *CPUS* and *RAM* in the Vagrantfile
+**before** created the VM.
+Some applications (e.g. machine_learning_for_object_detection) require minimal 4GB RAM to run smoothly without crash.
+That's the only reason why this resource allocation is used by default.
+
+*   Use Virtualbox as Provider
 
 To manage the Virtualbox VM, please open a terminal on your host OS and change the working directory to the directory
 containing the ComNetsEmu's source code. Use following commands to manage the VM.
@@ -151,18 +179,31 @@ $ vagrant halt comnetsemu
 $ vagrant destory comnetsemu
 ```
 
+*   Use Libvirt as Provider
+
 To create the VM with Libvirt provider. Check the [guide](https://github.com/vagrant-libvirt/vagrant-libvirt#installation) to install the plugin.
 
 After successful installation, run the following command in the ComNetsEmu's source directory:
 
 ```bash
 $ vagrant up --provider libvirt comnetsemu
+# Remove the VM managed by libvirt, the default provider is Virtualbox. Use VAGRANT_DEFAULT_PROVIDER to force vagrant to
+# use libvirt.
+$ VAGRANT_DEFAULT_PROVIDER=libvirt vagrant destroy comnetsemu
 ```
+
+[Rsync mode](https://www.vagrantup.com/docs/synced-folders/rsync.html) is used in the Libvirt provider for unidirectional (host->guest) sync.
+The syncing does not automatically start after the `vagrant up`.
+Open a shell and run `$ vagrant rsync-auto comnetsemu` after the VM  is booted to start syncing.
+For bidirectional sync, [NFS](https://www.vagrantup.com/docs/synced-folders/nfs.html) need to be configured and used as
+the sync type.
+
+*   Customization Shell Script
 
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
 process. This script is executed by the vagrant user which can run sudo commands without password.
 This script can be used to add your customized tools (e.g. ZSH, Desktop environment etc) and configuration to the
-ComNetsEmu VM. Since the vagrant VM uses Ubuntu LTS, apt should be used to manage the packages.
+ComNetsEmu VM. Since the vagrant VM uses Ubuntu 18.04 LTS, apt should be used to manage the packages.
 
 Example of `vm_customize.sh`:
 ```bash
@@ -188,7 +229,18 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python package is installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
-#### Option 2: Bare-mental Installation
+#### Option 2: Install on user's custom VM or directly on host OS
+
+As described in [here](#installation), installation on user's custom VM or directly on the host OS has several
+disadvantages. It is not convenient to manage the test environment compared to the option 1.
+For this option, it is recommended to install Ubuntu 18.04 LTS **freshly** inside the VM or as the host OS to avoid
+potential package conflicts.
+Currently, this option is not well-tested compared to the option 1.
+
+**Supported/Tested distributions**:
+
+1.  Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
+1.  GNU/Debian 10 (Buster)
 
 - Install essential packages required by the installer from your package management systems:
 
@@ -202,7 +254,7 @@ $ sudo apt install git make pkg-config sudo python3 libpython3-dev python3-dev p
 
 ```bash
 $ cd $TOP_DIR/comnetsemu/util
-$ PYTHON=python3 bash ./install.sh -a
+$ bash ./install.sh -a
 ```
 
 #### Post-Installation
@@ -224,37 +276,57 @@ $ bash ./build.sh
 
 ### Upgrade ComNetsEmu and Dependencies
 
+Example screenshots for running the upgrade process in terminal:
+
+![Screenshots for Running Upgrade Process](./doc/comnetsemu_upgrade.gif)
+
 The **master** branch contains stable/tested sources for ComNetsEmu's python package, utility scripts, examples and
 applications.
-It is **recommended** to upgraded to **latest** commit of the **master** branch.
+It is **recommended** to upgraded to **latest** commit of the **master** branch or the latest tag published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
 
-The [installer script](./util/install.sh) has a function to ONLY upgrade ComNetsEmu's dependencies software automatically.
-This script **ONLY** works on supported distributions and has some default variables:
+The [installer script](./util/install.sh) has a function to **ONLY** upgrade ComNetsEmu's dependencies software automatically.
+And the installer script also needs to be updated firstly.
+Therefore, it takes **three** steps to upgrade everything.
+It is assumed here the ComNetsEmu is installed using option 1 with Vagrant.
 
-1. The ComNetsEmu's source files are located in "$TOP_DIR/comnetsemu"
-2. The dependencies installed from source are located in "$TOP_DIR/comnetsemu_dependencies"
+#### Step 1: Upgrade source code of ComNetsEmu Python package, examples and applications on your host OS.
 
-You can modify these variables in the installer script for your customized installation.
-
-**WARNING**: The upgrade function does not re-install(upgrade) the Python package of ComNetsEmu. If the Vagrant VM is
-used, the develop mode and sync folder are used to apply changes automatically. Otherwise, the package should be
-re-installed manually.
-
-Before running the upgrade function, the source code repository (by default, "$TOP_DIR/comnetsemu") should be updated to the latest
-commit in master branch via git (fix conflicts if required):
+Use git to pull (or fetch+merge if you want to) the latest commit in master branch:
 
 ```bash
-$ cd $TOP_DIR/comnetsemu
+$ cd ~/comnetsemu
 $ git checkout master
 $ git pull origin master
 ```
 
-Then run following commands to upgrade automatically (good luck ^_^):
+#### Step 2: Upgrade ComNetsEmu Python module and all dependencies automatically inside VM.
+
+The [installer script](./util/install.sh) is used to perform this step.
+This script **ONLY** works on supported distributions and has some default variables:
+
+1. The ComNetsEmu's source files are located in "~/comnetsemu"
+2. The dependencies installed from source are located in "~/comnetsemu_dependencies"
+
+Run following command to upgrade automatically:
 
 ```bash
-$ cd $TOP_DIR/comnetsemu/util
-$ PYTHON=python3 bash ./install.sh -u
+$ cd ~/comnetsemu/util
+$ bash ./install.sh -u
 ```
+
+The script will ask you to input yes or no several times, please read the terminal output for information.
+
+#### Step 3: Check if the upgrading is successful inside VM.
+
+Run following commands to start basic tests:
+
+```bash
+$ cd ~/comnetsemu/
+$ sudo make test && sudo make test-examples
+```
+
+If all tests pass without any errors or exceptions, the upgrading was successful.
+Otherwise, it is recommended to redo the upgrade process or rebuild the Vagrant VM if the situation is bad...
 
 ### Run the Docker-in-Docker example
 
@@ -267,20 +339,26 @@ See the [README](./examples/README.md) to get information about all built-in exa
 
 ### File Catalog
 
-- [app](./app/): All application programs are classified in this directory. Each subdirectory contains a brief
-    introduction, source codes, Dockerfiles for internal containers and utility scripts of the application.
+To keep the VM size small, the Vagrantfile and test_containers contain only MINIMAL dependencies to bootstrap the VM and
+able to run all built-in examples.
+Dependencies of specific applications (e.g. Python packages like numpy, scipy etc.) should be installed by the script or
+instructions provided in the corresponded application folder.
+Therefore, the user need to install them only if she or he wants to run that application.
 
-- [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python package.
+-   [app](./app/): All application programs are classified in this directory. Each subdirectory contains a brief
+      introduction, source codes, Dockerfiles for internal containers and utility scripts of the application.
 
-- [examples](./examples/): Example programs for functionalities of the ComNetsEmu emulator.
+-   [comnetsemu](./comnetsemu/): Source codes of ComNetsEmu's Python package.
 
-- [patch](./patch/): Patches for external dependencies that are installed from source via [installer](./util/install.sh).
+-   [examples](./examples/): Example programs for functionalities of the ComNetsEmu emulator.
 
-- [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
+-   [patch](./patch/): Patches for external dependencies that are installed from source via [installer](./util/install.sh).
 
-- [utils](./util/): Utility and helper scripts.
+-   [test_containers](./test_containers/): Contains Dockerfiles and dependency files for external Docker containers (Docker host).
 
-- [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
+-   [utils](./util/): Utility and helper scripts.
+
+-   [Vagrantfile](./Vagrantfile): Vagrant file to setup development/experiment VM environment.
 
 ### Development Guide and API Documentation
 
@@ -298,6 +376,13 @@ $ sudo make test-examples
 ```bash
 $ make codecheck
 $ make typecheck
+```
+
+- Remove all created containers and all dangling images. Used to reduce the storage usage.
+
+```bash
+$ sudo make rm-all-containers
+$ sudo make rm-dangling-images
 ```
 
 ComNetsEmu's development and API documentation is generated by [Sphinx](https://www.sphinx-doc.org/en/master/).
@@ -320,7 +405,9 @@ $ firefox ./doc/build/html/index.html
 This project exists thanks to all people who contribute.
 [List](./CONTRIBUTORS) of all contributors.
 
-TODO: Add separate contributing guide
+Contributing to this repository requires an account of the internal Gitlab server hosted by
+[The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/).
+Please contact us by Email if you want to have an account.
 
 ### Contact
 

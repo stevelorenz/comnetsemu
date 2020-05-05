@@ -55,39 +55,44 @@ def testTopo():
     net.addLinkNamedIfce(s1, client2, bw=10, delay="10ms")
     net.addLinkNamedIfce(s1, client3, bw=10, delay="10ms")
 
-    info("*** Starting network\n")
-    net.start()
+    try:
+        info("*** Starting network\n")
+        net.start()
 
-    info("*** Create wg key pairs\n")
-    center_private_key, center_public_key = generate_key_pair_for_host(center)
-    h2_private_key, h2_public_key = generate_key_pair_for_host(client1)
-    h3_private_key, h3_public_key = generate_key_pair_for_host(client2)
-    h4_private_key, h4_public_key = generate_key_pair_for_host(client3)
+        info("*** Create wg key pairs\n")
+        center_private_key, center_public_key = generate_key_pair_for_host(center)
+        h2_private_key, h2_public_key = generate_key_pair_for_host(client1)
+        h3_private_key, h3_public_key = generate_key_pair_for_host(client2)
+        h4_private_key, h4_public_key = generate_key_pair_for_host(client3)
 
-    info("*** Create wg interfaces\n")
+        info("*** Create wg interfaces\n")
 
-    info(
-        "*** Create a star topology with center as the center. Instead of using wg tool write a configuration for the\n"
-    )
-    info(
-        "*** interface and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.\n"
-    )
-    info(
-        "*** The wg and wg-quick manpages contain a reference for the syntax of the configuration file.\n"
-    )
-    info(
-        "*** Use the network 192.168.0.0/24 for the inner tunnel and asign 192.168.0.1 to the center.\n"
-    )
+        info(
+            "*** Create a star topology with center as the center. Instead of using wg tool write a configuration for the\n"
+        )
+        info(
+            "*** interface and place it in /etc/wireguard/wg0.conf, then use the wg-quick command to setup the interface.\n"
+        )
+        info(
+            "*** The wg and wg-quick manpages contain a reference for the syntax of the configuration file.\n"
+        )
+        info(
+            "*** Use the network 192.168.0.0/24 for the inner tunnel and asign 192.168.0.1 to the center.\n"
+        )
 
-    while (
-        not test_connection(client1, "192.168.0.1")
-        or not test_connection(client2, "192.168.0.1")
-        or not test_connection(client3, "192.168.0.1")
-    ):
-        sleep(10)
+        while (
+            not test_connection(client1, "192.168.0.1")
+            or not test_connection(client2, "192.168.0.1")
+            or not test_connection(client3, "192.168.0.1")
+        ):
+            sleep(10)
 
-    info("*** Stopping network\n")
-    net.stop()
+    except KeyboardInterrupt:
+        info("** KeyboardInterrupt detected, exit the program.\n")
+
+    finally:
+        info("*** Stopping network")
+        net.stop()
 
 
 def generate_key_pair_for_host(center):

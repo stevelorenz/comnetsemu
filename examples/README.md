@@ -2,7 +2,7 @@
 
 These examples are intended for two purposes:
 
-1.  Get started using ComNetsEmu's Python API.
+1.  Get started using ComNetsEmu's Python APIs and main features.
 2.  Get started with core/essential tools/libraries/frameworks used in the [application folder](../app/).
 
 #### dockerhost.py and dockerhostcli.py
@@ -12,9 +12,27 @@ supported) for them.
 
 #### dockerindocker.py
 
-This example demonstrate how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
+This example demonstrates how to use ComNetsEmu's API to deploy Docker container **inside** Dockerhost instance.
 Docker-in-Docker(dind) is used by ComNetsEmu as an lightweight emulation for nested-Virtualization.
 The Dockerhost with internal Docker containers deployed is used to **mimic** an actual physical host that runs Docker containers.
+
+#### Echo Server as a Service (echo_server)
+
+This basic example demonstrates how to build and deploy a containerized service (a simple echo server) as an internal
+container on ComNetsEmu.
+
+#### Manage APP container inside Dockerhost (dockerhost_manage_appcontainer.py)
+
+This example shows how to manage application containers from one DockerHost instance instead of calling functions
+directly on manager object.
+This can be useful if you want to let one DockerHost node in the network to be the master node (like the master node in
+K8s) in to manage application containers on other worker nodes.
+Check the Docstring in ./dockerhost_manage_appcontainer.py for details.
+
+#### DPDK
+
+A basic example of running [DPDK](https://www.dpdk.org/) application inside Docker container and deploying it on ComNetsEmu.
+Check the [doc](./dpdk/README.md) in the subdirectory for details.
 
 #### mininet_demystify
 

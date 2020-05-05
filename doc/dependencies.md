@@ -2,11 +2,15 @@
 
 ## Installed from source code
 
-- Mininet: master branch, commit e0436642ae1005d2ec9f58ba698125d718072293
-- [Ryu SDN controller](https://github.com/osrg/ryu): v4.32
+-   Mininet: Use the mirror/fork repository [here](https://git.comnets.net/public-repo/mininet).
+    **Branch**: comnetsemu-stable, **Tag**: 2.3.0d6.
+
+-   [Ryu SDN controller](https://github.com/osrg/ryu): v4.34.
 
 ## Installed with package manager
 
-- Docker-CE: 19.03.0
-- [Docker-Py](https://github.com/docker/docker-py): v3.7.2
-- Wireguard: 0.0.20190702-wg1~bionic
+-   Docker-CE: 19.03.0
+
+-   [Required Python packages for ComNetsEmu](../util/requirements.txt)
+
+-   Wireguard: 0.0.20190702-wg1~bionic

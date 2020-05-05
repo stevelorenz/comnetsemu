@@ -3,13 +3,13 @@
 To use the interactive environment of O2SC first build the O2SC docker container:
 
 ```sh
-sudo docker build -t o2sc .
+docker build -t o2sc .
 ```
 
 Running the O2SC compressor in the dummy interface mode can be done with:
 
 ```sh
-sudo docker run -it o2sc -Du
+docker run -it o2sc -Du
 ```
 
 To run the container with the ComNetsEmu, execute the following inside the emulator environment:

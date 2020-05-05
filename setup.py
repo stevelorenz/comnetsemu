@@ -2,6 +2,7 @@
 
 """Setuptools Configuration"""
 
+from comnetsemu.net import VERSION
 from setuptools import setup, find_packages
 from os.path import join
 
@@ -9,7 +10,6 @@ from os.path import join
 import sys
 
 sys.path.append(".")
-from comnetsemu.net import VERSION
 
 scripts = [join("bin", filename) for filename in ["ce"]]
 modname = distname = "comnetsemu"
@@ -28,13 +28,12 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        # TODO: Add a proper license
-        # "License :: OSI Approved :: BSD License",
         "Programming Language :: Python:: 3.6",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: System :: Emulators",
         "Natural Language :: English",
+        "License :: MIT License",
     ],
     keywords="networking emulator SDN NFV Docker",
     # license="BSD",
@@ -42,8 +41,11 @@ setup(
     install_requires=[
         "setuptools>=39.0.1,<40.0.0",
         "docker>=3.7.2,<4.0.0",
-        # Not available on PyPi
+        "pyroute2>=0.5.7,<0.6.0",
+        "requests>=2.22.0,< 3.0.0",
+        # Not available on PyPi, installed from source code.
         "mininet>=2.3.0d6",
+        "ryu>=4.34,<5.0",
     ],
     scripts=scripts,
 )

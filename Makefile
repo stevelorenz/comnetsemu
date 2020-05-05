@@ -4,11 +4,11 @@ COMNETSEMU = comnetsemu/*.py
 CE_BIN = bin/ce
 UNITTESTS = comnetsemu/test/unit/*.py
 TESTS = $(UNITTESTS) comnetsemu/test/*.py
-EXAMPLES = examples/*.py
+EXAMPLES = $(shell find ./examples/ -name '*.py')
 PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TESTS)
 PYTHON ?= python3
 PYTYPE = pytype
-CHECKERRIGNORE=E501,W605
+CHECKERRIGNORE=W503,E501,C0330
 PREFIX ?= /usr
 DOCDIRS = doc/html doc/latex
 
@@ -21,12 +21,12 @@ clean:
 
 codecheck: $(PYSRC)
 	@echo "*** Running checks for code quality"
-	$(PYTHON) -m flake8 --extend-ignore=E501 --max-complexity 10 $(PYSRC)
+	$(PYTHON) -m flake8 --ignore=W503,E501,C0330 --max-complexity 10 $(PYSRC)
 	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
 
 errcheck: $(PYSRC)
 	@echo "*** Running checks for errors only"
-	$(PYTHON) -m flake8 --extend-ignore=$(CHECKERRIGNORE) $(PYSRC)
+	$(PYTHON) -m flake8 --ignore=$(CHECKERRIGNORE) $(PYSRC)
 	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
 
 typecheck: $(PYSRC)
@@ -49,8 +49,15 @@ coverage: $(COMNETSEMU) $(UNITTESTS)
 	$(PYTHON) -m coverage report -m
 
 installercheck: ./util/install.sh
-	@ echo "*** Check installer"
+	@echo "*** Check installer"
 	bash ./check_installer.sh
+
+update-deps:
+	@echo "*** Update ComNetsEmu's dependencies."
+	cd ./util/ && ./install.sh -u
+
+# PLEASE run following tests before any pushes to master/dev branches.
+run-tests-before-push-dev: errcheck typecheck test test-examples-all doc
 
 format: $(PYSRC)
 	@echo "Format Python sources with black"
@@ -81,7 +88,7 @@ rm-all-containers:
 
 rm-dangling-images:
 	@echo "Remove all dangling docker images"
-	docker rmi $$(docker images -f "dangling=true" -q)
+	docker image prune -f
 
 pp-empty-dirs:
 	@echo "Print empty directories"

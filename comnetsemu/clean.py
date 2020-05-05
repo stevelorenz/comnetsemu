@@ -14,10 +14,13 @@ import shutil
 import docker
 from mininet.log import info
 from mininet.clean import cleanup as mn_cleanup
-from comnetsemu.net import VNFMANGER_MOUNTED_DIR
+from comnetsemu.net import APPCONTAINERMANGER_MOUNTED_DIR
 
 
 def sh(cmd, check=True):
+    """Run a command in string format with subprocess.run.
+    Check is enabled and return the utf-8 decoded stdout.
+    """
     ret = subprocess.run(
         split(cmd), check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
@@ -25,16 +28,18 @@ def sh(cmd, check=True):
 
 
 def cleanup():
+    """ComNetsEmu cleanup function."""
     info("-" * 80 + "\n" + "*** Run ComNetsEmu's cleanups\n" + "-" * 80 + "\n")
     info("*** Run mininet's cleanups\n")
     mn_cleanup()
     cleanup_docker_containers()
     cleanup_netdevs()
     info("*** Remove temp directories\n")
-    shutil.rmtree(VNFMANGER_MOUNTED_DIR, ignore_errors=True)
+    shutil.rmtree(APPCONTAINERMANGER_MOUNTED_DIR, ignore_errors=True)
 
 
 def cleanup_docker_containers():
+    """Cleanup Docker containers created by ComNetsEmu."""
     info("*** Run docker container cleanups\n")
     client = docker.from_env()
     containers = client.containers.list(all=True)
@@ -71,9 +76,13 @@ def cleanup_docker_containers():
 
 
 def cleanup_netdevs():
-    """ISSUE: Maybe too aggressive."""
+    """Cleanup network devices created by ComNetsEmu.
+    ISSUE: Maybe too aggressive.
+    """
     info(
-        r"*** Remove all network devices in /sys/class/net/ with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+ \n"
+        r"*** Remove all network devices in /sys/class/net/ "
+        + r"with the pattern [a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+"
+        + "\n"
     )
     links = sh("ip link show")
     ret = re.findall(r"[a-zA-Z]*[\d]+-[a-zA-Z]*[\d]+", links)

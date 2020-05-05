@@ -5,9 +5,14 @@
 About: Test core features implemented in ComNetsEmu
 """
 
+import os
 import functools
 import sys
+import time
 import unittest
+
+import pyroute2
+import requests
 
 from comnetsemu.clean import cleanup
 from comnetsemu.net import Containernet, VNFManager
@@ -54,8 +59,9 @@ class TestVNFManager(unittest.TestCase):
         cls.mgr.addContainer("zombie", "h1", "dev_test", "/bin/bash", {})
         cls.net.stop()
         cls.mgr.stop()
-        if sys.exc_info() != (None, None, None):
-            cleanup()
+        cleanup()
+        # if sys.exc_info() != (None, None, None):
+        # cleanup()
 
     @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
     def test_ping(self):
@@ -81,14 +87,15 @@ class TestVNFManager(unittest.TestCase):
                     docker_args={"cpu_quota": 1000},
                 )
                 cname_list.append(f"c{i}{j}")
+        cname_list_get = self.mgr.getAllContainers()
+        self.assertEqual(cname_list, cname_list_get)
 
         # Check docker_args works
         c11_ins = self.mgr._getDockerIns("c11")
         self.assertEqual(c11_ins.attrs["HostConfig"]["CpuQuota"], 1000)
 
         for i in range(1, HOST_NUM + 1):
-            cins_host = self.mgr.getContainers(f"h{i}")
-            cname_list_host = [c.name for c in cins_host]
+            cname_list_host = self.mgr.getContainersDhost(f"h{i}")
             self.assertEqual(cname_list_host, [f"c{i}{k}" for k in range(1, i + 1)])
             for cname in cname_list_host:
                 self.mgr.removeContainer(cname)
@@ -96,6 +103,34 @@ class TestVNFManager(unittest.TestCase):
         for cname in cname_list:
             c_ins = self.mgr._getDockerIns(cname)
             self.assertTrue(c_ins is None)
+
+        d1 = self.mgr.addContainer("d1", "h1", "dev_test", "bash", docker_args={})
+        d1_get = self.mgr.getContainerInstance("d1")
+        self.assertIs(d1, d1_get)
+        self.mgr.removeContainer("d1")
+        d2 = self.mgr.getContainerInstance("d2", None)
+        self.assertEqual(d2, None)
+
+        cwd = os.getcwd()
+        d1 = self.mgr.addContainer(
+            "d1",
+            "h1",
+            "dev_test",
+            "bash",
+            docker_args={"volumes": {f"{cwd}": {"bind": "/foo", "mode": "rw"}}},
+        )
+        mounts = d1.dins.attrs["Mounts"]
+        for m in mounts:
+            if m["Destination"] == "/foo":
+                self.assertEqual(m["Source"], f"{cwd}")
+            elif m["Destination"] == "/tmp/comnetsemu/appcontainermanger":
+                self.assertEqual(m["Source"], "/tmp/comnetsemu/appcontainermanger")
+            elif m["Destination"] == "/var/lib/docker":
+                pass
+            else:
+                print(m)
+                raise ValueError("Unkown mount is added!")
+        self.mgr.removeContainer("d1")
 
     @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
     def test_container_isolation(self):
@@ -110,7 +145,7 @@ class TestVNFManager(unittest.TestCase):
         c1 = self.mgr.addContainer(
             "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M", {}
         )
-        usages = self.mgr.monResourceStats(c1.name, sample_period=0.1)
+        usages = self.mgr.monResourceStats(c1.name, sample_period=0.1, sample_num=2)
         cpu = sum(u[0] for u in usages) / len(usages)
         mem = sum(u[1] for u in usages) / len(usages)
         self.assertTrue(abs(cpu - 10.0) <= CPU_ERR_THR)
@@ -133,6 +168,52 @@ class TestVNFManager(unittest.TestCase):
     #     from comnetsemu.cli import CLI
     #     CLI(self.net)
     #     self.mgr.removeContainer("c1")
+
+    def test_appcontainermanager_rest_api(self):
+        ip_route = pyroute2.IPRoute()
+        mgr_api_ip = ip_route.get_addr(label="docker0")[0].get_attr("IFA_ADDRESS")
+        mgr_api_port = 8000
+        base_url = f"http://{mgr_api_ip}:{mgr_api_port}/containers"
+
+        self.mgr.addContainer("c1", "h1", "dev_test", "bash", docker_args={})
+        self.mgr.runRESTServerThread(ip=mgr_api_ip, port=mgr_api_port, enable_log=False)
+        time.sleep(0.5)
+
+        r = requests.get(base_url + "foo")
+        self.assertEqual(r.status_code, 400)
+        r = requests.get(base_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["c1"])
+        self.mgr.removeContainer("c1")
+
+        r = requests.post(base_url)
+        self.assertEqual(r.status_code, 400)
+        r = requests.post(base_url + "foo", json={})
+        self.assertEqual(r.status_code, 400)
+        cdata = {
+            "name": "c1",
+            "dhost": "h1",
+            "dimage": "dev_test",
+            # "dcmd": "bash",
+            "docker_args": {},
+        }
+        r = requests.post(base_url, json=cdata)
+        self.assertEqual(r.status_code, 400)
+        cdata["dcmd"] = "bash"
+        # Test the lock: c2 must be created earlier than c1.
+        self.mgr.addContainer("c2", "h1", "dev_test", "bash", docker_args={})
+        r = requests.post(base_url, json=cdata)
+        self.assertEqual(r.status_code, 200)
+        r = requests.get(base_url)
+        self.assertEqual(r.json(), ["c2", "c1"])
+        r = requests.delete(base_url + "/c3")
+        self.assertEqual(r.status_code, 400)
+        r = requests.delete(base_url + "/foo/bar")
+        self.assertEqual(r.status_code, 400)
+        r = requests.delete(base_url + "/c1")
+        self.assertEqual(r.status_code, 200)
+
+        self.mgr.removeContainer("c2")
 
 
 if __name__ == "__main__":

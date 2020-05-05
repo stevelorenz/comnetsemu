@@ -1,0 +1,10 @@
+#
+# This requirements.txt file is ONLY used to upgrade the ComNetsEmu's Python
+# dependency packages installed from PYPI.
+#
+# Dependencies installed from source code like Mininet are handled differently by install.sh.
+#
+
+docker==3.7.2
+pyroute2==0.5.7
+requests==2.22.0

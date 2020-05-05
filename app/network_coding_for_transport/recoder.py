@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 """
-About: On The Fly NC Recoder.
+About: NC Recoder.
 """
 
 import argparse
@@ -18,8 +18,8 @@ import rawsock_helpers as rsh
 from common import (
     BUFFER_SIZE,
     CODER_LOG_LEVEL,
-    INIT_REDUNDANCY,
     FIELD,
+    INIT_REDUNDANCY,
     IO_SLEEP,
     META_DATA_LEN,
     MTU,
@@ -37,7 +37,6 @@ def run_recoder(ifce, action, dst_mac):
 
     buf = bytearray(BUFFER_SIZE)
     udp_cnt = 0
-    generation = 0
 
     if dst_mac:
         logger.info(
@@ -57,11 +56,12 @@ def run_recoder(ifce, action, dst_mac):
 
     if action == "recode":
         logger.info("Init kodo recoder.")
-        decoder_factory = kodo.RLNCDecoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
-        recoder = decoder_factory.build()
-        decode_buf = bytearray(recoder.block_size())
-        recoder.set_mutable_symbols(decode_buf)
+        recoder_factory = kodo.RLNCPureRecoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
+        recoder = recoder_factory.build()
+        # decode_buf = bytearray(recoder.block_size())
+        # recoder.set_mutable_symbols(decode_buf)
         recode_buf = bytearray(BUFFER_SIZE)
+        generation = 0
         redundancy = INIT_REDUNDANCY
 
     logger.info("Entering IO loop.")
@@ -121,16 +121,17 @@ def run_recoder(ifce, action, dst_mac):
         if cur_gen > generation:
             generation = cur_gen
             # Cleanup the old recoder for a new generation.
-            recoder = decoder_factory.build()
-            decode_buf = bytearray(recoder.block_size())
-            recoder.set_mutable_symbols(decode_buf)
+            recoder = recoder_factory.build()
+            # decode_buf = bytearray(recoder.block_size())
+            # recoder.set_mutable_symbols(decode_buf)
 
         # Feed UDP payload into recoder
         head = udp_pl_offset + META_DATA_LEN
         tail = udp_pl_offset + META_DATA_LEN + udp_pl_len
         recoder.read_payload(buf[head:tail])
-        # Generate recoded packets
-        for _ in range(redundancy):
+
+        # Generate recoded packets, plus one is for the original packet.
+        for i in range(redundancy + 1):
             recode_buf = recoder.write_payload()
             buf[head:tail] = recode_buf[:udp_pl_len]
             # Update IP header checksum

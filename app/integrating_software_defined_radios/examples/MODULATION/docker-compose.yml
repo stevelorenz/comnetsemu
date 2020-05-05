@@ -12,8 +12,9 @@ services:
       - SDR-net
     volumes:
       - ./:/home/GNURadio-Files/
-    command: bash -c "cd /home/GNURadio-Files/  && python ./rx_ofdm.py"
-      
+    command: bash "cd /home/GNURadio-Files/"
+    command: bash -c "./transceiver_ofdm.py"
+  
   sdr2:
     build:
       context: ../../
@@ -28,7 +29,8 @@ services:
       - SDR-net
     volumes:
       - ./:/home/GNURadio-Files/
-    command: bash -c "cd /home/GNURadio-Files/ && python ./tx_ofdm.py"
+    command: bash "cd /home/GNURadio-Files/"
+    command: bash -c "./transceiver_ofdm.py"
       
 networks:
   SDR-net:

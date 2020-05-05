@@ -79,7 +79,7 @@ Now it is possible to forward the requests only to the optimal Server, reducing 
 Before running, a dedicated docker image needs to be created with 
 
 ```sh
-sudo docker build -t mec_test -f ./Dockerfile.mec_test .
+docker build -t mec_test -f ./Dockerfile.mec_test .
 ```
 
 ... ,where `mec_test` is the image name used in this application.

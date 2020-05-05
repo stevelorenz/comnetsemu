@@ -107,11 +107,13 @@ EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
-MININET_VER="e0436642a"
-RYU_VER="v4.32"
+# For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
+MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
+MININET_BRANCH="comnetsemu-stable"
+MININET_VER="2.3.0d6"
+RYU_VER="v4.34"
 BCC_VER="v0.9.0"
-# - Installed by package manager (apt, pip etc.)
-DOCKER_PY_VER="3.7.2"
+# ComNetsEmu's dependency python packages are listed in ./requirements.txt.
 
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
 DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
@@ -128,17 +130,17 @@ function usage() {
     echo ""
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
-    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]"
-    echo " -c: install (C)omNetsEmu Python module. Docker-Py and Mininet MUST be ALREADY installed."
-    echo " -d: install (D)ocker CE [stable] and Docker-Py [$DOCKER_PY_VER]"
-    echo " -h: print usage"
-    echo " -k: install required Linux (K)ernel modules"
+    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]."
+    echo " -c: install (C)omNetsEmu Python module and dependency packages."
+    echo " -d: install (D)ocker CE [stable]."
+    echo " -h: print usage."
+    echo " -k: install required Linux (K)ernel modules."
     echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
     echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
     echo " -r: (R)einstall all dependencies for ComNetsEmu."
-    echo " -u: (U)pgrade all ComNetsEmu's dependencies. "
-    echo " -v: install de(V)elopment tools"
-    echo " -y: install R(Y)u SDN controller [$RYU_VER]"
+    echo " -u: (U)pgrade ComNetsEmu's Python package and all dependencies. "
+    echo " -v: install de(V)elopment tools."
+    echo " -y: install R(Y)u SDN controller [$RYU_VER]."
     exit 2
 }
 
@@ -171,7 +173,6 @@ function install_docker() {
 
     $update update
     $install docker-ce
-    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 
     # Enable docker experimental features
     sudo mkdir -p /etc/docker
@@ -184,7 +185,6 @@ function install_docker() {
 function upgrade_docker() {
     $update update
     $install docker-ce
-    sudo -H $PIP install -U docker=="$DOCKER_PY_VER"
 }
 
 function install_mininet_with_deps() {
@@ -197,19 +197,29 @@ function install_mininet_with_deps() {
     echo "*** Install Mininet and its minimal dependencies."
     $install git net-tools
     cd "$mininet_dir" || exit
-    git clone https://github.com/mininet/mininet.git
+    git clone $MININET_GIT_URL
     cd mininet || exit
-    git checkout -b dev $MININET_VER
+    git checkout $MININET_BRANCH
+    git checkout $MININET_VER
     cd util || exit
     PYTHON=python3 ./install.sh -nfvw03
 }
 
 function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
-    warning "[INSTALL]" "The docker-py and Mininet MUST be already installed."
-    $install python3
+    $install python3 python3-pip
+    echo "- Install ComNetsEmu dependency packages."
+    cd "$TOP_DIR/comnetsemu/util" || exit
+    sudo -H pip3 install -r ./requirements.txt
+    echo "- Install ComNetsEmu Python package."
     cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
+}
+
+function upgrade_comnetsemu_deps_python_pkgs() {
+    echo "- Upgrade ComNetsEmu dependency packages."
+    cd "$TOP_DIR/comnetsemu/util" || exit
+    sudo -H pip3 install -r ./requirements.txt
 }
 
 function install_ryu() {
@@ -227,7 +237,10 @@ function install_ryu() {
 function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype
+    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype black
+    cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
+    echo "- Install packages to build HTML documentation."
+    sudo -H $PIP install -r ./requirements.txt
 }
 
 function install_bcc() {
@@ -247,15 +260,10 @@ function install_bcc() {
     sudo make install
 }
 
-function upgrade_comnetsemu_deps() {
+function upgrade_comnetsemu() {
     local dep_name
     local installed_ver
     local req_ver
-
-    warning "[Upgrade]" "The upgrade function checks information written in the installer script and only upgrade dependencies."
-    warning "[Upgrade]" "The repository of all examples, application codes and source code of the Python module is not updated. Please check and merge updates manually."
-    warning "[Upgrade]" "This upgrade does not (re-)install the ComNetsEmu Python module, install it manually if develop mode is not used."
-    echo ""
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -265,6 +273,7 @@ function upgrade_comnetsemu_deps() {
         echo "- Upgrade dependencies installed with package manager."
         upgrade_docker
         install_devs
+        upgrade_comnetsemu_deps_python_pkgs
 
         echo ""
         echo "- Upgrade dependencies installed from source"
@@ -284,6 +293,19 @@ function upgrade_comnetsemu_deps() {
             fi
             echo ""
         done
+
+        echo "- Reinstall ComNetsEmu python package with develop mode."
+        # Check here (https://stackoverflow.com/questions/19048732/python-setup-py-develop-vs-install)
+        # for difference between install and develop
+        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/" || exit
+        sudo make develop
+
+        echo "- Rebuild test containers if there are changes in their Dockerfiles."
+        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/test_containers" || exit
+        bash ./build.sh
+        echo "- Run removing unused images. This can reduce the disk usage."
+        docker image prune
+
     else
         error "[Upgrade]" "Please check and merge remote updates before upgrading."
     fi
@@ -327,8 +349,6 @@ function remove_comnetsemu() {
     mkdir -p "$mininet_dir"
     ./install.sh -r
     cd "$mininet_dir/mininet/util" || exit
-
-    # TODO: Remove BCC properly
 
     echo "Remove dependency folder"
     sudo rm -rf "$EXTERN_DEP_DIR"
@@ -396,7 +416,7 @@ else
         n) install_mininet_with_deps ;;
         r) reinstall_comnetsemu_deps ;;
         t) test_install ;;
-        u) upgrade_comnetsemu_deps ;;
+        u) upgrade_comnetsemu ;;
         v) install_devs ;;
         y) install_ryu ;;
         *) usage ;;
