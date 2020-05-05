@@ -241,12 +241,6 @@ def run_adaptive_redundancy(host_num, coder_log_conf):
         c0 = net.get("c0")
         makeTerm(c0, cmd="ryu-manager adaptive_rlnc_sdn_controller.py ; read")
 
-        # s2 = net.get('s2')
-        # makeTerm(s2, cmd="watch -n 1 ovs-ofctl dump-flows s2")
-
-        # s4 = net.get('s4')
-        # makeTerm(s4, cmd="watch -n 1 ovs-ofctl dump-flows s4")
-
         time.sleep(3)
 
         info("*** Run Iperf\n")

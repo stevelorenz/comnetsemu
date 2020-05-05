@@ -206,9 +206,7 @@ class SimpleSwitchIgmp13(simple_switch_13.SimpleSwitch13):
             hub.sleep(self.update_cycle)
 
             try:
-                self.logger.info('stats 2: {}\n'.format(self.stats[str_to_dpid('0000000000000002')].items()))
-                self.logger.info('\nstats 4: {}\n'.format(self.stats[str_to_dpid('0000000000000004')].items()))
-                # self.logger.info('diff_stats: {}'.format(self.diff_stats.items()))
+
                 self.logger.info('Link        tx-pkts '
                                  '  rx-pkts diff-tx-pkts '
                                  'diff-rx-pkts diff-lost-pkts loss_rate loss_mean loss_std pred_loss')
