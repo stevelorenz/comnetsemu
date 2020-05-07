@@ -199,9 +199,14 @@ function install_mininet_with_deps() {
     cd "$mininet_dir" || exit
     git clone $MININET_GIT_URL
     cd mininet || exit
-    git checkout $MININET_BRANCH
-    git checkout $MININET_VER
+    git checkout -b $MININET_VER $MININET_VER
     cd util || exit
+    if [[ $(lsb_release -rs) == "20.04" ]]; then
+       echo "cgroups-bin is deprected and the new package is cgroups-tools in mininet install script."
+       sed -i 's/cgroup-bin/cgroup-tools/g' ./install.sh
+	else
+       echo "cgroup-bin still supported in Ubuntu 18.04 and below."
+	fi
     PYTHON=python3 ./install.sh -nfvw03
 }
 
@@ -230,14 +235,14 @@ function install_ryu() {
     $install git gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
     git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
     cd "$ryu_dir/ryu" || exit
-    git checkout -b dev $RYU_VER
+    git checkout -b $RYU_VER $RYU_VER
     sudo -H $PIP install .
 }
 
 function install_devs() {
     echo "*** Install tools for development"
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint pytype black
+    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint black
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
     echo "- Install packages to build HTML documentation."
     sudo -H $PIP install -r ./requirements.txt
@@ -252,7 +257,7 @@ function install_bcc() {
     $install linux-headers-"$(uname -r)" python3-setuptools
     git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
     cd "$bcc_dir/bcc" || exit
-    git checkout -b dev $BCC_VER
+    git checkout -b $BCC_VER $BCC_VER
     mkdir -p build
     cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3

@@ -5,6 +5,14 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.10 - 2020-05-07
+
+### Changed
+
+-   Fix branch issues and cgroup-tool issue in install.sh.
+-   Remove ptype in install.sh.
+-   Add SDN hands-on exercises in ./app/software_defined_networks_examples/.
+
 ## v0.1.9 - 2020-04-15
 
 ### Changed
