@@ -13,9 +13,14 @@ Install them with:
 $ pip3 install numpy matplotlib tensorflow keras-rl
 ```
 
-### How to run ###
+### Running examples ###
 Run
 ```bash
 $ python3 ./dumbbell.py -a
 ```
-to start an emulation based on Mininet.
+to start an emulation of a single flow within a dumbbell topology that lasts for 30 seconds.
+Afterwards,
+plot the results with
+```bash
+$ python3 ./plot_tsv.py
+```

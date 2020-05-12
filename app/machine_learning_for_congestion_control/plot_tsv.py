@@ -22,8 +22,6 @@ def plot_data(path, scale=1):
 """Plot cwnd and RTT against time after running an emulation that created .tsv
 files."""
 def main():
-    # path_cwnd = "source{}_cwnd_data.tsv"
-    # path_rtt = "source{}_rtt_data.tsv"
     cwnd_files = [x for x in os.listdir() if "cwnd" in x and x.endswith(".tsv")]
     rtt_files = [x for x in os.listdir() if "rtt" in x and x.endswith(".tsv")]
     assert len(cwnd_files) == len(rtt_files), \
@@ -31,8 +29,6 @@ def main():
     k = len(cwnd_files)
 
     legend = []
-    #TODO: rename to plot_tsv.py
-    #TODO: fix k issue, write frank that note about X11 forwarding is not necessary with vagrant ssh...
     for i, path in enumerate(cwnd_files):
         plot_data(path)
         legend.append("source {}".format(i+1))
