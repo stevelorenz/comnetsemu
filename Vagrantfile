@@ -177,7 +177,7 @@ But the script will check and perform upgrade automatically and it does not take
 
       # Build images for Docker hosts
       cd /home/vagrant/comnetsemu/test_containers || exit
-      bash ./build.sh
+      sudo bash ./build.sh
 
       # Run the customization shell script (for distribution $BOX) if it exits.
       cd /home/vagrant/comnetsemu/util || exit
