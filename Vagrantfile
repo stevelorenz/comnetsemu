@@ -42,6 +42,9 @@ SCRIPT
 $setup_x11_server= <<-SCRIPT
 apt-get install -y xorg
 apt-get install -y openbox
+SCRIPT
+
+$setup_x11_server_libvirt = <<-SCRIPT
 # Make the SSH X forwarding work on libvirt managed VM.
 sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
 systemctl restart sshd.service
@@ -157,8 +160,14 @@ But the script will check and perform upgrade automatically and it does not take
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
     comnetsemu.vm.provision :shell, inline: $install_kernel, privileged: true
-    comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
-
+    if provider == "virtualbox"
+      comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
+      # Make the maketerm of Mininet works in VirtualBox.
+      comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
+        sed -i 's/X11UseLocalhost no/X11UseLocalhost yes/g' /etc/ssh/sshd_config
+        systemctl restart sshd.service
+      SHELL
+    end
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
       # Apply Xterm profile, looks nicer.
       cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
