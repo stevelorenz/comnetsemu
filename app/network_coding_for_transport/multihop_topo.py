@@ -80,7 +80,7 @@ def add_ovs_flows(net, switch_num):
     in_port = get_ofport("s{}-s{}".format(switch_num, switch_num - 1))
     out_port = get_ofport("s{}-h{}".format(switch_num, switch_num))
     add_forward_flow(f"s{switch_num}", in_port, out_port, proto)
-    dump_ovs_flows(switch_num)
+    # dump_ovs_flows(switch_num)
 
 
 def dump_ovs_flows(switch_num):
@@ -143,7 +143,7 @@ def deploy_coders(mgr, hosts, rec_st_idx, relay_num, action_map):
         "encoder",
         hosts[1].name,
         "nc_coder",
-        "sudo python3 ./encoder.py h2-s2",
+        "sudo python3 ./encoder.py h2-s2 --disable_systematic",
         wait=3,
         docker_args={},
     )

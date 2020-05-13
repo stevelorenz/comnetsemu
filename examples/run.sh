@@ -29,8 +29,8 @@ if [[ "$1" == "-a" ]]; then
     bash ./mininet_demystify/run.sh
     bash ./mininet_demystify/clean.sh
 
-    echo "- Run ./network_measurement.py"
-    $PYTHON ./network_measurement.py
+    # echo "- Run ./network_measurement.py"
+    # $PYTHON ./network_measurement.py
 
 fi
 

@@ -33,7 +33,7 @@ log.conf_logger(CODER_LOG_LEVEL)
 logger = log.logger
 
 
-def run_encoder(ifce):
+def run_encoder(ifce, disable_systematic):
 
     buf = bytearray(BUFFER_SIZE)
     udp_cnt = 0
@@ -56,8 +56,8 @@ def run_encoder(ifce):
     encoder_factory = kodo.RLNCEncoderFactory(FIELD, SYMBOLS, SYMBOL_SIZE)
     encoder = encoder_factory.build()
     symbol_storage = [b""] * SYMBOLS
-    # Use systematic encoding.
-    encoder.set_systematic_off()
+    if disable_systematic:
+        encoder.set_systematic_off()
 
     logger.info("Entering IO loop.")
     while True:
@@ -160,7 +160,8 @@ def run_encoder(ifce):
             )
             encoder = encoder_factory.build()
             assert encoder.rank() == 0
-            encoder.set_systematic_off()
+            if disable_systematic:
+                encoder.set_systematic_off()
             if generation < 255:
                 generation += 1
             else:
@@ -173,6 +174,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "ifce", type=str, help="The name of interface for receive and send frames."
     )
+    parser.add_argument(
+        "--disable_systematic", action="store_true", help="Disable systematic coding."
+    )
+
     args = parser.parse_args()
 
-    run_encoder(args.ifce)
+    if args.disable_systematic:
+        print("Disable systematic coding.")
+
+    run_encoder(args.ifce, args.disable_systematic)

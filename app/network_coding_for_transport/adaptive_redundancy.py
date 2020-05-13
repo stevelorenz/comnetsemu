@@ -131,7 +131,7 @@ def run_iperf_test(h_clt, h_srv, proto, time=10, print_clt_log=False):
     iperf_client_para = {
         "server_ip": h_srv.IP(),
         "port": UDP_PORT_DATA,
-        "bw": "100K",
+        "bw": "200K",
         "time": time,
         "interval": 1,
         "length": str(SYMBOL_SIZE - META_DATA_LEN),
