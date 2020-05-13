@@ -5,6 +5,14 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.11 - 2020-05-13
+
+### Changed
+
+-   Fix encoder issues in app/network_coding_for_transport/.
+-   Update app/machine_learning_for_congestion_control/
+-   Fix makeTerm of Mininet in Virtualbox provider.
+
 ## v0.1.10 - 2020-05-07
 
 ### Changed
