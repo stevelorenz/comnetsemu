@@ -366,6 +366,9 @@ class APPContainerManager:
         """
         with self._container_queue_lock:
             container = self._name_container_map.get(name, None)
+            # The container could be already removed by the user via CLI or
+            # other approaches, raise the exception to let user handle this
+            # situation.
             if not container:
                 raise ValueError(f"Can not find container with name: {container}")
 
