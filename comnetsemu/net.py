@@ -22,7 +22,7 @@ from mininet.term import cleanUpScreens, makeTerms
 from mininet.util import BaseString
 
 # ComNetsEmu version: should be consistent with README and LICENSE
-VERSION = "0.1.11"
+VERSION = "0.1.12"
 
 APPCONTAINERMANGER_MOUNTED_DIR = "/tmp/comnetsemu/appcontainermanger"
 

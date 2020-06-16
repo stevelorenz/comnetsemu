@@ -5,6 +5,14 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.12 - 2020-06-16
+
+### Changed
+
+-   Add a basic example of service migration based on signaling packets for state synchronization.
+-   Fix the default value and sanity checking of docker_args in net.py and node.py.
+-   Update README for the setup on Windows.
+
 ## v0.1.11 - 2020-05-13
 
 ### Changed
