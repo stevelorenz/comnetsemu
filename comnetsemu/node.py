@@ -10,6 +10,7 @@ import time
 
 import docker
 
+from comnetsemu.exceptions import InvalidDockerArgs
 from mininet.log import debug, error, info, warn
 from mininet.node import Host
 
@@ -39,7 +40,7 @@ class DockerHost(Host):
         self,
         name: str,
         dimage: str,
-        docker_args: dict,
+        docker_args: dict = None,
         dcmd: str = None,
         ishell: str = "bash",
         ishell_args: str = "--norc -is",
@@ -65,7 +66,7 @@ class DockerHost(Host):
         self.dimage = dimage
         self.ishell = ishell
         self.ishell_args = ishell_args
-        self.docker_args = docker_args
+        self.docker_args = docker_args if docker_args is not None else dict()
 
         self.dclient = docker.from_env()
         self.dcli = self.dclient.api
@@ -79,9 +80,9 @@ class DockerHost(Host):
         for key in self.docker_args_default:
             if key in docker_args:
                 error(
-                    f"Given argument: {key} will be overridden by the default "
-                    f"value: {self.docker_args_default[key]}\n"
+                    f"Given argument: {key} is invalid. This key is reserved for internal usages."
                 )
+                raise InvalidDockerArgs
 
         self.docker_args.update(self.docker_args_default)
         self.docker_args["name"] = self.name

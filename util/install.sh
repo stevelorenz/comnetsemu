@@ -187,6 +187,11 @@ function upgrade_docker() {
     $install docker-ce
 }
 
+function upgrade_pip() {
+    echo "*** Upgrade $PIP to the latest version."
+    sudo -H $PIP install -U pip
+}
+
 function install_mininet_with_deps() {
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
     local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
@@ -236,13 +241,15 @@ function install_ryu() {
     git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
     cd "$ryu_dir/ryu" || exit
     git checkout -b $RYU_VER $RYU_VER
+    upgrade_pip
     sudo -H $PIP install .
 }
 
 function install_devs() {
     echo "*** Install tools for development"
+    upgrade_pip
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb coverage flake8 flake8-bugbear pylint black
+    sudo -H $PIP install pytest ipdb==0.13.2 coverage==5.1 flake8==3.7.9 flake8-bugbear==20.1.4 pylint==2.5.2 black==19.10b0 pytype==2020.6.1
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
     echo "- Install packages to build HTML documentation."
     sudo -H $PIP install -r ./requirements.txt

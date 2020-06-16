@@ -28,10 +28,6 @@ if [[ "$1" == "-a" ]]; then
     echo "- Run ./mininet_demystify."
     bash ./mininet_demystify/run.sh
     bash ./mininet_demystify/clean.sh
-
-    # echo "- Run ./network_measurement.py"
-    # $PYTHON ./network_measurement.py
-
 fi
 
 export COMNETSEMU_AUTOTEST_MODE=0

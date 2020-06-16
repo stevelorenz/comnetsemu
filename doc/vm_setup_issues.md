@@ -21,3 +21,12 @@
         It is suggested to make sure the used editor/IDE on Windows host OS save files with Unix-style format to avoid
         conflicts.
         You can also disable synced folder feature in Vagrantfile by commenting out lines starts with `comnetsemu.vm.synced_folder`.
+
+2.  Issue: Failed to open xterms for running nodes.
+
+    * Potential cause:
+    The terminal you use does not support X11-forwarding via SSH.
+
+
+    * Solution:
+    [Mobaxterm](https://mobaxterm.mobatek.net/) could be used as the console to solve the problem.

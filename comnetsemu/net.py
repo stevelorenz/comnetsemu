@@ -14,6 +14,7 @@ from time import sleep
 import docker
 
 from comnetsemu.cli import spawnXtermDocker
+from comnetsemu.exceptions import InvalidDockerArgs
 from comnetsemu.node import APPContainer, DockerHost
 from mininet.log import debug, error, info
 from mininet.net import Mininet
@@ -171,6 +172,16 @@ class APPContainerManager:
         [1] https://docker-py.readthedocs.io/en/stable/containers.html
     """
 
+    reserved_docker_args = [
+        "init",
+        "tty",
+        "detach",
+        "labels",
+        "security_opt",
+        "cgroup_parent",
+        "network_mode",
+    ]
+
     docker_args_default = {
         "init": True,
         "tty": True,  # -t
@@ -220,13 +231,13 @@ class APPContainerManager:
                 f"Update the default volumes {self.docker_volumes_default} to the already given volumes config.\n"
             )
             docker_args["volumes"].update(self.docker_volumes_default)
-        # Override the essential parameters
-        for key in self.docker_args_default:
-            if key in docker_args:  # pragma no cover
+        for key in self.reserved_docker_args:
+            if key in docker_args:
                 error(
-                    f"Given argument: {key} will be overridden by the default "
-                    f"value: {self.docker_args_default[key]}\n"
+                    f"Given argument: {key} is invalid. This key is reserved by the APPContainerManager for internal usage."
                 )
+                raise InvalidDockerArgs
+
         docker_args.update(self.docker_args_default)
         docker_args["name"] = name
         docker_args["image"] = dimage
@@ -305,7 +316,7 @@ class APPContainerManager:
         dhost: str,
         dimage: str,
         dcmd: str,
-        docker_args: dict,
+        docker_args: dict = None,
         wait: bool = True,
     ) -> APPContainer:
         """Create and run a new container inside a Mininet DockerHost.
@@ -331,6 +342,8 @@ class APPContainerManager:
         :rtype: APPContainer
         """
         container = None
+        if not docker_args:
+            docker_args = dict()
         dhost = self.net.get(dhost)
         with self._container_queue_lock:
             dins = self._createContainer(name, dhost, dimage, dcmd, docker_args)

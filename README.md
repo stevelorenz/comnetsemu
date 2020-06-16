@@ -112,6 +112,11 @@ The ComNetsEmu's installer script is designed **mainly** for easy/simple setup/u
 [Here](./doc/dependencies.md) is a list of dependencies required by ComNetsEmu, these tools can be installed and updated by
 ComNetsEmu's [installer](./util/install.sh).
 
+**For users running Windows as the host OS:**
+
+1.  If you are using Windows, we recommend using [Mobaxterm](https://mobaxterm.mobatek.net/) as the console.
+    This will solve problems opening xterms in the emulator.
+
 #### Option 1: Install in a Vagrant managed VM (Highly Recommended)
 
 The comfortable way to setup the test and development environment is to run a pre-configured VM managed by [Vagrant](https://www.vagrantup.com/).
