@@ -1,0 +1,10 @@
+FROM python:3.6-alpine3.9
+
+# Install dependencies
+RUN pip3 install paho-mqtt
+
+# Copy script
+COPY drone /drone
+
+# Expose command
+CMD python /drone/drone.py
