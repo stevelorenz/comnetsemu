@@ -15,7 +15,7 @@ RAM = 4096
 # Bento: Packer templates for building minimal Vagrant baseboxes
 # The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
 BOX = "bento/ubuntu-18.04"
-BOX_VER = "201906.18.0"
+BOX_VER = "202008.16.0"
 VM_NAME = "ubuntu-18.04-comnetsemu"
 
 # Box for using libvirt as the provider, bento boxes do not support libvirt.
