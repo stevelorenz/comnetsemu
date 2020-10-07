@@ -109,7 +109,6 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
-MININET_BRANCH="comnetsemu-stable"
 MININET_VER="2.3.0d6"
 RYU_VER="v4.34"
 BCC_VER="v0.9.0"
@@ -146,7 +145,8 @@ function usage() {
 
 function install_kernel_modules() {
     echo "Install wireguard kernel module"
-    sudo add-apt-repository -y ppa:wireguard/wireguard
+    # It is now (07.10.2020) in the official repo.
+    # sudo add-apt-repository -y ppa:wireguard/wireguard
     sudo apt-get update
     sudo apt-get install -y linux-headers-"$(uname -r)"
     sudo apt-get install -y wireguard
@@ -207,11 +207,11 @@ function install_mininet_with_deps() {
     git checkout -b $MININET_VER $MININET_VER
     cd util || exit
     if [[ $(lsb_release -rs) == "20.04" ]]; then
-       echo "cgroups-bin is deprected and the new package is cgroups-tools in mininet install script."
-       sed -i 's/cgroup-bin/cgroup-tools/g' ./install.sh
-	else
-       echo "cgroup-bin still supported in Ubuntu 18.04 and below."
-	fi
+        echo "cgroups-bin is deprected and the new package is cgroups-tools in mininet install script."
+        sed -i 's/cgroup-bin/cgroup-tools/g' ./install.sh
+    else
+        echo "cgroup-bin still supported in Ubuntu 18.04 and below."
+    fi
     PYTHON=python3 ./install.sh -nfvw03
 }
 
@@ -434,5 +434,5 @@ else
         *) usage ;;
         esac
     done
-    shift $(($OPTIND - 1))
+    shift $OPTIND - 1
 fi

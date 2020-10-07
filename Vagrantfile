@@ -15,12 +15,10 @@ RAM = 4096
 # Bento: Packer templates for building minimal Vagrant baseboxes
 # The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
 BOX = "bento/ubuntu-18.04"
-BOX_VER = "202008.16.0"
 VM_NAME = "ubuntu-18.04-comnetsemu"
 
 # Box for using libvirt as the provider, bento boxes do not support libvirt.
 BOX_LIBVIRT = "generic/ubuntu1804"
-BOX_LIBVIRT_VER = "2.0.6"
 
 ######################
 #  Provision Script  #
@@ -50,20 +48,20 @@ sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
 systemctl restart sshd.service
 SCRIPT
 
-# Use v4.19 LTS, EOL: Dec, 2020
-# For AF_XDP, EROFS etc.
+# Use v5.4 LTS, EOL: Dec, 2025
+# For eBPF, XDP, AF_XDP, EROFS etc.
 $install_kernel= <<-SCRIPT
 # Install libssl1.1 from https://packages.ubuntu.com/bionic/amd64/libssl1.1/download
 echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" | tee -a /etc/apt/sources.list > /dev/null
 apt update
 apt install -y libssl1.1
 cd /tmp || exit
-wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-headers-4.19.0-041900_4.19.0-041900.201810221809_all.deb
-wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-headers-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
-wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-image-unsigned-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
-wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/linux-modules-4.19.0-041900-generic_4.19.0-041900.201810221809_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470_5.4.70-050470.202010070732_all.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-image-unsigned-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-modules-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
 dpkg -i *.deb
-update-initramfs -u -k 4.19.0-041900-generic
+update-initramfs -u -k 5.4.70-050470-generic
 update-grub
 SCRIPT
 
@@ -125,13 +123,11 @@ Vagrant.configure("2") do |config|
 
     if provider == "virtualbox"
       comnetsemu.vm.box = BOX
-      comnetsemu.vm.box_version = BOX_VER
       # Sync ./ to home dir of vagrant to simplify the install script
       comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
       comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'virtualbox'
     elsif provider == "libvirt"
       comnetsemu.vm.box = BOX_LIBVIRT
-      comnetsemu.vm.box_version = BOX_LIBVIRT_VER
       comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
       # Rync is used for simplicity, it's unidirectional (host -> guest).
       # It does NOT run $ vagrant rsync-auto by default.
@@ -208,6 +204,9 @@ But the script will check and perform upgrade automatically and it does not take
 
     # VM networking
     comnetsemu.vm.network "forwarded_port", guest: 8888, host: 8888, host_ip: "127.0.0.1"
+    comnetsemu.vm.network "forwarded_port", guest: 8082, host: 8082
+    comnetsemu.vm.network "forwarded_port", guest: 8083, host: 8083
+    comnetsemu.vm.network "forwarded_port", guest: 8084, host: 8084
     # - Uncomment the underlying line to add a private network to the VM.
     #   If VirtualBox is used as the hypervisor, this means adding or using (if already created) a host-only interface to the VM.
     # comnetsemu.vm.network "private_network", ip: "192.168.0.2"
