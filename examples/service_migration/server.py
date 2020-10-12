@@ -6,7 +6,6 @@ About: Simple server for counting.
 """
 
 import argparse
-import os
 import signal
 import socket
 import time

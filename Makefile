@@ -11,6 +11,7 @@ PYTYPE = pytype
 CHECKERRIGNORE=W503,E501,C0330
 PREFIX ?= /usr
 DOCDIRS = doc/html doc/latex
+BASHSRCS := $(shell find ./ -name '*.sh')
 
 CFLAGS += -Wall -Wextra
 
@@ -23,11 +24,15 @@ codecheck: $(PYSRC)
 	@echo "*** Running checks for code quality"
 	$(PYTHON) -m flake8 --ignore=W503,E501,C0330 --max-complexity 10 $(PYSRC)
 	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
+	@echo "*** Run shellcheck for BASH sources"
+	shellcheck $(BASHSRCS)
 
 errcheck: $(PYSRC)
 	@echo "*** Running checks for errors only"
 	$(PYTHON) -m flake8 --ignore=$(CHECKERRIGNORE) $(PYSRC)
 	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
+	@echo "*** Run shellcheck for BASH sources"
+	shellcheck $(BASHSRCS)
 
 typecheck: $(PYSRC)
 	@echo "*** Running type checks with $(PYTYPE)..."

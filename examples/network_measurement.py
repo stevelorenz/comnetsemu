@@ -78,7 +78,7 @@ if __name__ == "__main__":
     print("** Run flent RRUL and ping tests (each 15 seconds.)")
     h2.cmd("flent rrul -p all_scaled -l 15 -H 10.0.0.1 -o /flent_data/rrul.png")
     h2.cmd("flent rrul -p ping_cdf -l 15 -H 10.0.0.1 -o /flent_data/ping.png")
-    print(f"Generated plot and data are located in ./examples/.")
+    print("Generated plot and data are located in ./examples/.")
 
     if not AUTOTEST_MODE:
         CLI(net)

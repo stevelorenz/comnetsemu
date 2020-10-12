@@ -1,5 +1,7 @@
+#!/bin/bash
+
 sudo apt-get install -y git
-cd ~/
+cd ~/ || exit
 git clone https://github.com/ulbricht-inr/TASim.git
-cd TASim
+cd TASim || exit
 ./setup.sh 1

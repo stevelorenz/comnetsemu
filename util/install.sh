@@ -247,6 +247,7 @@ function install_ryu() {
 
 function install_devs() {
     echo "*** Install tools for development"
+    $install shellcheck
     upgrade_pip
     echo "- Install dev python packages via PIP."
     sudo -H $PIP install pytest ipdb==0.13.2 coverage==5.1 flake8==3.7.9 flake8-bugbear==20.1.4 pylint==2.5.2 black==19.10b0 pytype==2020.6.1
@@ -434,5 +435,5 @@ else
         *) usage ;;
         esac
     done
-    shift $OPTIND - 1
+    shift "$((OPTIND - 1))"
 fi

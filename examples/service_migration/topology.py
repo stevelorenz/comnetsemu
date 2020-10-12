@@ -11,7 +11,7 @@ import time
 
 from subprocess import check_output
 
-from comnetsemu.cli import CLI, spawnXtermDocker
+from comnetsemu.cli import CLI
 from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
@@ -211,9 +211,6 @@ if __name__ == "__main__":
     print("\n*** Setup3: Current log of the client: \n{}".format(client_log))
 
     if not AUTOTEST_MODE:
-        # Cannot spawn xterm for srv1 since BASH is not installed in the image:
-        # echo_server.
-        # spawnXtermDocker("srv2")
         CLI(net)
 
     try:
