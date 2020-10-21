@@ -109,7 +109,7 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
-MININET_VER="2.3.0d6"
+MININET_VER="bfc42f6d028a9d5ac1bc121090ca4b3041829f86"
 RYU_VER="v4.34"
 BCC_VER="v0.9.0"
 # ComNetsEmu's dependency python packages are listed in ./requirements.txt.

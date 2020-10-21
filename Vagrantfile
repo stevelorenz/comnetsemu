@@ -42,12 +42,6 @@ apt-get install -y xorg
 apt-get install -y openbox
 SCRIPT
 
-$setup_x11_server_libvirt = <<-SCRIPT
-# Make the SSH X forwarding work on libvirt managed VM.
-sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
-systemctl restart sshd.service
-SCRIPT
-
 # Use v5.4 LTS, EOL: Dec, 2025
 # For eBPF, XDP, AF_XDP, EROFS etc.
 $install_kernel= <<-SCRIPT
@@ -71,6 +65,10 @@ usermod -aG docker vagrant
 if [ -d /home/vagrant/.docker ]; then
   chown -R vagrant:vagrant /home/vagrant/.docker
 fi
+
+# Keep X11 forwarding working after changing user to root inside a SSH session
+# This is required to run xterm command inside Mininet's CLI
+xauth add $(xauth -f /home/vagrant/.Xauthority list|tail -1)
 SCRIPT
 
 ####################
