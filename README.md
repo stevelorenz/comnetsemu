@@ -234,6 +234,11 @@ As configured in ./Vagrantfile, current source code folder on the host OS is syn
 folder in the VM. And the emulator's Python package is installed in development mode. So you can work on the emulator
 or application codes in your host OS and run/test them in the VM.
 
+Warning: Installation with option 1 is already finished here.
+You can SSH into the VM to run examples and applications.
+The option 2 is **only** for users who want to install it on their own customized VM or bare metal.
+Stop here and go to the section of [docker-in-docker example](#run-the-docker-in-docker-example) if you used the default Vagrant VM.
+
 #### Option 2: Install on user's custom VM or directly on host OS
 
 As described in [here](#installation), installation on user's custom VM or directly on the host OS has several
@@ -337,7 +342,7 @@ Otherwise, it is recommended to redo the upgrade process or rebuild the Vagrant 
 
 ```bash
 $ cd $TOP_DIR/comnetsemu/examples/
-$ sudo python3 .dockerindocker.py
+$ sudo python3 ./dockerindocker.py
 ```
 
 See the [README](./examples/README.md) to get information about all built-in examples.

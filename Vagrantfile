@@ -65,10 +65,6 @@ usermod -aG docker vagrant
 if [ -d /home/vagrant/.docker ]; then
   chown -R vagrant:vagrant /home/vagrant/.docker
 fi
-
-# Keep X11 forwarding working after changing user to root inside a SSH session
-# This is required to run xterm command inside Mininet's CLI
-xauth add $(xauth -f /home/vagrant/.Xauthority list|tail -1)
 SCRIPT
 
 ####################

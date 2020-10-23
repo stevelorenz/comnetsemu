@@ -30,3 +30,28 @@
 
     * Solution:
     [Mobaxterm](https://mobaxterm.mobatek.net/) could be used as the console to solve the problem.
+
+3. Issue: Failed to open xterms with sudo inside the VM.
+
+   If run `sudo xterm` inside the VM or run `xterm h1` inside the ComNetsEmu's CLI returns the following error:
+
+   ```bash
+   Warning: This program is an suid-root program or is being run by the root user.
+   The full text of the error or warning message cannot be safely formatted
+   in this environment. You may get a more descriptive message by running the
+   program as a non-root user or by removing the suid bit on the executable.
+   xterm: Xt error: Can't open display: %s
+   ```
+
+   * Potential cause: It is not allowed on most Unix/Linux systems to keep the X11-forwarding working after changing user to root inside a SSH session.  This is by
+     default not allowed (e.g. It is allowed in Ubuntu 18.04 but not allowed on Ubuntu 20.04), because the X11 display connection belongs to the user you used to log with
+     when connecting to your remote SSH server.  X11-forwarding mechanism does not allow anyone to use the open display.
+
+   * Solution: You could manually retrieve X credentials in the sudo context by looking up the `xauth list` for the original username (`vagrant` for the default VM) and
+     then adding them using following command (You need to do this **Everytime** for a new SSH session.):
+
+     ```bash
+     sudo xauth add $(xauth -f /home/vagrant/.Xauthority list|tail -1)
+     ```
+
+     You can also run this command using Python's `subprocess` module inside each emulation script.
