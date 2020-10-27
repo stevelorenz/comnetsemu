@@ -10,7 +10,9 @@ This example requires Python3.7 and the following Python3.7 modules:
 
 Install them with:
 ```bash
-$ pip3 install numpy matplotlib tensorflow keras-rl
+$ pip3 install numpy matplotlib keras-rl
+$ pip3 install tensorflow==1.13.1
+$ pip3 install keras==2.2.4
 ```
 
 ### Running examples ###
