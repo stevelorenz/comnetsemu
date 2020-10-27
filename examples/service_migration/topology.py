@@ -45,9 +45,12 @@ if __name__ == "__main__":
 
     info("*** Creating the client and hosts\n")
     h1 = net.addDockerHost(
-        "h1", dimage="dev_test", ip="10.0.0.11/24", docker_args={"hostname": "h1"},
+        "h1",
+        dimage="dev_test",
+        ip="10.0.0.11/24",
+        docker_args={"hostname": "h1"},
     )
-    # INFO: In order to make the host
+
     h2 = net.addDockerHost(
         "h2",
         dimage="dev_test",
@@ -63,16 +66,26 @@ if __name__ == "__main__":
 
     info("*** Adding switch and links\n")
     s1 = net.addSwitch("s1")
-    net.addLinkNamedIfce(s1, h1, bw=100, delay="10ms")
+    net.addLinkNamedIfce(s1, h1, bw=1000, delay="5ms")
     # Add the interfaces for service traffic.
-    net.addLinkNamedIfce(s1, h2, bw=100, delay="10ms")
-    net.addLinkNamedIfce(s1, h3, bw=100, delay="10ms")
+    net.addLinkNamedIfce(s1, h2, bw=1000, delay="5ms")
+    net.addLinkNamedIfce(s1, h3, bw=1000, delay="5ms")
     # Add the interface for host internal traffic.
     net.addLink(
-        s1, h2, bw=100, delay="1ms", intfName1="s1-h2-int", intfName2="h2-s1-int",
+        s1,
+        h2,
+        bw=1000,
+        delay="1ms",
+        intfName1="s1-h2-int",
+        intfName2="h2-s1-int",
     )
     net.addLink(
-        s1, h3, bw=100, delay="1ms", intfName1="s1-h3-int", intfName2="h3-s1-int",
+        s1,
+        h3,
+        bw=1000,
+        delay="1ms",
+        intfName1="s1-h3-int",
+        intfName2="h3-s1-int",
     )
 
     info("\n*** Starting network\n")
@@ -126,8 +139,12 @@ if __name__ == "__main__":
 
     info("*** Deploy counter service on h2.\n")
     counter_server_h2 = mgr.addContainer(
-        "counter_server_h2", "h2", "service_migration", "python /home/server.py h2",
+        "counter_server_h2",
+        "h2",
+        "service_migration",
+        "python /home/server.py h2",
     )
+    time.sleep(3)
     info("*** Deploy client app on h1.\n")
     client_app = mgr.addContainer(
         "client", "h1", "service_migration", "python /home/client.py"
@@ -155,12 +172,10 @@ if __name__ == "__main__":
     for _ in range(3):
         check_output(shlex.split("kill {}".format(pid_old_service)))
         # Wait a little bit to let the signal work.
-        time.sleep(0.1)
-    # INFO: Used for testing.
-    # service_log = counter_server_h2.getLogs()
-    # print("\n*** Current log of the service on h2: \n{}".format(service_log))
-    # service_log = counter_server_h3.getLogs()
-    # print("\n*** Current log of the service on h3: \n{}".format(service_log))
+        time.sleep(1)
+
+    service_log = counter_server_h3.getLogs()
+    print("\n*** Current log of the service on h3: \n{}".format(service_log))
 
     mgr.removeContainer("counter_server_h2")
 
@@ -193,8 +208,10 @@ if __name__ == "__main__":
     for _ in range(3):
         check_output(shlex.split("kill {}".format(pid_old_service)))
         # Wait a little bit to let the signal work.
-        time.sleep(0.1)
+        time.sleep(1)
 
+    service_log = counter_server_h2.getLogs()
+    print("\n*** Current log of the service on h2: \n{}".format(service_log))
     mgr.removeContainer("counter_server_h3")
 
     info("*** Mod the added flow to forward traffic from h1 back to h2 to switch s1.\n")

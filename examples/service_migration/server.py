@@ -49,8 +49,8 @@ def run(host_name, get_state=False):
         else:
             dest_ip = INTERNAL_IP_H2
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Send 3 duplicated packets to avoid losses.
-        for _ in range(3):
+        # Send duplicated packets to avoid losses.
+        for _ in range(6):
             sock.sendto(str(counter).encode("utf-8"), (dest_ip, INTERNAL_PORT))
         sock.close()
 
@@ -75,7 +75,9 @@ if __name__ == "__main__":
         help="The name of the host on which the server is deployed.",
     )
     parser.add_argument(
-        "--get_state", action="store_true", help="Get state from network.",
+        "--get_state",
+        action="store_true",
+        help="Get state from network.",
     )
 
     args = parser.parse_args()
