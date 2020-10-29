@@ -63,7 +63,7 @@ class TestVNFManager(unittest.TestCase):
         # if sys.exc_info() != (None, None, None):
         # cleanup()
 
-    @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
+    @unittest.skipIf(len(sys.argv) == 3 and sys.argv[2] == "-quick", "Schneller!")
     def test_ping(self):
         ret = self.net.pingAll()
         self.assertEqual(ret, 0.0)
@@ -132,7 +132,7 @@ class TestVNFManager(unittest.TestCase):
                 raise ValueError("Unkown mount is added!")
         self.mgr.removeContainer("d1")
 
-    @unittest.skipIf(len(sys.argv) == 2 and sys.argv[1] == "-f", "Schneller!")
+    @unittest.skipIf(len(sys.argv) == 3 and sys.argv[2] == "-quick", "Schneller!")
     def test_container_isolation(self):
         h1 = self.net.get("h1")
         h2 = self.net.get("h2")

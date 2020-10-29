@@ -48,6 +48,10 @@ test: $(COMNETSEMU) $(UNITTESTS)
 	@echo "Running all unit tests of ComNetsEmu python package."
 	$(PYTHON) ./comnetsemu/test/unit/runner.py -v
 
+test-quick: $(COMNETSEMU) $(UNITTESTS)
+	@echo "Running quick unit tests of ComNetsEmu python package."
+	$(PYTHON) ./comnetsemu/test/unit/runner.py -v -quick
+
 coverage: $(COMNETSEMU) $(UNITTESTS)
 	@echo "Running coverage tests of ComNetsEmu core functions."
 	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/unit/runner.py -v

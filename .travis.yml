@@ -1,0 +1,40 @@
+language: python
+
+matrix:
+  include:
+    - dist: bionic
+      python: 3.6
+      env: dist="18.04 LTS bionic"
+
+branches:
+  only:
+    - master
+    - dev
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3 libpython3-dev python3-dev python3-pip python3-setuptools software-properties-common
+  - sudo mkdir -p /usr/lib/python3.6/site-packages/
+
+install:
+  - cd ${TRAVIS_BUILD_DIR}/util
+  - PYTHON=python3 ./install.sh -a
+  - cd ${TRAVIS_BUILD_DIR}
+  - sudo make develop
+  - cd ${TRAVIS_BUILD_DIR}/test_containers
+  - sudo bash ./build.sh
+
+
+before_script:
+  - cd ${TRAVIS_BUILD_DIR}
+
+# Run tests
+# TODO: Fix issue related to memory_swap in resource isolation and add test-examples
+script:
+  - sudo make test-quick
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always

@@ -1,13 +1,20 @@
+[![Build Status](https://travis-ci.com/stevelorenz/comnetsemu.svg?branch=master)](https://travis-ci.com/stevelorenz/comnetsemu)
+[![MIT Licensed](https://img.shields.io/github/license/stevelorenz/comnetsemu)](https://github.com/stevelorenz/comnetsemu/blob/master/LICENSE)
+
 ComNetsEmu
 ==========
 *A holistic testbed/emulator for the book: Computing in Communication Networks: From Theory to Practice*
 
 **This project is currently under heavy development [beta]**.
 
+The repository is hosted both on the internal [Gitlab server of ComNets TUD](https://git.comnets.net/public-repo/comnetsemu) and
+[Github](https://github.com/stevelorenz/comnetsemu).
+The GitLab ComNets TUD is read-only for public users (only for internal usage).
+For all public users, please create issues and send pull requests on Github if you want to contribute.
+
 **For all ComNetsEmu users:**
 
-Please run the upgrade process described [here](#upgrade-comnetsemu-and-dependencies) when there is a new release
-published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
+Please run the upgrade process described [here](#upgrade-comnetsemu-and-dependencies) when there are new commits in the master branch.
 New features, fixes and other improvements require running the upgrade script **manually**.
 But the script will check and perform the upgrade automatically and it does not take much time if you have a good
 network connection.
@@ -415,9 +422,7 @@ $ firefox ./doc/build/html/index.html
 This project exists thanks to all people who contribute.
 [List](./CONTRIBUTORS) of all contributors.
 
-Contributing to this repository requires an account of the internal Gitlab server hosted by
-[The Telekom Chair of Communication Networks](https://cn.ifn.et.tu-dresden.de/).
-Please contact us by Email if you want to have an account.
+For all public users, please create issues or send pull requests on [Github](https://github.com/stevelorenz/comnetsemu).
 
 ### Contact
 
