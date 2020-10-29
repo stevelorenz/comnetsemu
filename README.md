@@ -29,6 +29,7 @@ Check the [CHANGELOG](./CHANGELOG.md) for information of new releases.
 * [Installation](#installation)
   * [Option 1: Install in a Vagrant managed VM (Highly Recommended)](#option-1-install-in-a-vagrant-managed-vm-highly-recommended)
   * [Option 2: Install on user's custom VM or directly on host OS](#option-2-install-on-users-custom-vm-or-directly-on-host-os)
+  * [Option 3: Download the VM image](#option-3-download-the-vm-image)
   * [Post-Installation](#post-installation)
 * [Upgrade ComNetsEmu and Dependencies](#upgrade-comnetsemu-and-dependencies)
 * [Run the Docker-in-Docker example](#run-the-docker-in-docker-example)
@@ -272,6 +273,21 @@ $ sudo apt install git make pkg-config sudo python3 libpython3-dev python3-dev p
 ```bash
 $ cd $TOP_DIR/comnetsemu/util
 $ bash ./install.sh -a
+```
+
+#### Option 3: Download the VM image
+
+Only if the previous option does not suit you, please use this option.
+Because the VM image may not be updated frequently and you need to manually configure the VM for e.g. port forwarding, folder synchronization.
+
+The VM image (comnetsemu.ova) for Virtualbox is uploaded to the [Google cloud drive](https://drive.google.com/drive/folders/1FP5Bx2DHp7oV57Ja38_x01ABiw3wK11M?usp=sharing).
+Please verify the sha512sum with the given files in the folder.
+
+For KVM user, you can convert the ova file to qcow2 file with following commands (Assume the file has the name some_name):
+
+```bash
+$ tar -xvf some_name.ova
+$ qemu-img convert some_name.vmdk some_name.qcow2 -O qcow2
 ```
 
 #### Post-Installation

@@ -71,10 +71,6 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-#if Vagrant.has_plugin?("vagrant-vbguest")
-#  config.vbguest.auto_update = false
-#end
-#
 require 'optparse'
 
 # Parse the provider argument
@@ -143,21 +139,30 @@ New features, fixes and other improvements require run the upgrade script **manu
 But the script will check and perform upgrade automatically and it does not take much time if you have a good network connection.
     '
 
-    # Workaround for vbguest plugin issue
-    comnetsemu.vm.provision "shell", run: "always", inline: <<-WORKAROUND
-    modprobe vboxsf || true
-    WORKAROUND
-
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
     comnetsemu.vm.provision :shell, inline: $install_kernel, privileged: true
+    comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
+
     if provider == "virtualbox"
-      comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
-      # Make the maketerm of Mininet works in VirtualBox.
+      # Workaround for vbguest plugin issue
+      comnetsemu.vm.provision "shell", run: "always", inline: <<-WORKAROUND
+      modprobe vboxsf || true
+      WORKAROUND
+      # Make the maketerm of Mininet work in VirtualBox.
       comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
         sed -i 's/X11UseLocalhost no/X11UseLocalhost yes/g' /etc/ssh/sshd_config
         systemctl restart sshd.service
       SHELL
     end
+
+    if provider == "libvirt"
+      # Make the maketerm of Mininet work in KVM.
+      comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
+        sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
+        systemctl restart sshd.service
+      SHELL
+    end
+
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
       # Apply Xterm profile, looks nicer.
       cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
