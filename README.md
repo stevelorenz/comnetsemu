@@ -283,6 +283,10 @@ Because the VM image may not be updated frequently and you need to manually conf
 The VM image (comnetsemu.ova) for Virtualbox is uploaded to the [Google cloud drive](https://drive.google.com/drive/folders/1FP5Bx2DHp7oV57Ja38_x01ABiw3wK11M?usp=sharing).
 Please verify the sha512sum with the given files in the folder.
 
+The default account and password for the VM are both `vagrant`.
+There is no pre-configured root password.
+The `vagrant` user can run `sudo` command without password, so root password can be configured via `sudo passwd` if required.
+
 For KVM user, you can convert the ova file to qcow2 file with following commands (Assume the file has the name some_name):
 
 ```bash
