@@ -1,0 +1,9 @@
+prefix=/usr/local
+libdir=${prefix}/lib/x86_64-linux-gnu
+includedir=${prefix}/include
+
+Name: kodo_rlnc
+Description: Random Linear Network Coding codecs using the Kodo library.
+Version: 16.1.1
+Libs: -L${libdir} -lkodo_rlnc -lkodo_rlnc
+Cflags: -I${includedir}

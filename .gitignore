@@ -131,3 +131,6 @@ examples/**/*.png
 examples/**/*.gz
 
 prototype/*
+
+kodo-rlnc
+kodo-rlnc_install/
