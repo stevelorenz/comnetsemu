@@ -207,7 +207,10 @@ class MultiHopRest(app_manager.RyuApp):
 
     def handle_udp(self, msg, pkt):
         if not self._check_sanity_udp(pkt):
-            self.logger.info("<Packet-In>[UDP]: Receive un-known UDP flows.")
+            self.logger.info(
+                "<Packet-In>[UDP]: Receive un-known UDP flows. Action: L2FWD."
+            )
+            self.action_l2fwd(msg, pkt, add_flow=True)
             return
 
         datapath = msg.datapath
