@@ -23,4 +23,4 @@ python3 waf build
 python3 waf install
 
 echo "* Copy to be installed files."
-cp -r "$KODO_DIR/kodo-rlnc_install" ./kodo-rlnc_install
+cp -r "$KODO_DIR/kodo-rlnc_install" "$CUR_DIR/kodo-rlnc_install"
