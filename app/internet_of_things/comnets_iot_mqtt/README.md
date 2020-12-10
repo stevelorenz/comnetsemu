@@ -41,14 +41,14 @@ On running the same we can see the logs of a sample broker, publisher and subscr
 For example:
 
 `sudo docker logs MQTT`
-![image](broker.png )
+![image](img/broker.png )
 In the case of the broker we can see generic information from publishers and subscriber. For example we see that the host `10.0.0.3` subscribed to the topics `randomnumber, temperature and randomnumber2`. We also see information like the publish sent from `10.0.0.2` and sent from broker to `10.0.0.3`.   
 
 `sudo docker logs MPUB1`
-![image](pub1.png )
+![image](img/pub1.png )
 We see the host through the process of `CONNECT, CONNACK, PUBLISH and DISCONNECT`.
 
 `sudo docker logs MSUB`
-![image](sub.png )
+![image](img/sub.png )
 We see the host through the process of `CONNECT, CONNACK, SUBSCRIBE and SUBACK and receive PUBLISH`. We can see the size and value of the message received through the broker from the publishers.
 We can save these logs using [logs script](https://github.com/Nibamot/ComNetsIot/blob/master/logs.sh) to get respective mosquitto component logs.
