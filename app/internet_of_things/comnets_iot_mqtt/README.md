@@ -21,8 +21,8 @@ This simple PoC is a way to implement a sample IoT project in mininet thanks to 
   Please take a look at [mosquitto_pub](https://mosquitto.org/man/mosquitto_pub-1.html), [mosquitto](https://mosquitto.org/man/mosquitto-8.html) and [mosquitto_sub](https://mosquitto.org/man/mosquitto_sub-1.html) for information regarding parameters used for  publisher, broker and subscriber.  
 
 
-### How to run
-`sudo python3 teststar.py` sets up the following star topology. The hosts `h1, h2, h3, h4, h5 are connected to each other by a switch`.
+## How to run
+`sudo python3 teststar.py` sets up the following star topology. The hosts h1, h2, h3, h4, h5 are connected to each other by a switch.
 
 ```text
 h1: MQTT broker (Eclipse Mosquitto)                     10.0.0.1:1883        
@@ -37,18 +37,69 @@ h3: Subscriber (Eclipse Mosquitto)                      10.0.0.3
 
 
 We can check specific logs for specific containers by using `sudo docker logs **nameofcontainer**`.
-On running the same we can see the logs of a sample broker, publisher and subscriber as below
+On running the same we can see the logs of a sample broker, publisher and subscriber as below.
+
 For example:
 
 `sudo docker logs MQTT`
-![image](broker.png )
+```text
+1607611349: mosquitto version 1.6.12 starting
+1607611349: Using default config.
+1607611349: Opening ipv4 listen socket on port 1883.
+1607611349: Opening ipv6 listen socket on port 1883.
+1607611349: mosquitto version 1.6.12 running
+1607611354: New connection from 10.0.0.3 on port 1883.
+1607611354: New client connected from 10.0.0.3 as mosq-nwepcmcWMLM05A7z1n (p2, c1, k60).
+1607611354: No will message specified.
+1607611354: Sending CONNACK to mosq-nwepcmcWMLM05A7z1n (0, 0)
+1607611355: Received SUBSCRIBE from mosq-nwepcmcWMLM05A7z1n
+1607611355: test/randomnumber (QoS 1)
+1607611355: mosq-nwepcmcWMLM05A7z1n 1 test/randomnumber
+1607611355: test/temperature (QoS 1)
+1607611355: mosq-nwepcmcWMLM05A7z1n 1 test/temperature
+1607611355: test/randomnumber2 (QoS 1)
+1607611355: mosq-nwepcmcWMLM05A7z1n 1 test/randomnumber2
+1607611355: Sending SUBACK to mosq-nwepcmcWMLM05A7z1n
+1607611360: New connection from 10.0.0.2 on port 1883.
+1607611360: New client connected from 10.0.0.2 as mosq-Mf3TMLZ7DbK1e9Z8Cw (p2, c1, k60).
+```
+
+
 In the case of the broker we can see generic information from publishers and subscriber. For example we see that the host `10.0.0.3` subscribed to the topics `randomnumber, temperature and randomnumber2`. We also see information like the publish sent from `10.0.0.2` and sent from broker to `10.0.0.3`.   
 
 `sudo docker logs MPUB1`
-![image](pub1.png )
-We see the host through the process of `CONNECT, CONNACK, PUBLISH and DISCONNECT`.
+
+```text
+Client mosq-Mf3TMLZ7DbK1e9Z8Cw sending CONNECT
+Client mosq-Mf3TMLZ7DbK1e9Z8Cw received CONNACK (0)
+Client mosq-Mf3TMLZ7DbK1e9Z8Cw sending PUBLISH (d0, q0, r0, m1, 'test/temperature', ... (5 bytes))
+Client mosq-Mf3TMLZ7DbK1e9Z8Cw sending DISCONNECT
+```
+
+We see the host go through the process of `CONNECT, CONNACK, PUBLISH and DISCONNECT`.
 
 `sudo docker logs MSUB`
-![image](sub.png )
-We see the host through the process of `CONNECT, CONNACK, SUBSCRIBE and SUBACK and receive PUBLISH`. We can see the size and value of the message received through the broker from the publishers.
+```text
+Client mosq-nwepcmcWMLM05A7z1n sending CONNECT
+Client mosq-nwepcmcWMLM05A7z1n received CONNACK (0)
+Client mosq-nwepcmcWMLM05A7z1n sending SUBSCRIBE (Mid: 1, Topic: test/randomnumber, QoS: 1, Options: 0x00)
+Client mosq-nwepcmcWMLM05A7z1n sending SUBSCRIBE (Mid: 1, Topic: test/temperature, QoS: 1, Options: 0x00)
+Client mosq-nwepcmcWMLM05A7z1n sending SUBSCRIBE (Mid: 1, Topic: test/randomnumber2, QoS: 1, Options: 0x00)
+Client mosq-nwepcmcWMLM05A7z1n received SUBACK
+Subscribed (mid: 1): 1, 1, 1
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/temperature', ... (5 bytes))
+test/temperature 17951
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/temperature', ... (5 bytes))
+test/temperature 12663
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/randomnumber', ... (5 bytes))
+test/randomnumber 13081
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/temperature', ... (5 bytes))
+test/temperature 29120
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/randomnumber', ... (5 bytes))
+test/randomnumber 12314
+Client mosq-nwepcmcWMLM05A7z1n received PUBLISH (d0, q0, r0, m0, 'test/randomnumber2', ... (5 bytes))
+test/randomnumber2 13910
+```
+
+We see the host go through the process of `CONNECT, CONNACK, SUBSCRIBE and SUBACK and receive PUBLISH`. We can see the size and value of the message received through the broker from the publishers.
 We can save these logs using [logs script](https://github.com/Nibamot/ComNetsIot/blob/master/logs.sh) to get respective mosquitto component logs.
