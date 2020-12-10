@@ -37,7 +37,8 @@ h3: Subscriber (Eclipse Mosquitto)                      10.0.0.3
 
 
 We can check specific logs for specific containers by using `sudo docker logs **nameofcontainer**`.
-On running the same we can see the logs of a sample broker, publisher and subscriber as below
+On running the same we can see the logs of a sample broker, publisher and subscriber as below.
+
 For example:
 
 `sudo docker logs MQTT`
