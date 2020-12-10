@@ -1,0 +1,6 @@
+#from the eclipse base image
+FROM eclipse-mosquitto:latest
+COPY publishh2.sh /
+COPY publishh4.sh /
+COPY publishh5.sh /
+RUN ls
