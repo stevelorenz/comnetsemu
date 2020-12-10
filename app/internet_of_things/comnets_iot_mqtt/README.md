@@ -21,7 +21,7 @@ This simple PoC is a way to implement a sample IoT project in mininet thanks to 
   Please take a look at [mosquitto_pub](https://mosquitto.org/man/mosquitto_pub-1.html), [mosquitto](https://mosquitto.org/man/mosquitto-8.html) and [mosquitto_sub](https://mosquitto.org/man/mosquitto_sub-1.html) for information regarding parameters used for  publisher, broker and subscriber.  
 
 
-### How to run
+## How to run
 `sudo python3 teststar.py` sets up the following star topology. The hosts `h1, h2, h3, h4, h5 are connected to each other by a switch`.
 
 ```text
