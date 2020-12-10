@@ -22,7 +22,7 @@ This simple PoC is a way to implement a sample IoT project in mininet thanks to 
 
 
 ## How to run
-`sudo python3 teststar.py` sets up the following star topology. The hosts `h1, h2, h3, h4, h5 are connected to each other by a switch`.
+`sudo python3 teststar.py` sets up the following star topology. The hosts h1, h2, h3, h4, h5 are connected to each other by a switch.
 
 ```text
 h1: MQTT broker (Eclipse Mosquitto)                     10.0.0.1:1883        
@@ -47,7 +47,7 @@ In the case of the broker we can see generic information from publishers and sub
 
 `sudo docker logs MPUB1`
 ![image](img/pub1.png )
-We see the host through the process of `CONNECT, CONNACK, PUBLISH and DISCONNECT`.
+We see the host go through the process of `CONNECT, CONNACK, PUBLISH and DISCONNECT`.
 
 `sudo docker logs MSUB`
 ![image](img/sub.png )
