@@ -1,0 +1,4 @@
+#from the eclipse base image
+FROM eclipse-mosquitto:latest
+COPY broker.sh /
+RUN ls
