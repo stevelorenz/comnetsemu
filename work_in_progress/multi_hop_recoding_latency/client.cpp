@@ -122,7 +122,7 @@ vector< vector<uint8_t> > client:: encode(string IP, int Port)
 int main()
 {
 	client C;
-	sent_test("10.0.3.11", 9999,"hello")
+	sent_test("10.0.3.11", 9999,"hello");
 	//C.encode("10.0.3.11", 9999);
 	//cout<<sent_accout<<endl;
 	return 0;

@@ -77,7 +77,7 @@ class MeicaDistTest(object):
             },
         )
 
-    def run_multi_htop(self, node_num, vnf_mode):
+    def run_multi_htop(self, node_num, vnf_mode, recode_node):
         info("* Running multi_htop test.\n")
 
         info("*** Adding network nodes.\n")
@@ -152,10 +152,12 @@ class MeicaDistTest(object):
                 )
                 time.sleep(1)  # Avoid memory corruption among VNFs.
 
-    def run(self, topo, node_num, vnf_mode):
+    def run(self, topo, node_num, vnf_mode,recode_node):
         if node_num < 2:
             raise RuntimeError("The minimal number of nodes is two.")
-        if topo == "multi_htop":
+        if len(recode_node) != node_num:
+            raise RuntimeError("recode_node list don't match nood_num.")
+        if topo == "multi_htop" :
             self.run_multi_htop(node_num, vnf_mode)
 
 
@@ -172,7 +174,7 @@ if __name__ == "__main__":
         help="Name of the test topology.",
     )
     parser.add_argument(
-        "--node_num", type=int, default=3, help="Number of nodes in the network."
+        "--node_num", type=int, default=3, dest="node_num", help="Number of nodes in the network."
     )
     parser.add_argument(
         "--vnf_mode",
@@ -181,8 +183,16 @@ if __name__ == "__main__":
         choices=["null", "store_forward", "compute_forward"],
         help="Mode to run all VNFs.",
     )
+    # add a new argument to set the recode node
+    parser.add_argument(
+        "--recode_node",
+        type=int,
+        nargs="+",
+        default= [0,0,0],
+        choices=[0,1],
+        help="choice which node to run recode, if not recodes,type 0, if wants to recode, type 1"
+    )
     args = parser.parse_args()
-
     home_dir = os.path.expanduser("~")
     xresources_path = os.path.join(home_dir, ".Xresources")
     if os.path.exists(xresources_path):
@@ -199,7 +209,7 @@ if __name__ == "__main__":
     test.setup()
 
     try:
-        test.run(topo=args.topo, node_num=args.node_num, vnf_mode=args.vnf_mode)
+        test.run(topo=args.topo, node_num=args.node_num, vnf_mode=args.vnf_mode, recode_node=args.recode_node)
         info("*** Enter CLI\n")
         CLI(test.net)
     finally:

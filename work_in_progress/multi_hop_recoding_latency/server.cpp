@@ -26,7 +26,33 @@ int main()
 }
 void test()
 {
+		int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
+	if(sock < 0)  
+	{  
+    perror("socket");  
+    exit(1);  
+	}  
+	
+	// Init Socket
+	struct sockaddr_in addr_serv;  
+	int len;  
+	memset(&addr_serv, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
+	addr_serv.sin_family = AF_INET;  //使用IPV4地址
+	addr_serv.sin_port = htons(9999);  
+	addr_serv.sin_addr.s_addr =  inet_addr("10.0.3.11");
+	len = sizeof(addr_serv); 
+	int recv_num; 
+
+	// Bind socket 
+	if(bind(sock, (struct sockaddr *)&addr_serv, sizeof(addr_serv)) < 0)  
+	{  
+		perror("bind error:");  
+		exit(1);  
+	}  
+
+	// Set up for receive
+	struct sockaddr_in client_addr; 
 }
 void run()
 {
