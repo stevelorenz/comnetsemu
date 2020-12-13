@@ -158,7 +158,7 @@ class MeicaDistTest(object):
         if len(recode_node) != node_num:
             raise RuntimeError("recode_node list don't match nood_num.")
         if topo == "multi_htop" :
-            self.run_multi_htop(node_num, vnf_mode)
+            self.run_multi_htop(node_num, vnf_mode,recode_node)
 
 
 if __name__ == "__main__":
