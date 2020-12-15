@@ -78,6 +78,12 @@ class MeicaDistTest(object):
 
     def run_multi_htop(self, node_num, vnf_mode, recode_node):
         info("* Running multi_htop test.\n")
+        
+        info("*** write recode_node.temp\n")
+        b=",".join(str(i) for i in recode_node)
+        fo = open("recode_node.temp", "w")
+        fo.write(b)
+        fo.close()
 
         info("*** Adding network nodes.\n")
         host_addr_base = 10
@@ -192,7 +198,7 @@ if __name__ == "__main__":
         nargs="+",
         default= [0,0,0],
         choices=[0,1],
-        help="choice which node to run recode, if not recodes,type 0, if wants to recode, type 1"
+        help="choice which node to run recode, ex: --recode_node 0 1 0"
     )
     args = parser.parse_args()
     home_dir = os.path.expanduser("~")

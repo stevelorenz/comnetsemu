@@ -17,7 +17,7 @@
 About: Ryu application for the multi-hop topology.
 TODO (Zuo): Reduce duplicated code.
 """
-
+import os, sys
 import json
 import shlex
 import subprocess
@@ -43,18 +43,13 @@ CLIENT_IP = "10.0.1.11"
 SERVER_IP = "10.0.3.11"
 SERVER_UDP_PORT = 9999
 
-CONF = cfg.CONF
-CONF.register_cli_opts([
-    cfg.StrOpt(
-        'recode_node', default='', help='set node to recode')
-])
+
 
 
 
 # set a new arg for recode_node
 # First setting default recode_node_list
 
-recode_node_list=[1,1,1]
 is_recoded=False
 # CONF=cfg.CONF
 # CONF.register_cli_opts([cfg.StrOpt('recode_node', default='[0,0,0]',
@@ -69,18 +64,21 @@ class MultiHopRest(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(MultiHopRest, self).__init__(*args, **kwargs)
-
         self.switches = {}
         self.nodes = {}
-
         self.mac_to_port = {}
         self.ip_to_port = {}
         # Map specific interface names to port.
         self.vnf_iface_to_port = {} 
-
-        # self.recode_node=CONF['custoumer']['recode_node']
-        # self.logger.info(f"successful init,recode_node is: {self.recode_node} \n ")
-
+        # read recode_node from recode_node.temp
+        self.recode_node_list=[0,0,0]
+        re_temp=open("recode_node.temp","r+")
+        s1=re_temp.read()
+        re_temp.close()
+        os.remove("recode_node.temp")
+        self.logger.info("[naibao]: succuessful delete recode_node.temp")
+        s1_list_str=s1.split(',')
+        self.recode_node_list=[int(i) for i in s1_list_str]
         # wsgi
         wsgi = kwargs["wsgi"]
         wsgi.register(MultiHopController, {APP_INSTANCE_NAME: self})
@@ -188,7 +186,7 @@ class MultiHopRest(app_manager.RyuApp):
             # here to deside if recode 
             self.logger.info(f'[naibao]: packet can forward, judge recode, current dpid:{dpid}')
             # true, need to recode
-            if recode_node_list[dpid-1]:
+            if self.recode_node_list[dpid-1]:
                 self.logger.info(f'[naibao]: {dpid} need to recode')
                 # judge if recoded
                 if is_recoded:
