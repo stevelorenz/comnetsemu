@@ -15,17 +15,18 @@
 
 """
 About: Ryu application for the multi-hop topology.
-
 TODO (Zuo): Reduce duplicated code.
 """
-
+import os, sys
 import json
 import shlex
 import subprocess
+import argparse
 
 import ryu.lib.packet as packet_lib
 import ryu.topology.api as topo_api
 
+from ryu import cfg
 from ryu.app.wsgi import ControllerBase, Response, WSGIApplication, route
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -43,6 +44,19 @@ SERVER_IP = "10.0.3.11"
 SERVER_UDP_PORT = 9999
 
 
+
+
+
+# set a new arg for recode_node
+# First setting default recode_node_list
+
+is_recoded=False
+# CONF=cfg.CONF
+# CONF.register_cli_opts([cfg.StrOpt('recode_node', default='[0,0,0]',
+#          help='recode_node for switch')],group='test-switch') 
+
+
+
 class MultiHopRest(app_manager.RyuApp):
 
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -50,15 +64,22 @@ class MultiHopRest(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(MultiHopRest, self).__init__(*args, **kwargs)
-
         self.switches = {}
         self.nodes = {}
-
         self.mac_to_port = {}
         self.ip_to_port = {}
         # Map specific interface names to port.
-        self.vnf_iface_to_port = {}
-
+        self.vnf_iface_to_port = {} 
+        # read recode_node from recode_node.temp
+        self.recode_node_list=[0,0,0]
+        re_temp=open("recode_node.temp","r+")
+        s1=re_temp.read()
+        re_temp.close()
+        os.remove("recode_node.temp")
+        self.logger.info("[naibao]: succuessful delete recode_node.temp")
+        s1_list_str=s1.split(',')
+        self.recode_node_list=[int(i) for i in s1_list_str]
+        # wsgi
         wsgi = kwargs["wsgi"]
         wsgi.register(MultiHopController, {APP_INSTANCE_NAME: self})
 
@@ -67,7 +88,6 @@ class MultiHopRest(app_manager.RyuApp):
     @staticmethod
     def _get_ofport(ifce: str):
         """Get the openflow port based on the iterface name.
-
         :param ifce (str): Name of the interface.
         """
         try:
@@ -154,14 +174,31 @@ class MultiHopRest(app_manager.RyuApp):
             self.ip_to_port.setdefault(dpid, {})
             self.ip_to_port[dpid][ip.src] = in_port
 
-        self.logger.info(
-            f"""<Packet-In>[L2FWD]: DPID:{dpid}, l2_src:{src}, l2_dst:{dst}, in_port: {in_port}"""
-        )
+            self.logger.info(
+                f"""<Packet-In>[L2FWD]: DPID:{dpid}, l2_src:{src}, l2_dst:{dst}, in_port: {in_port}"""
+            )
 
         self.mac_to_port[dpid][src] = in_port
 
-        if dst in self.mac_to_port[dpid]:
-            out_port = self.mac_to_port[dpid][dst]
+
+        if dst in self.mac_to_port[dpid]:  
+            global is_recoded        
+            # here to deside if recode 
+            self.logger.info(f'[naibao]: packet can forward, judge recode, current dpid:{dpid}')
+            # true, need to recode
+            if self.recode_node_list[dpid-1]:
+                self.logger.info(f'[naibao]: {dpid} need to recode')
+                # judge if recoded
+                if is_recoded:
+                    self.logger.info('[naibao]: already recoded')
+                    out_port = self.mac_to_port[dpid][dst]
+                    is_recoded = False
+                else:
+                    self.logger.info('[naibao]: not recoded, sent to controller to recode')
+                    out_port = ofproto.OFPP_CONTROLLER     
+            else :
+                    out_port = self.mac_to_port[dpid][dst]          
+        # ---------------------------
         else:
             out_port = ofproto.OFPP_FLOOD
 
@@ -278,6 +315,23 @@ class MultiHopRest(app_manager.RyuApp):
                 ev.msg.total_len,
             )
         msg = ev.msg
+        dp = msg.datapath
+        ofp = dp.ofproto
+
+        # here to recode
+        global is_recoded
+        if msg.reason == ofp.OFPR_ACTION:
+            # TODO recode here
+            self.logger.info('[naibao]: recoding...')
+            is_recoded= True
+            self.logger.info('[naibao]: recode finish')
+            reason = 'Action'
+            self.logger.info('[naibao] received: '
+                      'buffer_id=%x total_len=%d reason=%s '
+                      'table_id=%d match=%s data=%s',
+                      msg.buffer_id, msg.total_len, reason,
+                      msg.table_id, msg.match, msg.data)
+            
 
         pkt = packet_lib.packet.Packet(msg.data)
         eth = pkt.get_protocol(packet_lib.ethernet.ethernet)

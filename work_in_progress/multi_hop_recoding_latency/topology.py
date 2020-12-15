@@ -23,7 +23,6 @@ from mininet.term import makeTerm
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.curdir, os.pardir))
 
-
 class MeicaDistTest(object):
     """MeicaDistTest"""
 
@@ -77,8 +76,14 @@ class MeicaDistTest(object):
             },
         )
 
-    def run_multi_htop(self, node_num, vnf_mode):
+    def run_multi_htop(self, node_num, vnf_mode, recode_node):
         info("* Running multi_htop test.\n")
+        
+        info("*** write recode_node.temp\n")
+        b=",".join(str(i) for i in recode_node)
+        fo = open("recode_node.temp", "w")
+        fo.write(b)
+        fo.close()
 
         info("*** Adding network nodes.\n")
         host_addr_base = 10
@@ -130,7 +135,10 @@ class MeicaDistTest(object):
         self.net.start()
 
         c0 = self.net.get("c0")
-        makeTerm(c0, cmd="ryu-manager ./multi_hop_controller.py ; read")
+        r_n_str=''
+        for i in args.recode_node:
+            r_n_str=r_n_str+str(i)+' '
+        makeTerm(c0, cmd=f"ryu-manager ./multi_hop_controller.py; read")
 
         info("*** Update ARP tables of VNFs.\n")
         for v in self._vnfs:
@@ -152,11 +160,13 @@ class MeicaDistTest(object):
                 )
                 time.sleep(1)  # Avoid memory corruption among VNFs.
 
-    def run(self, topo, node_num, vnf_mode):
+    def run(self, topo, node_num, vnf_mode,recode_node):
         if node_num < 2:
             raise RuntimeError("The minimal number of nodes is two.")
-        if topo == "multi_htop":
-            self.run_multi_htop(node_num, vnf_mode)
+        if len(recode_node) != node_num:
+            raise RuntimeError("recode_node list don't match nood_num.")
+        if topo == "multi_htop" :
+            self.run_multi_htop(node_num, vnf_mode,recode_node)
 
 
 if __name__ == "__main__":
@@ -172,7 +182,7 @@ if __name__ == "__main__":
         help="Name of the test topology.",
     )
     parser.add_argument(
-        "--node_num", type=int, default=3, help="Number of nodes in the network."
+        "--node_num", type=int, default=3, dest="node_num", help="Number of nodes in the network."
     )
     parser.add_argument(
         "--vnf_mode",
@@ -181,8 +191,16 @@ if __name__ == "__main__":
         choices=["null", "store_forward", "compute_forward"],
         help="Mode to run all VNFs.",
     )
+    # add a new argument to set the recode node
+    parser.add_argument(
+        "--recode_node",
+        type=int,
+        nargs="+",
+        default= [0,0,0],
+        choices=[0,1],
+        help="choice which node to run recode, ex: --recode_node 0 1 0"
+    )
     args = parser.parse_args()
-
     home_dir = os.path.expanduser("~")
     xresources_path = os.path.join(home_dir, ".Xresources")
     if os.path.exists(xresources_path):
@@ -199,7 +217,7 @@ if __name__ == "__main__":
     test.setup()
 
     try:
-        test.run(topo=args.topo, node_num=args.node_num, vnf_mode=args.vnf_mode)
+        test.run(topo=args.topo, node_num=args.node_num, vnf_mode=args.vnf_mode, recode_node=args.recode_node)
         info("*** Enter CLI\n")
         CLI(test.net)
     finally:
