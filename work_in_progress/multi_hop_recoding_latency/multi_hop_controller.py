@@ -15,17 +15,18 @@
 
 """
 About: Ryu application for the multi-hop topology.
-
 TODO (Zuo): Reduce duplicated code.
 """
 
 import json
 import shlex
 import subprocess
+import argparse
 
 import ryu.lib.packet as packet_lib
 import ryu.topology.api as topo_api
 
+from ryu import cfg
 from ryu.app.wsgi import ControllerBase, Response, WSGIApplication, route
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -42,6 +43,24 @@ CLIENT_IP = "10.0.1.11"
 SERVER_IP = "10.0.3.11"
 SERVER_UDP_PORT = 9999
 
+CONF = cfg.CONF
+CONF.register_cli_opts([
+    cfg.StrOpt(
+        'recode_node', default='', help='set node to recode')
+])
+
+
+
+# set a new arg for recode_node
+# First setting default recode_node_list
+
+recode_node_list=[1,1,1]
+is_recoded=False
+# CONF=cfg.CONF
+# CONF.register_cli_opts([cfg.StrOpt('recode_node', default='[0,0,0]',
+#          help='recode_node for switch')],group='test-switch') 
+
+
 
 class MultiHopRest(app_manager.RyuApp):
 
@@ -57,8 +76,12 @@ class MultiHopRest(app_manager.RyuApp):
         self.mac_to_port = {}
         self.ip_to_port = {}
         # Map specific interface names to port.
-        self.vnf_iface_to_port = {}
+        self.vnf_iface_to_port = {} 
 
+        # self.recode_node=CONF['custoumer']['recode_node']
+        # self.logger.info(f"successful init,recode_node is: {self.recode_node} \n ")
+
+        # wsgi
         wsgi = kwargs["wsgi"]
         wsgi.register(MultiHopController, {APP_INSTANCE_NAME: self})
 
@@ -67,7 +90,6 @@ class MultiHopRest(app_manager.RyuApp):
     @staticmethod
     def _get_ofport(ifce: str):
         """Get the openflow port based on the iterface name.
-
         :param ifce (str): Name of the interface.
         """
         try:
@@ -154,14 +176,31 @@ class MultiHopRest(app_manager.RyuApp):
             self.ip_to_port.setdefault(dpid, {})
             self.ip_to_port[dpid][ip.src] = in_port
 
-        self.logger.info(
-            f"""<Packet-In>[L2FWD]: DPID:{dpid}, l2_src:{src}, l2_dst:{dst}, in_port: {in_port}"""
-        )
+            self.logger.info(
+                f"""<Packet-In>[L2FWD]: DPID:{dpid}, l2_src:{src}, l2_dst:{dst}, in_port: {in_port}"""
+            )
 
         self.mac_to_port[dpid][src] = in_port
 
-        if dst in self.mac_to_port[dpid]:
-            out_port = self.mac_to_port[dpid][dst]
+
+        if dst in self.mac_to_port[dpid]:  
+            global is_recoded        
+            # here to deside if recode 
+            self.logger.info(f'[naibao]: packet can forward, judge recode, current dpid:{dpid}')
+            # true, need to recode
+            if recode_node_list[dpid-1]:
+                self.logger.info(f'[naibao]: {dpid} need to recode')
+                # judge if recoded
+                if is_recoded:
+                    self.logger.info('[naibao]: already recoded')
+                    out_port = self.mac_to_port[dpid][dst]
+                    is_recoded = False
+                else:
+                    self.logger.info('[naibao]: not recoded, sent to controller to recode')
+                    out_port = ofproto.OFPP_CONTROLLER     
+            else :
+                    out_port = self.mac_to_port[dpid][dst]          
+        # ---------------------------
         else:
             out_port = ofproto.OFPP_FLOOD
 
@@ -278,6 +317,23 @@ class MultiHopRest(app_manager.RyuApp):
                 ev.msg.total_len,
             )
         msg = ev.msg
+        dp = msg.datapath
+        ofp = dp.ofproto
+
+        # here to recode
+        global is_recoded
+        if msg.reason == ofp.OFPR_ACTION:
+            # TODO recode here
+            self.logger.info('[naibao]: recoding...')
+            is_recoded= True
+            self.logger.info('[naibao]: recode finish')
+            reason = 'Action'
+            self.logger.info('[naibao] received: '
+                      'buffer_id=%x total_len=%d reason=%s '
+                      'table_id=%d match=%s data=%s',
+                      msg.buffer_id, msg.total_len, reason,
+                      msg.table_id, msg.match, msg.data)
+            
 
         pkt = packet_lib.packet.Packet(msg.data)
         eth = pkt.get_protocol(packet_lib.ethernet.ethernet)
@@ -289,33 +345,7 @@ class MultiHopRest(app_manager.RyuApp):
         if eth.ethertype == packet_lib.ether_types.ETH_TYPE_LLDP:
             return
 
-        if arp:	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-
-	if(sock < 0)  
-	{  
-    perror("socket");  
-    exit(1);  
-	}  
-	
-	// Init Socket
-	struct sockaddr_in addr_serv;  
-	int len;  
-	memset(&addr_serv, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
-	addr_serv.sin_family = AF_INET;  //使用IPV4地址
-	addr_serv.sin_port = htons(9999);  
-	addr_serv.sin_addr.s_addr =  inet_addr("10.0.3.11");
-	len = sizeof(addr_serv); 
-	int recv_num; 
-
-	// Bind socket 
-	if(bind(sock, (struct sockaddr *)&addr_serv, sizeof(addr_serv)) < 0)  
-	{  
-		perror("bind error:");  
-		exit(1);  
-	}  
-
-	// Set up for receive
-	struct sockaddr_in client_addr; 
+        if arp:
             # MARK: If the MAC-based flow is added, all following UDP packets
             # will also be l2 forwarded.
             self.action_l2fwd(msg, pkt, add_flow=False)

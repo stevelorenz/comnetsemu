@@ -12,4 +12,7 @@ if __name__ == "__main__":
     )
 
     args=parser.parse_args()
-    print(args.recode_node)
+    r_n_str=''
+    for i in args.recode_node:
+        r_n_str=r_n_str+str(i)+' '
+    print(r_n_str)

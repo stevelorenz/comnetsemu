@@ -23,7 +23,6 @@ from mininet.term import makeTerm
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.curdir, os.pardir))
 
-
 class MeicaDistTest(object):
     """MeicaDistTest"""
 
@@ -130,7 +129,10 @@ class MeicaDistTest(object):
         self.net.start()
 
         c0 = self.net.get("c0")
-        makeTerm(c0, cmd="ryu-manager ./multi_hop_controller.py ; read")
+        r_n_str=''
+        for i in args.recode_node:
+            r_n_str=r_n_str+str(i)+' '
+        makeTerm(c0, cmd=f"ryu-manager ./multi_hop_controller.py; read")
 
         info("*** Update ARP tables of VNFs.\n")
         for v in self._vnfs:
