@@ -47,6 +47,7 @@ add_project_arguments(
     language: 'cpp',
 )
 
+
 math_dep = cppc.find_library('m', required: true)
 
 bpf_dep = dependency('libbpf', required: true)
@@ -70,6 +71,7 @@ all_deps = declare_dependency(
   dependencies: dep_list,
 )
 
+
 executable('client',
            'client.cpp',
            dependencies:all_deps,
@@ -84,6 +86,20 @@ executable('recoder_vnf',
            'recoder_vnf.cpp',
            dependencies:all_deps,
            install : false)
+
+executable('test_client',
+           'test_client.cpp',
+           dependencies:all_deps,
+           install : false)
+
+executable('test_server',
+           'test_server.cpp',
+           dependencies:all_deps,
+           install : false)
+
+
+
+
 
 message('\n'.join([
   '',

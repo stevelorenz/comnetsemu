@@ -1,0 +1,5 @@
+project('mylib', 'cpp', default_options : ['cpp_std=c++14'], version : '0.1')
+
+mylib = library('mylib', sources : ['CommandLine.hpp', 'CommandLine.cpp'])
+
+mylib_dep = declare_dependency(include_directories : include_directories('.'), link_with : mylib)
