@@ -43,18 +43,8 @@ CLIENT_IP = "10.0.1.11"
 SERVER_IP = "10.0.3.11"
 SERVER_UDP_PORT = 9999
 
-
-
-
-
-# set a new arg for recode_node
-# First setting default recode_node_list
-
+# set a new flag for recode_node
 is_recoded=False
-# CONF=cfg.CONF
-# CONF.register_cli_opts([cfg.StrOpt('recode_node', default='[0,0,0]',
-#          help='recode_node for switch')],group='test-switch') 
-
 
 
 class MultiHopRest(app_manager.RyuApp):
@@ -71,14 +61,14 @@ class MultiHopRest(app_manager.RyuApp):
         # Map specific interface names to port.
         self.vnf_iface_to_port = {} 
         # read recode_node from recode_node.temp
-        self.recode_node_list=[0,0,0]
-        re_temp=open("recode_node.temp","r+")
-        s1=re_temp.read()
+        self.recode_node_list = [0, 0, 0]
+        re_temp = open("recode_node.temp", "r+")
+        s1 = re_temp.read()
         re_temp.close()
         os.remove("recode_node.temp")
         self.logger.info("[naibao]: succuessful delete recode_node.temp")
-        s1_list_str=s1.split(',')
-        self.recode_node_list=[int(i) for i in s1_list_str]
+        s1_list_str = s1.split(',')
+        self.recode_node_list = [int(i) for i in s1_list_str]
         # wsgi
         wsgi = kwargs["wsgi"]
         wsgi.register(MultiHopController, {APP_INSTANCE_NAME: self})
@@ -182,9 +172,10 @@ class MultiHopRest(app_manager.RyuApp):
 
 
         if dst in self.mac_to_port[dpid]:  
-            global is_recoded        
-            # here to deside if recode 
-            self.logger.info(f'[naibao]: packet can forward, judge recode, current dpid:{dpid}')
+            global is_recoded
+            # here to deside if recode
+            self.logger.info(
+                f'[naibao]: packet can forward, judge recode, current dpid:{dpid}')
             # true, need to recode
             if self.recode_node_list[dpid-1]:
                 self.logger.info(f'[naibao]: {dpid} need to recode')
@@ -194,10 +185,11 @@ class MultiHopRest(app_manager.RyuApp):
                     out_port = self.mac_to_port[dpid][dst]
                     is_recoded = False
                 else:
-                    self.logger.info('[naibao]: not recoded, sent to controller to recode')
-                    out_port = ofproto.OFPP_CONTROLLER     
-            else :
-                    out_port = self.mac_to_port[dpid][dst]          
+                    self.logger.info(
+                        '[naibao]: not recoded, sent to controller to recode')
+                    out_port = ofproto.OFPP_CONTROLLER
+            else:
+                out_port = self.mac_to_port[dpid][dst]
         # ---------------------------
         else:
             out_port = ofproto.OFPP_FLOOD
@@ -323,14 +315,14 @@ class MultiHopRest(app_manager.RyuApp):
         if msg.reason == ofp.OFPR_ACTION:
             # TODO recode here
             self.logger.info('[naibao]: recoding...')
-            is_recoded= True
+            is_recoded = True
             self.logger.info('[naibao]: recode finish')
             reason = 'Action'
             self.logger.info('[naibao] received: '
-                      'buffer_id=%x total_len=%d reason=%s '
-                      'table_id=%d match=%s data=%s',
-                      msg.buffer_id, msg.total_len, reason,
-                      msg.table_id, msg.match, msg.data)
+                             'buffer_id=%x total_len=%d reason=%s '
+                             'table_id=%d match=%s data=%s',
+                             msg.buffer_id, msg.total_len, reason,
+                             msg.table_id, msg.match, msg.data)
             
 
         pkt = packet_lib.packet.Packet(msg.data)
