@@ -15,10 +15,9 @@
 #define SERVICE_PORT 9999
 
 int main(void) {
-  uint32_t data_rate = 1000;
-  uint32_t interleaving_batch;
-  uint32_t current_batch = 0;
+  double data_rate = 100;
   uint32_t symbols = 42;
+  uint32_t redundant_symbols = 20; 
   uint32_t symbol_size = 160;
   fifi::finite_field field = fifi::finite_field::binary8;
   kodo_rlnc::encoder encoder(field, symbols, symbol_size);
@@ -41,6 +40,7 @@ int main(void) {
   // Assign the data buffer to the encoder so that we may start
   // to produce encoded symbols from it
   encoder.set_symbols_storage(data_in.data());
+  encoder.set_systematic_off();
 
 
   struct sockaddr_in myaddr, remaddr;
@@ -76,30 +76,31 @@ int main(void) {
   }
 
   // now let's send the messages
-  uint32_t packets_sent = 0;
+  uint32_t packets_sent = 1;
   start = std::chrono::high_resolution_clock::now();
-  while (packets_sent < encoder.rank()) {
-
-            // Stall the sending thread to match the desired data rate
-            while (true)
-            {
-                now = std::chrono::high_resolution_clock::now();
-                double elapsed_time = microsec(now - start).count();
-                double current_rate = packets_sent / elapsed_time;
-
-                // Exit the while loop if the current rate drops below the
-                // desired rate
-                if (current_rate * 1000000 <= data_rate)
-                    break;
-            }
-
+  while (packets_sent < (symbols + redundant_symbols)) {
+	
     encoder.produce_payload(payload.data());
 
-    printf("Sending packet %d to %s port %d\n", packets_sent, server, SERVICE_PORT);
+    // Stall the sending thread to match the desired data rate
+    now = std::chrono::high_resolution_clock::now();
+    double elapsed_time = microsec(now - start).count();
+    double time_to_wait = (( 1 / data_rate * packets_sent) - elapsed_time / 1000000) *1000000;
+    if (time_to_wait > 0){
+     usleep(time_to_wait);
+     printf("Sending packet %d to %s port %d\n", packets_sent, server, SERVICE_PORT);
     if (sendto(fd, &(payload[0]), payload.size(), 0,
                (struct sockaddr *)&remaddr, slen) == -1)
       perror("sendto");
+    }
+    else {
+    printf("Data rate can not be reached \n");
+    break;
+    }
     packets_sent++;
+    
+
+
   }
   close(fd);
   return 0;
