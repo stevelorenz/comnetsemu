@@ -5,6 +5,13 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.2.0 - 2021-05-30
+
+### Changed
+
+-   Use Ubuntu 20.04 LTS as the base distribution for the VM.
+-   Use the latest Mininet 2.3.0 from upstream (https://github.com/mininet/mininet).
+
 ## v0.1.12 - 2020-06-16
 
 ### Changed

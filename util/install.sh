@@ -112,7 +112,6 @@ DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 MININET_GIT_URL="https://github.com/mininet/mininet.git"
 MININET_VER="2.3.0"
 RYU_VER="v4.34"
-BCC_VER="v0.9.0"
 # ComNetsEmu's dependency python packages are listed in ./requirements.txt.
 
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
@@ -130,7 +129,6 @@ function usage() {
     echo ""
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
-    echo " -b: install (B)PF Compiler Collection (BCC) [$BCC_VER]."
     echo " -c: install (C)omNetsEmu Python module and dependency packages."
     echo " -d: install (D)ocker CE [stable]."
     echo " -h: print usage."
@@ -157,13 +155,8 @@ function install_docker() {
     $update update
     $remove docker.io containerd runc
     $install docker.io
-
-    # Enable docker experimental features
-    sudo mkdir -p /etc/docker
-    echo "{\"experimental\": true}" | sudo tee --append /etc/docker/daemon.json
-    if pidof systemd; then
-        sudo systemctl restart docker
-    fi
+    sudo systemctl start docker
+    sudo systemctl enable docker
 }
 
 function upgrade_docker() {
@@ -238,23 +231,6 @@ function install_devs() {
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
     echo "- Install packages to build HTML documentation."
     sudo -H $PIP install -r ./requirements.txt
-}
-
-function install_bcc() {
-    local bcc_dir="$EXTERN_DEP_DIR/bcc-$BCC_VER"
-    mkdir -p "$bcc_dir"
-
-    echo "*** Install BPF Compiler Collection"
-    $install bison build-essential cmake flex git libedit-dev libllvm6.0 llvm-6.0-dev libclang-6.0-dev python3 zlib1g-dev libelf-dev
-    $install linux-headers-"$(uname -r)" python3-setuptools
-    git clone https://github.com/iovisor/bcc.git "$bcc_dir/bcc"
-    cd "$bcc_dir/bcc" || exit
-    git checkout -b $BCC_VER $BCC_VER
-    mkdir -p build
-    cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3
-    make
-    sudo make install
 }
 
 function upgrade_comnetsemu() {
@@ -404,7 +380,6 @@ else
     while getopts 'abcdhklnrtuvy' OPTION; do
         case $OPTION in
         a) all ;;
-        b) install_bcc ;;
         c) install_comnetsemu ;;
         d) install_docker ;;
         h) usage ;;

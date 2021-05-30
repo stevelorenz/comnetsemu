@@ -2,14 +2,15 @@ language: python
 
 matrix:
   include:
-    - dist: bionic
+    - dist: focal
       python: 3.6
-      env: dist="18.04 LTS bionic"
+      env: dist="20.04 LTS focal"
 
 branches:
   only:
     - master
     - dev
+    - dev-zuo
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
 before_install:
@@ -19,7 +20,9 @@ before_install:
 
 install:
   - cd ${TRAVIS_BUILD_DIR}/util
-  - PYTHON=python3 ./install.sh -a
+  # ISSUE: `install.sh -a` does not work on Travis CI since the Docker is pre-installed in its VM.
+  - PYTHON=python3 ./install.sh -knyv
+  - PYTHON=python3 ./install.sh -c
   - cd ${TRAVIS_BUILD_DIR}
   - sudo make develop
   - cd ${TRAVIS_BUILD_DIR}/test_containers
