@@ -52,7 +52,7 @@ class CLI(CLI):  # pylint: disable=function-redefined
 
     def do_xterm(self, line, term="xterm"):
         """Spawn xterm(s) for the given node(s).
-           Usage: xterm node1 node2 ..."""
+        Usage: xterm node1 node2 ..."""
         args = line.split()
         if not args:
             error("usage: %s node1 node2 ...\n" % term)

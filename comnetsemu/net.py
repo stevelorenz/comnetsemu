@@ -7,6 +7,7 @@ import json
 import os
 import os.path
 import shutil
+import subprocess
 import threading
 from functools import partial
 from time import sleep
@@ -35,6 +36,19 @@ class Containernet(Mininet):
         Mininet.
         """
         self._appcontainers = list()
+
+        # ISSUE: This is a bad workaround to allow X11 forwarding with sudo ...
+        #        It is used because running mininet needs root privileges currently ...
+        #        The X-forwarding does not work when a user uses `sudo xterm`, the magic cookie is not there.
+        sudo_user = os.environ.get("SUDO_USER", None)
+        if os.path.exists(f"/home/{sudo_user}/.Xauthority"):
+            subprocess.run(
+                f"xauth add $(xauth -f /home/{sudo_user}/.Xauthority list|tail -1)",
+                check=True,
+                shell=True,
+                stderr=subprocess.DEVNULL,
+            )
+
         Mininet.__init__(self, **params)
 
     def addDockerHost(self, name: str, **params):  # pragma: no cover
@@ -62,8 +76,8 @@ class Containernet(Mininet):
 
     def addLinkNamedIfce(self, src, dst, *args, **kwargs):  # pragma: no cover
         """Add a link with two named interfaces.
-           - Name of interface 1: src-dst
-           - Name of interface 2: dst-src
+        - Name of interface 1: src-dst
+        - Name of interface 2: dst-src
         """
         # Accept node objects or names
         src = src if not isinstance(src, BaseString) else self[src]

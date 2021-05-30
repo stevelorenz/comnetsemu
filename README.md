@@ -88,7 +88,7 @@ Check the [Roadmap](./doc/roadmap.md) for planed and WIP features.
 
 **Supported/Tested distributions**:
 
-1.  Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
+1.  Ubuntu 20.04 LTS: Used as base-box in the Vagrant VM.
 1.  GNU/Debian 10 (Buster)
 
 For development and using it as a playground, it is recommended to run ComNetsEmu INSIDE a VM. Run ComNetsEmu/Mininet
@@ -216,7 +216,7 @@ the sync type.
 A customization shell script (should be located in `./util/vm_customize.sh`) is executed at the end of the provision
 process. This script is executed by the vagrant user which can run sudo commands without password.
 This script can be used to add your customized tools (e.g. ZSH, Desktop environment etc) and configuration to the
-ComNetsEmu VM. Since the vagrant VM uses Ubuntu 18.04 LTS, apt should be used to manage the packages.
+ComNetsEmu VM. Since the vagrant VM uses Ubuntu 20.04 LTS, apt should be used to manage the packages.
 
 Example of `vm_customize.sh`:
 ```bash
@@ -251,14 +251,13 @@ Stop here and go to the section of [docker-in-docker example](#run-the-docker-in
 
 As described in [here](#installation), installation on user's custom VM or directly on the host OS has several
 disadvantages. It is not convenient to manage the test environment compared to the option 1.
-For this option, it is recommended to install Ubuntu 18.04 LTS **freshly** inside the VM or as the host OS to avoid
+For this option, it is recommended to install Ubuntu 20.04 LTS **freshly** inside the VM or as the host OS to avoid
 potential package conflicts.
 Currently, this option is not well-tested compared to the option 1.
 
 **Supported/Tested distributions**:
 
-1.  Ubuntu 18.04 LTS (Bionic Beaver): Used as base-box in the Vagrant VM.
-1.  GNU/Debian 10 (Buster)
+1.  Ubuntu 20.04 LTS: Used as base-box in the Vagrant VM.
 
 - Install essential packages required by the installer from your package management systems:
 

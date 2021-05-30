@@ -12,7 +12,7 @@ set -e
 set -o nounset
 
 # TODO:  <06-06-19, Zuo> Test installation on other distributions
-TEST_IMAGES=("ubuntu:18.04" "debian:buster")
+TEST_IMAGES=("ubuntu:20.04")
 TEST_OPTIONS=("-t")
 COMNETSEMU_DIR="/root/comnetsemu"
 

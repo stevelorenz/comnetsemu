@@ -12,8 +12,10 @@ set -o nounset
 
 # Mininet's installer's default assumption.
 if [[ $EUID -eq 0 ]]; then
-    echo "Installer should be run as a user with sudo permissions, "
-    echo "not root."
+    echo "This installer script should be run as a user with sudo permissions, "
+    echo "not root (Avoid running all commands in the script with root privilege) !"
+
+    echo "Please use bash ./install.sh instead of sudo bash ./install.sh"
     exit 1
 fi
 
@@ -73,9 +75,8 @@ if [[ "$ARCH" == "i686" ]]; then
     exit 1
 fi
 
-test -e /etc/debian_version && DIST="Debian"
 grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
-if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
+if [ "$DIST" = "Ubuntu" ]; then
     # Truly non-interactive apt-get installation
     install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install'
     remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
@@ -87,7 +88,7 @@ if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
         $install lsb-release
     fi
 else
-    error "[DIST]" "The installer currently ONLY supports Debian/Ubuntu"
+    error "[DIST]" "The installer currently ONLY supports Ubuntu 20.04 LTS."
     exit 1
 fi
 
@@ -108,8 +109,8 @@ EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 DEPS_INSTALLED_FROM_SRC=(mininet ryu)
 # - Installed from source, versions are tags or branch names of dependencies
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
-MININET_GIT_URL="https://git.comnets.net/public-repo/mininet.git"
-MININET_VER="bfc42f6d028a9d5ac1bc121090ca4b3041829f86"
+MININET_GIT_URL="https://github.com/mininet/mininet.git"
+MININET_VER="2.3.0"
 RYU_VER="v4.34"
 BCC_VER="v0.9.0"
 # ComNetsEmu's dependency python packages are listed in ./requirements.txt.
@@ -153,26 +154,9 @@ function install_kernel_modules() {
 }
 
 function install_docker() {
-    $remove docker docker.io
-    $install apt-transport-https ca-certificates curl software-properties-common python3-pip gnupg2
-
-    if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
-        curl -fsSL https://download.docker.com/linux/"${DIST,,}"/gpg | sudo apt-key add -
-        if [[ $(sudo apt-key fingerprint 9DC858229FC7DD38854AE2D88D81803C0EBFCD88) ]]; then
-            echo "The fingerprint is correct"
-        else
-            echo "The fingerprint is wrong!"
-            exit 1
-        fi
-        $addrepo \
-            "deb [arch=amd64] https://download.docker.com/linux/${DIST,,}\
-            $(lsb_release -cs) \
-            stable"
-
-    fi
-
     $update update
-    $install docker-ce
+    $remove docker.io containerd runc
+    $install docker.io
 
     # Enable docker experimental features
     sudo mkdir -p /etc/docker
@@ -184,7 +168,7 @@ function install_docker() {
 
 function upgrade_docker() {
     $update update
-    $install docker-ce
+    $install docker.io
 }
 
 function upgrade_pip() {
@@ -345,7 +329,7 @@ function remove_comnetsemu() {
     warning "[REMOVE]" "Try its best to remove all packages and configuration files, not 100% clean."
 
     echo "Remove Docker and docker-py"
-    $remove docker-ce
+    $remove docker.io
     sudo -H $PIP uninstall -y docker || true
 
     echo "Remove Mininet"

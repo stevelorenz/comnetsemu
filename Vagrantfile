@@ -13,9 +13,9 @@ CPUS = 2
 RAM = 4096
 
 # Bento: Packer templates for building minimal Vagrant baseboxes
-# The bento/ubuntu-18.04 is a small image of 500 MB, fast to download
-BOX = "bento/ubuntu-18.04"
-VM_NAME = "ubuntu-18.04-comnetsemu"
+# The bento/ubuntu-20.04 is a small image of 500 MB, fast to download
+BOX = "bento/ubuntu-20.04"
+VM_NAME = "ubuntu-20.04-comnetsemu"
 
 # Box for using libvirt as the provider, bento boxes do not support libvirt.
 BOX_LIBVIRT = "generic/ubuntu1804"
@@ -42,22 +42,23 @@ apt-get install -y xorg
 apt-get install -y openbox
 SCRIPT
 
-# Use v5.4 LTS, EOL: Dec, 2025
+# Ubuntu 20.04 LTS uses v5.4 LTS, EOL: Dec, 2025
+#
 # For eBPF, XDP, AF_XDP, EROFS etc.
-$install_kernel= <<-SCRIPT
-# Install libssl1.1 from https://packages.ubuntu.com/bionic/amd64/libssl1.1/download
-echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" | tee -a /etc/apt/sources.list > /dev/null
-apt update
-apt install -y libssl1.1
-cd /tmp || exit
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470_5.4.70-050470.202010070732_all.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-image-unsigned-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-modules-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
-dpkg -i *.deb
-update-initramfs -u -k 5.4.70-050470-generic
-update-grub
-SCRIPT
+# $install_kernel= <<-SCRIPT
+# # Install libssl1.1 from https://packages.ubuntu.com/bionic/amd64/libssl1.1/download
+# echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" | tee -a /etc/apt/sources.list > /dev/null
+# apt update
+# apt install -y libssl1.1
+# cd /tmp || exit
+# wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470_5.4.70-050470.202010070732_all.deb
+# wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-headers-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
+# wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-image-unsigned-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
+# wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.4.70/amd64/linux-modules-5.4.70-050470-generic_5.4.70-050470.202010070732_amd64.deb
+# dpkg -i *.deb
+# update-initramfs -u -k 5.4.70-050470-generic
+# update-grub
+# SCRIPT
 
 $post_installation= <<-SCRIPT
 # Allow vagrant user to use Docker without sudo
@@ -140,7 +141,6 @@ But the script will check and perform upgrade automatically and it does not take
     '
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
-    comnetsemu.vm.provision :shell, inline: $install_kernel, privileged: true
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
 
     if provider == "virtualbox"
@@ -148,19 +148,9 @@ But the script will check and perform upgrade automatically and it does not take
       comnetsemu.vm.provision "shell", run: "always", inline: <<-WORKAROUND
       modprobe vboxsf || true
       WORKAROUND
-      # Make the maketerm of Mininet work in VirtualBox.
-      comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
-        sed -i 's/X11UseLocalhost no/X11UseLocalhost yes/g' /etc/ssh/sshd_config
-        systemctl restart sshd.service
-      SHELL
     end
 
     if provider == "libvirt"
-      # Make the maketerm of Mininet work in KVM.
-      comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
-        sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
-        systemctl restart sshd.service
-      SHELL
     end
 
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
