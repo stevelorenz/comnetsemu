@@ -7,18 +7,18 @@
 ###############
 
 CPUS = 2
-# - 2GB RAM should be sufficient for most examples and applications.
+# - 2GB RAM SHOULD be sufficient for most examples and applications.
 # - Currently only YOLOv2 object detection application requires 4GB RAM to run smoothly.
 # - Reduce the memory number (in MB) here if you physical machine does not have enough physical memory.
 RAM = 4096
 
 # Bento: Packer templates for building minimal Vagrant baseboxes
-# The bento/ubuntu-20.04 is a small image of 500 MB, fast to download
+# The bento/ubuntu-XX.XX is a small image of about 500 MB, fast to download
 BOX = "bento/ubuntu-20.04"
 VM_NAME = "ubuntu-20.04-comnetsemu"
 
-# Box for using libvirt as the provider, bento boxes do not support libvirt.
-BOX_LIBVIRT = "generic/ubuntu1804"
+# When using libvirt as the provider, use this box, bento boxes do not support libvirt.
+BOX_LIBVIRT = "generic/ubuntu2004"
 
 ######################
 #  Provision Script  #
@@ -26,20 +26,32 @@ BOX_LIBVIRT = "generic/ubuntu1804"
 
 # Common bootstrap
 $bootstrap= <<-SCRIPT
-# Install dependencies
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
 
-# Essential packages used by ./util/install.sh
-apt-get install -y git make pkg-config sudo python3 libpython3-dev python3-dev python3-pip software-properties-common
-# Test/Development utilities
-apt-get install -y bash-completion htop dfc gdb tmux
-apt-get install -y iperf iperf3
+APT_PKGS=(
+  bash-completion
+  dfc
+  gdb
+  git
+  htop
+  iperf
+  iperf3
+  libpython3-dev
+  make
+  pkg-config
+  python3
+  python3-dev
+  python3-pip
+  software-properties-common
+  sudo
+  tmux
+)
+apt-get install -y --no-install-recommends "${APT_PKGS[@]}"
 SCRIPT
 
 $setup_x11_server= <<-SCRIPT
-apt-get install -y xorg
-apt-get install -y openbox
+apt-get install -y --no-install-recommends xorg openbox
 SCRIPT
 
 # Ubuntu 20.04 LTS uses v5.4 LTS, EOL: Dec, 2025
@@ -72,22 +84,6 @@ SCRIPT
 #  Vagrant Config  #
 ####################
 
-require 'optparse'
-
-# Parse the provider argument
-def get_provider
-  ret = nil
-  opt_parser = OptionParser.new do |opts|
-    opts.on("--provider provider") do |provider|
-      ret = provider
-    end
-  end
-  opt_parser.parse!(ARGV)
-  ret
-end
-provider = get_provider || "virtualbox"
-
-
 Vagrant.configure("2") do |config|
 
   if Vagrant.has_plugin?("vagrant-vbguest")
@@ -98,6 +94,11 @@ Vagrant.configure("2") do |config|
 
     # VirtualBox-specific configuration
     comnetsemu.vm.provider "virtualbox" do |vb|
+      comnetsemu.vm.box = BOX
+      # Sync ./ to home dir of vagrant to simplify the install script
+      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
+      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'virtualbox'
+
       vb.name = VM_NAME
       vb.cpus = CPUS
       vb.memory = RAM
@@ -107,25 +108,17 @@ Vagrant.configure("2") do |config|
     end
 
     comnetsemu.vm.provider "libvirt" do |libvirt|
-      libvirt.driver = "kvm"
-      libvirt.cpus = CPUS
-      libvirt.memory = RAM
-    end
-
-    if provider == "virtualbox"
-      comnetsemu.vm.box = BOX
-      # Sync ./ to home dir of vagrant to simplify the install script
-      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
-      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'virtualbox'
-    elsif provider == "libvirt"
       comnetsemu.vm.box = BOX_LIBVIRT
       comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
       # Rync is used for simplicity, it's unidirectional (host -> guest).
       # It does NOT run $ vagrant rsync-auto by default.
       # More options here: https://github.com/vagrant-libvirt/vagrant-libvirt#synced-folders
       comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'rsync'
-    end
 
+      libvirt.driver = "kvm"
+      libvirt.cpus = CPUS
+      libvirt.memory = RAM
+    end
 
     comnetsemu.vm.hostname = "comnetsemu"
     comnetsemu.vm.box_check_update = true
@@ -142,16 +135,6 @@ But the script will check and perform upgrade automatically and it does not take
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
-
-    if provider == "virtualbox"
-      # Workaround for vbguest plugin issue
-      comnetsemu.vm.provision "shell", run: "always", inline: <<-WORKAROUND
-      modprobe vboxsf || true
-      WORKAROUND
-    end
-
-    if provider == "libvirt"
-    end
 
     comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
       # Apply Xterm profile, looks nicer.
@@ -184,12 +167,8 @@ But the script will check and perform upgrade automatically and it does not take
     comnetsemu.vm.provision :shell, inline: $post_installation, privileged: true
 
     # Always run this when use `vagrant up`
-    # - Check to update all dependencies
-    # ISSUE: The VM need to have Internet connection to boot up...
-    #comnetsemu.vm.provision :shell, privileged: true, run: "always", inline: <<-SHELL
-    #  cd /home/vagrant/comnetsemu/util || exit
-    #  PYTHON=python3 ./install.sh -u
-    #SHELL
+    # - Apply temporary fixes for upstream dependencies.
+    comnetsemu.vm.provision :shell, privileged: false, run: "always", path: "./util/tmp_fix_deps.sh"
 
     # VM networking
     comnetsemu.vm.network "forwarded_port", guest: 8888, host: 8888, host_ip: "127.0.0.1"

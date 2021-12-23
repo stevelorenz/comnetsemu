@@ -2,8 +2,8 @@
 # About: Default image for development, tests and basic examples.
 #
 
-# Docker official image with docker-in-docker (dind)
-FROM docker:stable-dind
+# About 3MB compressed size.
+FROM alpine:latest
 
 RUN apk update && apk upgrade
 

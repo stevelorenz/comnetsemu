@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# About: ComNetsEmu Installer
-# Email: zuo.xiang@tu-dresden.de
+# About: All-in-one ComNetsEmu Installer
+#        This is ONLY a basic all-in-one script installer for single vagrant VM setup.
+#        It ONLY supports the latest Ubuntu LTS version ().
+#        Supporting multiple GNU/Linux distributions and versions is OUT OF SCOPE.
 #
 
 # Fail on error
@@ -10,35 +12,31 @@ set -e
 # Fail on unset var usage
 set -o nounset
 
-# Mininet's installer's default assumption.
-if [[ $EUID -eq 0 ]]; then
-    echo "This installer script should be run as a user with sudo permissions, "
-    echo "not root (Avoid running all commands in the script with root privilege) !"
+# Avoid conflicts with custom grep options
+unset GREP_OPTIONS
 
-    echo "Please use bash ./install.sh instead of sudo bash ./install.sh"
-    exit 1
-fi
+# Use en_US locale
+unset LANG
+unset LANGUAGE
+LC_ALL=en_US.utf8
+export LC_ALL
 
-# Set magic variables for current file & dir
-# __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+######################
+#  Helper Functions  #
+######################
 
-####################
-#  Util Functions  #
-####################
-
-msg() {
+function print_stderr() {
     printf '%b\n' "$1" >&2
 }
 
-warning() {
+function warning() {
     declare _type=$1 text=$2
-    msg "\033[33mWarning:\033[0m ${_type} ${text}"
+    print_stderr "\033[33mWarning:\033[0m ${_type} ${text}"
 }
 
-error() {
+function error() {
     declare _type=$1 text=$2
-    msg "\033[31m[✘]\033[0m ${_type} ${text}"
+    print_stderr "\033[31m[✘]\033[0m ${_type} ${text}"
 }
 
 function no_dir_exit() {
@@ -49,6 +47,8 @@ function no_dir_exit() {
     fi
 }
 
+# TODO (Zuo): Patch Mininet source directly instead of using Python runtime
+# monkey-patching, when there's a new Mininet release.
 function check_patch() {
     declare patch_path=$1
     declare prefix_num=$2
@@ -62,37 +62,58 @@ function check_patch() {
 }
 
 ####################
-#  Main Installer  #
+#  Sanity Checks   #
 ####################
 
-DIST=Unknown
-ARCH=$(uname -m)
-PYTHON=python3
-PIP=pip3
-
-if [[ "$ARCH" == "i686" ]]; then
-    error "[ARCH]" "i386 is not supported."
+# Mininet's installer's default assumption.
+if [[ $EUID -eq 0 ]]; then
+	error "[USER]" "Do not run this script through sudo or as root user."
+    echo "This installer script should be run as a regular user with sudo permissions, "
+    echo "not root (Avoid running all commands in the script with root privilege) !"
+	echo "The script will call sudo when needed."
+    echo "Please use bash ./install.sh instead of sudo bash ./install.sh"
     exit 1
 fi
 
+ARCH=$(uname -m)
+if [[ "$ARCH" == "i686" ]]; then
+    error "[ARCH]" "i386 is not supported. Please use X86_64."
+    exit 1
+fi
+
+# Check if the latest Ubuntu LTS is used.
+UBUNTU_RELEASE="20.04"
+# Truly non-interactive apt-get installation
+install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -q install'
+remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
+update='sudo apt-get update'
+
+DIST=Unknown
 grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
 if [ "$DIST" = "Ubuntu" ]; then
-    # Truly non-interactive apt-get installation
-    install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install'
-    remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-    # pkginst='sudo dpkg -i'
-    update='sudo apt-get'
-    addrepo='sudo add-apt-repository'
-    # Prereqs for this script
     if ! lsb_release -v &>/dev/null; then
         $install lsb-release
     fi
+    if [[ $(lsb_release -rs) != "$UBUNTU_RELEASE" ]]; then
+		error "[DIST]" "This installer ONLY supports Ubuntu $UBUNTU_RELEASE LTS."
+
+		echo "If you have already created the VM with the older LTS version (e.g. 18.04), please just re-create the VM to upgrade the base OS and packages."
+		echo "If vagrant is used. You can simply destroy the VM and re-up the ComNetsEmu VM after you pulling the latest Vagrantfile."
+		echo "You can re-build all container images when the new VM is created."
+		exit 1
+	fi
 else
-    error "[DIST]" "The installer currently ONLY supports Ubuntu 20.04 LTS."
+    error "[DIST]" "This installer ONLY supports Ubuntu $UBUNTU_RELEASE LTS."
     exit 1
 fi
 
-echo "*** ComNetsEmu Installer ***"
+####################
+#  Main Installer  #
+####################
+
+# Use Python3 packages by default
+PYTHON=python3
+PIP=pip3
 
 DEFAULT_REMOTE="origin"
 
@@ -117,6 +138,8 @@ RYU_VER="v4.34"
 DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
 DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
 
+echo "*** ComNetsEmu Installer ***"
+
 echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
 echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
@@ -124,18 +147,16 @@ echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
     echo " - Dependencies are installed with package manager (apt, pip) or from sources (git clone)."
-    echo " - [] in options are used to mark the version (If the tool is installed from source, the version can be a Git commit, branch or tag.)"
+    echo " - [VERSION] in options are used to mark/print the version (If the tool is installed from source, the version can be a Git commit, branch or tag.)"
 
     echo ""
     echo "Options:"
     echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
-    echo " -c: install (C)omNetsEmu Python module and dependency packages."
+    echo " -c: install (C)omNetsEmu Python module and all its Python dependency packages."
     echo " -d: install (D)ocker CE [stable]."
-    echo " -h: print usage."
+	echo " -h: print usage/(H)elp."
     echo " -k: install required Linux (K)ernel modules."
-    echo " -l: install ComNetsEmu and only (L)ight-weight dependencies."
-    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0)"
-    echo " -r: (R)einstall all dependencies for ComNetsEmu."
+    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0, Wireshark)"
     echo " -u: (U)pgrade ComNetsEmu's Python package and all dependencies. "
     echo " -v: install de(V)elopment tools."
     echo " -y: install R(Y)u SDN controller [$RYU_VER]."
@@ -144,15 +165,17 @@ function usage() {
 
 function install_kernel_modules() {
     echo "Install wireguard kernel module"
-    # It is now (07.10.2020) in the official repo.
-    # sudo add-apt-repository -y ppa:wireguard/wireguard
-    sudo apt-get update
-    sudo apt-get install -y linux-headers-"$(uname -r)"
-    sudo apt-get install -y wireguard
+	local wg_apt_pkgs=(
+		linux-headers-"$(uname -r)"
+		wireguard
+	)
+	$update
+	$install "${wg_apt_pkgs[@]}"
 }
 
 function install_docker() {
-    $update update
+    $update
+	# Avoid conflicts and old versions. Maybe wrong here.
     $remove docker.io containerd runc
     $install docker.io
     sudo systemctl start docker
@@ -160,7 +183,7 @@ function install_docker() {
 }
 
 function upgrade_docker() {
-    $update update
+    $update
     $install docker.io
 }
 
@@ -183,30 +206,26 @@ function install_mininet_with_deps() {
     cd mininet || exit
     git checkout -b $MININET_VER $MININET_VER
     cd util || exit
-    if [[ $(lsb_release -rs) == "20.04" ]]; then
-        echo "cgroups-bin is deprected and the new package is cgroups-tools in mininet install script."
-        sed -i 's/cgroup-bin/cgroup-tools/g' ./install.sh
-    else
-        echo "cgroup-bin still supported in Ubuntu 18.04 and below."
-    fi
-    PYTHON=python3 ./install.sh -nfvw03
+	# MARK: Use cgroup-tools to replace the deprecated cgroup-bin
+	sed -i 's/cgroup-bin/cgroup-tools/g' ./install.sh
+    PYTHON=python3 ./install.sh -nfvw
 }
 
 function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
     $install python3 python3-pip
-    echo "- Install ComNetsEmu dependency packages."
+    echo "- Install Python packages that ComNetsEmu depends on."
     cd "$TOP_DIR/comnetsemu/util" || exit
-    sudo -H pip3 install -r ./requirements.txt
-    echo "- Install ComNetsEmu Python package."
+    sudo $PIP install -r ./requirements.txt
+    echo "- Install the ComNetsEmu Python package."
     cd "$TOP_DIR/comnetsemu" || exit
     sudo PYTHON=python3 make install
 }
 
 function upgrade_comnetsemu_deps_python_pkgs() {
-    echo "- Upgrade ComNetsEmu dependency packages."
+    echo "- Upgrade Python packages that ComNetsEmu depends on."
     cd "$TOP_DIR/comnetsemu/util" || exit
-    sudo -H pip3 install -r ./requirements.txt
+    sudo -H $PIP install -r ./requirements.txt
 }
 
 function install_ryu() {
@@ -227,10 +246,19 @@ function install_devs() {
     $install shellcheck
     upgrade_pip
     echo "- Install dev python packages via PIP."
-    sudo -H $PIP install pytest ipdb==0.13.2 coverage==5.1 flake8==3.7.9 flake8-bugbear==20.1.4 pylint==2.5.2 black==19.10b0 pytype==2020.6.1
+	local pip_pkgs=(
+		black
+		coverage
+		flake8
+		flake8-bugbear
+		ipdb
+		pylint
+		pytest
+	)
+    sudo $PIP install "${pip_pkgs[@]}"
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
     echo "- Install packages to build HTML documentation."
-    sudo -H $PIP install -r ./requirements.txt
+    sudo $PIP install -r ./requirements.txt
 }
 
 function upgrade_comnetsemu() {
@@ -243,7 +271,7 @@ function upgrade_comnetsemu() {
         echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
 
         echo ""
-        echo "- Upgrade dependencies installed with package manager."
+		echo "- Upgrade dependencies installed with package managers (apt, pip)."
         upgrade_docker
         install_devs
         upgrade_comnetsemu_deps_python_pkgs
@@ -284,18 +312,8 @@ function upgrade_comnetsemu() {
     fi
 }
 
-function reinstall_comnetsemu_deps() {
-    echo ""
-    echo "*** Reinstall ComNetsEmu dependencies."
-    sudo rm -r "$EXTERN_DEP_DIR"
-    install_kernel_modules
-    install_mininet_with_deps
-    install_ryu
-    install_docker
-    install_devs
-}
-
-# TODO: Extend remove function for all installed packages
+# TODO (Zuo): Clean remove function is not finished yet!!!
+# Check if Mininet supports clean remove and finish the clean remove function!!!
 function remove_comnetsemu() {
     echo "*** Remove function currently under development"
     exit 0
@@ -325,39 +343,20 @@ function remove_comnetsemu() {
 
     echo "Remove dependency folder"
     sudo rm -rf "$EXTERN_DEP_DIR"
-
-}
-
-function test_install() {
-    echo "*** Test installation. Used by ../check_installer.sh script."
-    install_mininet_with_deps
-    install_ryu
-    install_docker
-    install_devs
-    install_comnetsemu
-}
-
-function install_lightweight() {
-    echo "*** Install ComNetsEmu with only light weight dependencies"
-    $update update
-    install_kernel_modules
-    install_mininet_with_deps
-    install_ryu
-    install_docker
-    # MUST run at the end!
-    install_comnetsemu
 }
 
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
-    $update update
+    $update
     install_kernel_modules
     install_mininet_with_deps
     install_ryu
     install_docker
-    install_devs
-    # MUST run at the end!
+
+	# Must install comnetsemu after installing all dependencies !
     install_comnetsemu
+
+    install_devs
 }
 
 # Check if source and dependency directory exits
@@ -384,10 +383,7 @@ else
         d) install_docker ;;
         h) usage ;;
         k) install_kernel_modules ;;
-        l) install_lightweight ;;
         n) install_mininet_with_deps ;;
-        r) reinstall_comnetsemu_deps ;;
-        t) test_install ;;
         u) upgrade_comnetsemu ;;
         v) install_devs ;;
         y) install_ryu ;;
