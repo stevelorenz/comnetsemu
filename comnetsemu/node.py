@@ -193,7 +193,7 @@ class DockerHost(Host):
         self.dclient.close()
 
     def terminate(self):
-        """ Stop docker container """
+        """Stop docker container"""
         if not self._is_container_running():
             return
         try:
@@ -212,7 +212,7 @@ class DockerHost(Host):
 
     def sendCmd(self, *args, **kwargs):
         """Send a command, followed by a command to echo a sentinel,
-           and return without waiting for the command to complete."""
+        and return without waiting for the command to complete."""
         self._check_shell()
         if not self.shell:
             return
@@ -220,8 +220,8 @@ class DockerHost(Host):
 
     def popen(self, *args, **kwargs):
         """Return a Popen() object in node's namespace
-           args: Popen() args, single list, or string
-           kwargs: Popen() keyword args"""
+        args: Popen() args, single list, or string
+        kwargs: Popen() keyword args"""
         if not self._is_container_running():
             error(
                 "ERROR: Can't connect to Container '%s'' for docker host '%s'!\n"
@@ -234,7 +234,7 @@ class DockerHost(Host):
 
     def cmd(self, *args, **kwargs):
         """Send a command, wait for output, and return it.
-           cmd: string"""
+        cmd: string"""
         verbose = kwargs.get("verbose", False)
         log = info if verbose else debug
         log("*** %s : %s\n" % (self.name, args))
@@ -243,7 +243,7 @@ class DockerHost(Host):
 
     def _check_shell(self):
         """Verify if shell is alive and
-           try to restart if needed"""
+        try to restart if needed"""
         if self._is_container_running():
             if self.shell:
                 self.shell.poll()
@@ -272,31 +272,27 @@ class DockerHost(Host):
             return False
         return True
 
-    # MARK(Zuo): This is a temporary workaround. I will submit an issue to upstream
-    # Mininet project to modify the current Intf.setIP() method.
+    # MARK (Zuo): Use iproute2 instead of ifconfig to configure the IP address
+    # of the default interface of the DockerHost.
     def setIP(self, ip, prefixLen=8, intf=None, **kwargs):
         """Set the IP address for an interface.
-           intf: intf or intf name
-           ip: IP address as a string
-           prefixLen: prefix length, e.g. 8 for /8 or 16M addrs
-           kwargs: any additional arguments for intf.setIP"""
+        intf: intf or intf name
+        ip: IP address as a string
+        prefixLen: prefix length, e.g. 8 for /8 or 16M addrs
+        kwargs: any additional arguments for intf.setIP"""
 
         ifce = self.intf(intf)
-        ret = ifce.setIP(ip, prefixLen, **kwargs)
-        if ret.startswith("ifconfig: bad"):
-            # warn("\nFailed to set IP address with ifconfig\n")
-            debug("Use iproute2 instead of ifconfig (used by Mininet).\n")
-            if "/" in ip:
-                ifce.ip, ifce.prefixLen = ip.split("/")
-                ret = self.cmd("ip addr add {} dev {}".format(ip, ifce.name))
-            else:
-                if prefixLen is None:
-                    raise Exception("No prefix length set for IP address %s" % (ip,))
-                ifce.ip, ifce.prefixLen = ip, prefixLen
-                ret = self.cmd(
-                    "ip addr add {}/{} dev {}".format(ip, prefixLen, ifce.name)
-                )
-        return ret
+        debug("Use iproute2 instead of ifconfig (used by Mininet).\n")
+        if "/" in ip:
+            ifce.ip, ifce.prefixLen = ip.split("/")
+            ret = self.cmd("ip addr add {} dev {}".format(ip, ifce.name))
+            return ret
+        else:
+            if prefixLen is None:
+                raise Exception("No prefix length set for IP address %s" % (ip,))
+            ifce.ip, ifce.prefixLen = ip, prefixLen
+            ret = self.cmd("ip addr add {}/{} dev {}".format(ip, prefixLen, ifce.name))
+            return ret
 
 
 class APPContainer:
