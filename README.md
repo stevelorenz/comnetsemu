@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/stevelorenz/comnetsemu.svg?branch=master)](https://travis-ci.com/stevelorenz/comnetsemu)
+[![Build Status](https://app.travis-ci.com/stevelorenz/comnetsemu.svg?branch=master)](https://app.travis-ci.com/stevelorenz/comnetsemu)
 [![MIT Licensed](https://img.shields.io/github/license/stevelorenz/comnetsemu)](https://github.com/stevelorenz/comnetsemu/blob/master/LICENSE)
 
 ComNetsEmu
