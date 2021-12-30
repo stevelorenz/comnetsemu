@@ -407,11 +407,10 @@ $ sudo make coverage
 $ sudo make test-examples
 ```
 
-- Run static code checking(with pyflakes, pylint and pep8) and type hints checking (with google/pytype):
+- Run static code checking(with pyflakes, pylint and pep8):
 
 ```bash
 $ make codecheck
-$ make typecheck
 ```
 
 - Remove all created containers and all dangling images. Used to reduce the storage usage.

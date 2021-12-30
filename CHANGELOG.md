@@ -5,6 +5,14 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.2.1 - 2021-12-30
+
+### Changed
+
+-   Remove broken dev dependencies in the install.sh. Also remove openflow1.3 reference switch from Mininet project. Just use openvswitch.
+-   Add ./util/tmp_fix_deps.sh script to apply temporary fixes to broken upstream packages. For example, the Ryu SDN controller does not work with eventlet 0.31.0 yet.
+-   Use iproute2 instead of ifconfig for IP configuring of the DockerHost.
+
 ## v0.2.0 - 2021-05-30
 
 ### Changed
