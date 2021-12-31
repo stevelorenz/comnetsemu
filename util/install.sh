@@ -84,15 +84,15 @@ fi
 # Check if the latest Ubuntu LTS is used.
 UBUNTU_RELEASE="20.04"
 # Truly non-interactive apt-get installation
-install='sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -q install'
-remove='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-update='sudo apt-get update'
+INSTALL='sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -q install'
+REMOVE='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
+UPDATE='sudo apt-get update'
 
 DIST=Unknown
 grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
 if [ "$DIST" = "Ubuntu" ]; then
     if ! lsb_release -v &>/dev/null; then
-        $install lsb-release
+        $INSTALL lsb-release
     fi
     if [[ $(lsb_release -rs) != "$UBUNTU_RELEASE" ]]; then
 		error "[DIST]" "This installer ONLY supports Ubuntu $UBUNTU_RELEASE LTS."
@@ -169,29 +169,31 @@ function install_kernel_modules() {
 		linux-headers-"$(uname -r)"
 		wireguard
 	)
-	$update
-	$install "${wg_apt_pkgs[@]}"
+	$UPDATE
+	$INSTALL "${wg_apt_pkgs[@]}"
 }
 
 function install_docker() {
-    $update
+    $UPDATE
 	# Avoid conflicts and old versions. Maybe wrong here.
-    $remove docker.io containerd runc
-    $install docker.io
+    $REMOVE docker.io containerd runc
+    $INSTALL docker.io
     sudo systemctl start docker
     sudo systemctl enable docker
 }
 
 function upgrade_docker() {
-    $update
-    $install docker.io
+    $UPDATE
+    $INSTALL docker.io
 }
 
 function upgrade_pip() {
-    echo "*** Upgrade $PIP to the latest version."
-    sudo -H $PIP install -U pip
+    echo "*** Upgrade $PIP itself to the latest version."
+    sudo $PIP install -U pip
 }
 
+# ISSUE (Zuo): Mininet currently requires full root privilege...
+# install.sh -n calls sudo inside and install Mininet in system Python path.
 function install_mininet_with_deps() {
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
     local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
@@ -200,7 +202,7 @@ function install_mininet_with_deps() {
     mkdir -p "$mininet_dir"
 
     echo "*** Install Mininet and its minimal dependencies."
-    $install git net-tools
+    $INSTALL git net-tools
     cd "$mininet_dir" || exit
     git clone $MININET_GIT_URL
     cd mininet || exit
@@ -211,9 +213,13 @@ function install_mininet_with_deps() {
     PYTHON=python3 ./install.sh -nfvw
 }
 
+# ISSUE (Zuo): Mininet currently requires full root privilege...
+# Mininet is installed in the system Python path.
+# ComNetsEmu is based on Mininet, so its dependencies and itself have to be installed into the system
+# Python path as well. pip install --user can be used when Mininet does not require root privilege.
 function install_comnetsemu() {
     echo "*** Install ComNetsEmu"
-    $install python3 python3-pip
+    $INSTALL python3 python3-pip
     echo "- Install Python packages that ComNetsEmu depends on."
     cd "$TOP_DIR/comnetsemu/util" || exit
     sudo $PIP install -r ./requirements.txt
@@ -225,7 +231,7 @@ function install_comnetsemu() {
 function upgrade_comnetsemu_deps_python_pkgs() {
     echo "- Upgrade Python packages that ComNetsEmu depends on."
     cd "$TOP_DIR/comnetsemu/util" || exit
-    sudo -H $PIP install -r ./requirements.txt
+    sudo $PIP install -r ./requirements.txt
 }
 
 function install_ryu() {
@@ -233,17 +239,17 @@ function install_ryu() {
     mkdir -p "$ryu_dir"
 
     echo "*** Install Ryu SDN controller"
-    $install git gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
+    $INSTALL git gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
     git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
     cd "$ryu_dir/ryu" || exit
     git checkout -b $RYU_VER $RYU_VER
     upgrade_pip
-    sudo -H $PIP install .
+    sudo $PIP install .
 }
 
 function install_devs() {
     echo "*** Install tools for development"
-    $install shellcheck
+    $INSTALL shellcheck
     upgrade_pip
     echo "- Install dev python packages via PIP."
 	local pip_pkgs=(
@@ -255,10 +261,10 @@ function install_devs() {
 		pylint
 		pytest
 	)
-    sudo $PIP install "${pip_pkgs[@]}"
+    $PIP install --user "${pip_pkgs[@]}"
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
     echo "- Install packages to build HTML documentation."
-    sudo $PIP install -r ./requirements.txt
+    $PIP install --user -r ./requirements.txt
 }
 
 function upgrade_comnetsemu() {
@@ -312,34 +318,31 @@ function upgrade_comnetsemu() {
     fi
 }
 
-# TODO (Zuo): Clean remove function is not finished yet!!!
-# Check if Mininet supports clean remove and finish the clean remove function!!!
-function remove_comnetsemu() {
+function remove_all() {
     echo "*** Remove function currently under development"
     exit 0
 
     # ISSUE: pip uninstall does not uninstall all dependencies of the packages
-    echo "*** Remove ComNetsEmu and its dependencies"
-    warning "[REMOVE]" "Try its best to remove all packages and configuration files, not 100% clean."
+    echo "*** Remove ComNetsEmu and all dependencies"
+    warning "[REMOVE]" "Try to remove all packages and configuration files, but this method is not 100% clean."
 
-    echo "Remove Docker and docker-py"
-    $remove docker.io
-    sudo -H $PIP uninstall -y docker || true
+    echo "- Remove Docker and docker-py"
+    $REMOVE docker.io
+    $PIP uninstall -y docker || true
 
-    echo "Remove Mininet"
-    sudo -H $PIP uninstall -y mininet || true
+    echo "- Remove Mininet"
+    $PIP uninstall -y mininet || true
 
-    echo "Remove ComNetsEmu"
-    sudo -H $PIP uninstall -y comnetsemu || true
+    echo "- Remove ComNetsEmu"
+    $PIP uninstall -y comnetsemu || true
 
     echo "Remove Ryu SDN controller"
-    sudo -H $PIP uninstall -y ryu || true
+    $PIP uninstall -y ryu || true
 
     echo "Remove OVS"
     mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
-    mkdir -p "$mininet_dir"
-    ./install.sh -r
     cd "$mininet_dir/mininet/util" || exit
+    ./install.sh -r
 
     echo "Remove dependency folder"
     sudo rm -rf "$EXTERN_DEP_DIR"
@@ -347,7 +350,7 @@ function remove_comnetsemu() {
 
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
-    $update
+    $UPDATE
     install_kernel_modules
     install_mininet_with_deps
     install_ryu

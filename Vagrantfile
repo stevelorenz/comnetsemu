@@ -55,8 +55,9 @@ apt-get install -y --no-install-recommends xorg openbox
 SCRIPT
 
 # Ubuntu 20.04 LTS uses v5.4 LTS, EOL: Dec, 2025
-#
-# For eBPF, XDP, AF_XDP, EROFS etc.
+# This script is uncommented and used when there's a requirement to manually install a special Linux kernel
+# A special kernel (version) is needed sometimes for special latest kernel features (e.g. eBPF, AF_XDP)
+
 # $install_kernel= <<-SCRIPT
 # # Install libssl1.1 from https://packages.ubuntu.com/bionic/amd64/libssl1.1/download
 # echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" | tee -a /etc/apt/sources.list > /dev/null
@@ -72,6 +73,34 @@ SCRIPT
 # update-grub
 # SCRIPT
 
+$setup_comnetsemu= <<-SCRIPT
+# Apply Xterm profile, looks nicer.
+cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
+# xrdb can not run directly during vagrant up. Auto-works after reboot.
+xrdb -merge /home/vagrant/.Xresources
+
+cd /home/vagrant/comnetsemu/util || exit
+PYTHON=python3 ./install.sh -a
+
+cd /home/vagrant/comnetsemu/ || exit
+# setup.py develop installs the package (typically just a source folder)
+# in a way that allows you to conveniently edit your code after it is
+# installed to the (virtual) environment, and have the changes take
+# effect immediately. Convinient for development
+sudo make develop
+
+# Build images for Docker hosts
+cd /home/vagrant/comnetsemu/test_containers || exit
+sudo bash ./build.sh
+
+# Run the customization shell script (for distribution $BOX) if it exits.
+cd /home/vagrant/comnetsemu/util || exit
+if [ -f "./vm_customize.sh" ]; then
+  echo "*** Run VM customization script."
+  bash ./vm_customize.sh
+fi
+SCRIPT
+
 $post_installation= <<-SCRIPT
 # Allow vagrant user to use Docker without sudo
 usermod -aG docker vagrant
@@ -86,34 +115,26 @@ SCRIPT
 
 Vagrant.configure("2") do |config|
 
-  if Vagrant.has_plugin?("vagrant-vbguest")
-    config.vbguest.auto_update = false
-  end
-
   config.vm.define "comnetsemu" do |comnetsemu|
+    comnetsemu.vm.box = BOX
+    # Sync ./ to home directory of vagrant to simplify the install script
+    comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
+    comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu"
 
-    # VirtualBox-specific configuration
+    # For virtualbox provider
     comnetsemu.vm.provider "virtualbox" do |vb|
-      comnetsemu.vm.box = BOX
-      # Sync ./ to home dir of vagrant to simplify the install script
-      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
-      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'virtualbox'
-
       vb.name = VM_NAME
       vb.cpus = CPUS
       vb.memory = RAM
-      # MARK: The CPU should enable SSE3 or SSE4 to compile DPDK applications.
+      # MARK: The vCPUs should have SSE4 to compile DPDK applications.
       vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
       vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
     end
 
-    comnetsemu.vm.provider "libvirt" do |libvirt|
-      comnetsemu.vm.box = BOX_LIBVIRT
-      comnetsemu.vm.synced_folder ".", "/vagrant", disabled: true
-      # Rync is used for simplicity, it's unidirectional (host -> guest).
-      # It does NOT run $ vagrant rsync-auto by default.
-      # More options here: https://github.com/vagrant-libvirt/vagrant-libvirt#synced-folders
-      comnetsemu.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: 'rsync'
+    # For libvirt provider
+    comnetsemu.vm.provider "libvirt" do |libvirt, override|
+      # Overrides are used to modify default options that do not work for libvirt provider.
+      override.vm.box = BOX_LIBVIRT
 
       libvirt.driver = "kvm"
       libvirt.cpus = CPUS
@@ -135,35 +156,7 @@ But the script will check and perform upgrade automatically and it does not take
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
-
-    comnetsemu.vm.provision "shell", privileged: false, inline: <<-SHELL
-      # Apply Xterm profile, looks nicer.
-      cp /home/vagrant/comnetsemu/util/Xresources /home/vagrant/.Xresources
-      # xrdb can not run directly during vagrant up. Auto-works after reboot.
-      xrdb -merge /home/vagrant/.Xresources
-
-      cd /home/vagrant/comnetsemu/util || exit
-      PYTHON=python3 ./install.sh -a
-
-      cd /home/vagrant/comnetsemu/ || exit
-      # setup.py develop installs the package (typically just a source folder)
-      # in a way that allows you to conveniently edit your code after it is
-      # installed to the (virtual) environment, and have the changes take
-      # effect immediately. Convinient for development
-      sudo make develop
-
-      # Build images for Docker hosts
-      cd /home/vagrant/comnetsemu/test_containers || exit
-      sudo bash ./build.sh
-
-      # Run the customization shell script (for distribution $BOX) if it exits.
-      cd /home/vagrant/comnetsemu/util || exit
-      if [ -f "./vm_customize.sh" ]; then
-        echo "*** Run VM customization script."
-        bash ./vm_customize.sh
-      fi
-    SHELL
-
+    comnetsemu.vm.provision :shell, inline: $setup_comnetsemu, privileged: false
     comnetsemu.vm.provision :shell, inline: $post_installation, privileged: true
 
     # Always run this when use `vagrant up`
@@ -175,6 +168,7 @@ But the script will check and perform upgrade automatically and it does not take
     comnetsemu.vm.network "forwarded_port", guest: 8082, host: 8082
     comnetsemu.vm.network "forwarded_port", guest: 8083, host: 8083
     comnetsemu.vm.network "forwarded_port", guest: 8084, host: 8084
+
     # - Uncomment the underlying line to add a private network to the VM.
     #   If VirtualBox is used as the hypervisor, this means adding or using (if already created) a host-only interface to the VM.
     # comnetsemu.vm.network "private_network", ip: "192.168.0.2"
