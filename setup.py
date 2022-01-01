@@ -39,13 +39,18 @@ setup(
     # license="BSD",
     # MARK: MINIMAL requirements
     install_requires=[
-        "setuptools>=39.0.1,<40.0.0",
-        "docker>=3.7.2,<4.0.0",
-        "pyroute2>=0.5.7,<0.6.0",
+        "docker>=4.1.0,<5.0.0",
+        "pyroute2>=0.5.9,<0.6.0",
         "requests>=2.22.0,< 3.0.0",
-        # Not available on PyPi, installed from source code.
+        "ryu>=4.30,<5.0",
+        "setuptools>=45.2.0,<46.0.0",
+        # Mininet is installed FROM SOURCE CODE because:
+        # - The version in Ubuntu's repo is too old
+        # - It's not fully available on PyPi (The searchable package on PyPi
+        #   does not work out-of-box yet. Check: https://github.com/mininet/mininet/pull/970)
+        # - Mininet needs to be patched when some features of ComNetsEmu can
+        #   not be implemented without modifying the source code of Mininet
         "mininet>=2.3.0d6",
-        "ryu>=4.34,<5.0",
     ],
     scripts=scripts,
 )

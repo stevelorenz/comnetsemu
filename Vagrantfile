@@ -37,13 +37,11 @@ APT_PKGS=(
   htop
   iperf
   iperf3
-  libpython3-dev
   make
   pkg-config
   python3
   python3-dev
   python3-pip
-  software-properties-common
   sudo
   tmux
 )
@@ -81,17 +79,8 @@ xrdb -merge /home/vagrant/.Xresources
 
 cd /home/vagrant/comnetsemu/util || exit
 PYTHON=python3 ./install.sh -a
-
-cd /home/vagrant/comnetsemu/ || exit
-# setup.py develop installs the package (typically just a source folder)
-# in a way that allows you to conveniently edit your code after it is
-# installed to the (virtual) environment, and have the changes take
-# effect immediately. Convinient for development
-sudo make develop
-
-# Build images for Docker hosts
-cd /home/vagrant/comnetsemu/test_containers || exit
-sudo bash ./build.sh
+# Install development tools
+PYTHON=python3 ./install.sh -d
 
 # Run the customization shell script (for distribution $BOX) if it exits.
 cd /home/vagrant/comnetsemu/util || exit
@@ -107,6 +96,9 @@ usermod -aG docker vagrant
 if [ -d /home/vagrant/.docker ]; then
   chown -R vagrant:vagrant /home/vagrant/.docker
 fi
+
+apt-get autoclean -y
+apt-get autoremove -y
 SCRIPT
 
 ####################
@@ -158,10 +150,6 @@ But the script will check and perform upgrade automatically and it does not take
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
     comnetsemu.vm.provision :shell, inline: $setup_comnetsemu, privileged: false
     comnetsemu.vm.provision :shell, inline: $post_installation, privileged: true
-
-    # Always run this when use `vagrant up`
-    # - Apply temporary fixes for upstream dependencies.
-    comnetsemu.vm.provision :shell, privileged: false, run: "always", path: "./util/tmp_fix_deps.sh"
 
     # VM networking
     comnetsemu.vm.network "forwarded_port", guest: 8888, host: 8888, host_ip: "127.0.0.1"

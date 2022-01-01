@@ -2,7 +2,7 @@
 #
 # About: All-in-one ComNetsEmu Installer
 #        This is ONLY a basic all-in-one script installer for single vagrant VM setup.
-#        It ONLY supports the latest Ubuntu LTS version ().
+#        It ONLY supports the latest Ubuntu LTS version (20.04).
 #        Supporting multiple GNU/Linux distributions and versions is OUT OF SCOPE.
 #
 
@@ -84,9 +84,9 @@ fi
 # Check if the latest Ubuntu LTS is used.
 UBUNTU_RELEASE="20.04"
 # Truly non-interactive apt-get installation
-INSTALL='sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -q install'
-REMOVE='sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove'
-UPDATE='sudo apt-get update'
+INSTALL="sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -q install"
+# REMOVE="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove"
+UPDATE="sudo apt-get update"
 
 DIST=Unknown
 grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
@@ -107,15 +107,34 @@ else
     exit 1
 fi
 
-####################
-#  Main Installer  #
-####################
-
-# Use Python3 packages by default
+# Only use Python3
 PYTHON=python3
 PIP=pip3
 
-DEFAULT_REMOTE="origin"
+# Check if required tools are already available in PATH.
+NEEDED_CMDS=(
+	"$PIP"
+	"$PYTHON"
+	git
+	sed
+	sudo
+)
+MISSING_CMDS=()
+
+for cmd in "${NEEDED_CMDS[@]}"; do
+	if ! command -v "$cmd" > /dev/null; then
+		MISSING_CMDS+=("$cmd")
+	fi
+done
+
+if [[ ${#MISSING_CMDS[@]} -gt 0 ]]; then
+	error "[CMDS]" "Missing commands (${MISSING_CMDS[*]}) to run this script. Please install them with your package manager."
+	exit 1
+fi
+
+####################
+#  Main Installer  #
+####################
 
 # Get the directory containing comnetsemu source code folder
 TOP_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
@@ -127,74 +146,55 @@ COMNETSEMU_SRC_DIR="comnetsemu"
 # Clone sources into this directory has privileges conflicts with host OS.
 EXTERN_DEP_DIR="$TOP_DIR/comnetsemu_dependencies"
 # Include the minimal dependencies (used in examples/applications and require potential updates from upstream)
-DEPS_INSTALLED_FROM_SRC=(mininet ryu)
+DEPS_INSTALLED_FROM_SRC=(mininet)
 # - Installed from source, versions are tags or branch names of dependencies
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://github.com/mininet/mininet.git"
 MININET_VER="2.3.0"
-RYU_VER="v4.34"
-# ComNetsEmu's dependency python packages are listed in ./requirements.txt.
-
-DEPS_VERSIONS=("$MININET_VER" "$RYU_VER")
-DEP_INSTALL_FUNCS=(install_mininet_with_deps install_ryu)
+DEPS_VERSIONS=("$MININET_VER")
+DEP_INSTALL_FUNCS=(install_mininet_with_deps)
 
 echo "*** ComNetsEmu Installer ***"
 
-echo " - The default git remote name: $DEFAULT_REMOTE"
 echo " - The path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
-echo " - The directory to download all dependencies: $EXTERN_DEP_DIR"
+echo " - The directory to download all dependencies that are installed from source: $EXTERN_DEP_DIR"
 
 function usage() {
     printf '\nUsage: %s [-abcdhlnouvy]\n\n' "$(basename "$0")" >&2
-    echo " - Dependencies are installed with package manager (apt, pip) or from sources (git clone)."
-    echo " - [VERSION] in options are used to mark/print the version (If the tool is installed from source, the version can be a Git commit, branch or tag.)"
-
-    echo ""
+    echo "Mark: Just use option -a if you want a out-of-box all-in-one environment."
+	# Less options, less problems...
     echo "Options:"
-    echo " -a: install ComNetsEmu and (A)ll dependencies - good luck!"
-    echo " -c: install (C)omNetsEmu Python module and all its Python dependency packages."
-    echo " -d: install (D)ocker CE [stable]."
+    echo " -a: install ComNetsEmu and (A)ll its dependencies - good luck with your network connection !"
 	echo " -h: print usage/(H)elp."
-    echo " -k: install required Linux (K)ernel modules."
-    echo " -n: install mi(N)inet with minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0, Wireshark)"
-    echo " -u: (U)pgrade ComNetsEmu's Python package and all dependencies. "
-    echo " -v: install de(V)elopment tools."
-    echo " -y: install R(Y)u SDN controller [$RYU_VER]."
+    echo " -n: only install Mi(N)inet with its minimal dependencies from source [$MININET_VER] (Python module, OpenvSwitch, Openflow reference implementation 1.0, Wireshark)"
+    echo " -u: (U)pgrade ComNetsEmu and all its dependencies. "
+	echo " -d: install dev tools for ComNetsEmu de(V)elopment (they are NOT installed with -a option)."
     exit 2
 }
 
-function install_kernel_modules() {
-    echo "Install wireguard kernel module"
-	local wg_apt_pkgs=(
-		linux-headers-"$(uname -r)"
-		wireguard
-	)
-	$UPDATE
-	$INSTALL "${wg_apt_pkgs[@]}"
-}
+# Check if source and dependency directory exits
+function check_comnetsemu_dirs()
+{
+	if [[ ! -d "$TOP_DIR/$COMNETSEMU_SRC_DIR" ]]; then
+	    error "[PATH]" "The ComNetsEmu source directory does not exist."
+	    echo " The default path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
+	    echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
+	    exit 1
+	fi
+	
+	if [[ ! -d "$EXTERN_DEP_DIR" ]]; then
+	    warning "[PATH]" "The default dependency directory does not exist."
+	    echo "Create the dependency directory : $EXTERN_DEP_DIR"
+	    mkdir -p "$EXTERN_DEP_DIR"
+	fi
 
-function install_docker() {
-    $UPDATE
-	# Avoid conflicts and old versions. Maybe wrong here.
-    $REMOVE docker.io containerd runc
-    $INSTALL docker.io
-    sudo systemctl start docker
-    sudo systemctl enable docker
-}
-
-function upgrade_docker() {
-    $UPDATE
-    $INSTALL docker.io
-}
-
-function upgrade_pip() {
-    echo "*** Upgrade $PIP itself to the latest version."
-    sudo $PIP install -U pip
 }
 
 # ISSUE (Zuo): Mininet currently requires full root privilege...
 # install.sh -n calls sudo inside and install Mininet in system Python path.
 function install_mininet_with_deps() {
+	check_comnetsemu_dirs
+
     local mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
     local mininet_patch_dir="$TOP_DIR/comnetsemu/patch/mininet"
 
@@ -213,77 +213,70 @@ function install_mininet_with_deps() {
     PYTHON=python3 ./install.sh -nfvw
 }
 
+COMNETSEMU_APT_PKGS=(
+	"$PYTHON-docker"
+	"$PYTHON-pip"
+	"$PYTHON-pyroute2"
+	"$PYTHON-requests"
+	"$PYTHON-ryu"
+	docker.io
+	linux-headers-"$(uname -r)"
+	rt-tests
+	stress-ng
+	wireguard
+)
+
 # ISSUE (Zuo): Mininet currently requires full root privilege...
 # Mininet is installed in the system Python path.
 # ComNetsEmu is based on Mininet, so its dependencies and itself have to be installed into the system
 # Python path as well. pip install --user can be used when Mininet does not require root privilege.
 function install_comnetsemu() {
+	check_comnetsemu_dirs
+
     echo "*** Install ComNetsEmu"
-    $INSTALL python3 python3-pip
-    echo "- Install Python packages that ComNetsEmu depends on."
-    cd "$TOP_DIR/comnetsemu/util" || exit
-    sudo $PIP install -r ./requirements.txt
-    echo "- Install the ComNetsEmu Python package."
-    cd "$TOP_DIR/comnetsemu" || exit
-    sudo PYTHON=python3 make install
-}
-
-function upgrade_comnetsemu_deps_python_pkgs() {
-    echo "- Upgrade Python packages that ComNetsEmu depends on."
-    cd "$TOP_DIR/comnetsemu/util" || exit
-    sudo $PIP install -r ./requirements.txt
-}
-
-function install_ryu() {
-    local ryu_dir="$EXTERN_DEP_DIR/ryu-$RYU_VER"
-    mkdir -p "$ryu_dir"
-
-    echo "*** Install Ryu SDN controller"
-    $INSTALL git gcc "$PYTHON-dev" libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev python3-pip
-    git clone git://github.com/osrg/ryu.git "$ryu_dir/ryu"
-    cd "$ryu_dir/ryu" || exit
-    git checkout -b $RYU_VER $RYU_VER
-    upgrade_pip
+	echo "- Install all apt packages that ComNetsEmu depends on."
+    $INSTALL "${COMNETSEMU_APT_PKGS[@]}"
+	echo "- Install the ComNetsEmu Python package itself."
+    cd "$TOP_DIR/comnetsemu" || exit 1
     sudo $PIP install .
+	echo "- Build all test containers (required for unit tests and built-in examples)"
+    cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/test_containers" || exit
+    sudo $PYTHON ./build.py
 }
 
-function install_devs() {
-    echo "*** Install tools for development"
-    $INSTALL shellcheck
-    upgrade_pip
-    echo "- Install dev python packages via PIP."
-	local pip_pkgs=(
-		black
-		coverage
-		flake8
-		flake8-bugbear
-		ipdb
-		pylint
-		pytest
-	)
-    $PIP install --user "${pip_pkgs[@]}"
+COMNETSEMU_DEV_APT_PKGS=(
+	"$PYTHON-coverage"
+	"$PYTHON-flake8"
+	"$PYTHON-ipdb"
+	"$PYTHON-pytest"
+	black
+	pylint
+	shellcheck
+)
+
+function install_dev_tools() {
+    echo "- Install all dev python packages."
+    $INSTALL "${COMNETSEMU_DEV_APT_PKGS[@]}"
+
+	echo "- Install (with pip) Python packages to build HTML documentation."
     cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/doc" || exit
-    echo "- Install packages to build HTML documentation."
-    $PIP install --user -r ./requirements.txt
+	# Pip must be used since many required packages are not in Ubuntu's repo.
+    sudo $PIP install -r ./requirements.txt
 }
 
 function upgrade_comnetsemu() {
+	check_comnetsemu_dirs
+
     local dep_name
     local installed_ver
     local req_ver
     warning "[Upgrade]" "Have you checked and merged latest updates of the remote repository? ([y]/n)"
     read -r -n 1
     if [[ ! $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "*** Upgrade ComNetsEmu dependencies, the ComNetsEmu's source repository and Python module are not upgraded."
+        echo "*** Upgrade ComNetsEmu and all its dependencies"
+		$UPDATE
 
-        echo ""
-		echo "- Upgrade dependencies installed with package managers (apt, pip)."
-        upgrade_docker
-        install_devs
-        upgrade_comnetsemu_deps_python_pkgs
-
-        echo ""
-        echo "- Upgrade dependencies installed from source"
+        echo "- Upgrade special dependencies installed from source code"
         echo "  The upgrade script checks the version flag (format tool_name-version) in $EXTERN_DEP_DIR"
         echo "  The installer will install new versions (defined as constant variables in this script) if the version flags are not match."
 
@@ -301,95 +294,35 @@ function upgrade_comnetsemu() {
             echo ""
         done
 
-        echo "- Reinstall ComNetsEmu python package with develop mode."
-        # Check here (https://stackoverflow.com/questions/19048732/python-setup-py-develop-vs-install)
-        # for difference between install and develop
-        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/" || exit
-        sudo make develop
-
-        echo "- Rebuild test containers if there are changes in their Dockerfiles."
-        cd "$TOP_DIR/$COMNETSEMU_SRC_DIR/test_containers" || exit
-        bash ./build.sh
-        echo "- Run removing unused images. This can reduce the disk usage."
-        docker image prune
-
+        echo "- Upgrade ComNetsEmu itself and dependencies installed with package manager"
+		install_comnetsemu
     else
         error "[Upgrade]" "Please check and merge remote updates before upgrading."
     fi
 }
 
-function remove_all() {
-    echo "*** Remove function currently under development"
-    exit 0
-
-    # ISSUE: pip uninstall does not uninstall all dependencies of the packages
-    echo "*** Remove ComNetsEmu and all dependencies"
-    warning "[REMOVE]" "Try to remove all packages and configuration files, but this method is not 100% clean."
-
-    echo "- Remove Docker and docker-py"
-    $REMOVE docker.io
-    $PIP uninstall -y docker || true
-
-    echo "- Remove Mininet"
-    $PIP uninstall -y mininet || true
-
-    echo "- Remove ComNetsEmu"
-    $PIP uninstall -y comnetsemu || true
-
-    echo "Remove Ryu SDN controller"
-    $PIP uninstall -y ryu || true
-
-    echo "Remove OVS"
-    mininet_dir="$EXTERN_DEP_DIR/mininet-$MININET_VER"
-    cd "$mininet_dir/mininet/util" || exit
-    ./install.sh -r
-
-    echo "Remove dependency folder"
-    sudo rm -rf "$EXTERN_DEP_DIR"
-}
-
 function all() {
     echo "*** Install ComNetsEmu and all dependencies"
     $UPDATE
-    install_kernel_modules
     install_mininet_with_deps
-    install_ryu
-    install_docker
-
-	# Must install comnetsemu after installing all dependencies !
+	# Must install comnetsemu after installing all source dependencies !
     install_comnetsemu
 
-    install_devs
+	# Start and enable required daemons
+    sudo systemctl start docker
+    sudo systemctl enable docker
 }
-
-# Check if source and dependency directory exits
-if [[ ! -d "$TOP_DIR/$COMNETSEMU_SRC_DIR" ]]; then
-    error "[PATH]" "The ComNetsEmu source directory does not exist."
-    echo " The default path of the ComNetsEmu source code: $TOP_DIR/$COMNETSEMU_SRC_DIR"
-    echo " You can change the variable COMNETSEMU_SRC_DIR in the script to use customized directory name"
-    exit 1
-fi
-
-if [[ ! -d "$EXTERN_DEP_DIR" ]]; then
-    warning "[PATH]" "The default dependency directory does not exist."
-    echo "Create the dependency directory : $EXTERN_DEP_DIR"
-    mkdir -p "$EXTERN_DEP_DIR"
-fi
 
 if [ $# -eq 0 ]; then
     usage
 else
-    while getopts 'abcdhklnrtuvy' OPTION; do
+    while getopts 'adhnu' OPTION; do
         case $OPTION in
         a) all ;;
-        c) install_comnetsemu ;;
-        d) install_docker ;;
+        d) install_dev_tools ;;
         h) usage ;;
-        k) install_kernel_modules ;;
         n) install_mininet_with_deps ;;
         u) upgrade_comnetsemu ;;
-        v) install_devs ;;
-        y) install_ryu ;;
         *) usage ;;
         esac
     done

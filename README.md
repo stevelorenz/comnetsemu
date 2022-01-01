@@ -307,7 +307,7 @@ Please **build** them after the installation and **re-build** them after updates
 ```bash
 $ cd ./test_containers
 # This script removes all dangling images after build.
-$ bash ./build.sh
+$ python ./build.py
 ```
 
 ### Upgrade ComNetsEmu and Dependencies

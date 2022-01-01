@@ -87,7 +87,7 @@ doc: $(PYSRC)
 
 build-test-containers:
 	@echo "Build all test containers"
-	cd ./test_containers/ && ./build.sh -a
+	cd ./test_containers/ && python3 ./build.py
 
 ## Cleanup utilities
 
