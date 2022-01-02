@@ -5,6 +5,17 @@ CHANGELOG is added until Beta v0.1.5, notable changes after this version MUST be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 And this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.3.0 - 2022-01-02
+
+### Changed
+
+-   Fully rewrite the install.sh to use apt packages that are available and
+	have proper version on Ubuntu 20.04. Minimize the usage of pip as much as possible.
+-   Add ./util/run_cyclictest.sh (basic version) to use cyclictest for real-time performance evaluation.
+-   Fix the wrong configuration in Vagrantfile for both Virtualbox and Libvirt
+	provider (Remove the hack of using getoption, use the override as suggested
+	by Vagrant documentation).
+
 ## v0.2.1 - 2021-12-30
 
 ### Changed

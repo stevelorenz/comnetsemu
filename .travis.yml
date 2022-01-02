@@ -19,14 +19,7 @@ before_install:
 
 install:
   - cd ${TRAVIS_BUILD_DIR}/util
-  # ISSUE: `install.sh -a` does not work on Travis CI since the Docker is pre-installed in its VM.
-  - PYTHON=python3 ./install.sh -knyv
-  - PYTHON=python3 ./install.sh -c
-  - cd ${TRAVIS_BUILD_DIR}
-  - sudo make develop
-  - cd ${TRAVIS_BUILD_DIR}/test_containers
-  - sudo bash ./build.sh
-
+  - PYTHON=python3 ./install.sh -a
 
 before_script:
   - cd ${TRAVIS_BUILD_DIR}
