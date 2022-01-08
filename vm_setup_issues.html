@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Known VM Setup Issues &mdash; ComNetsEmu v0.1.5 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> ComNetsEmu
+          </a>
+              <div class="version">
+                v0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">ComNetsEmu API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ref_links.html">Reference Links</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ComNetsEmu</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Known VM Setup Issues</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/vm_setup_issues.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="known-vm-setup-issues">
+<h1>Known VM Setup Issues<a class="headerlink" href="#known-vm-setup-issues" title="Permalink to this headline"></a></h1>
+<section id="on-windows">
+<h2>On Windows<a class="headerlink" href="#on-windows" title="Permalink to this headline"></a></h2>
+<ol>
+<li><p>Issue: Failed to run the install.sh during <code class="docutils literal notranslate"><span class="pre">vagrant</span> <span class="pre">up</span></code> on Windows. ‘bash\r’: No such file or directory or
+‘\r’command not found.</p>
+<ul class="simple">
+<li><p>Potential cause:
+Some Windows editions (e.g. TUD Windows Enterprise) somehow silently modify the files in the shared
+folder which is by default enabled in Vagrantfile. The installer script is modified into Windows format which has a
+different line endings compared to Unix-like OSes like GNU/Linux.</p></li>
+<li><p>Solution:
+You can run <code class="docutils literal notranslate"><span class="pre">vagrant</span> <span class="pre">ssh</span> <span class="pre">comnetsemu</span></code> to log into the VM.
+Install the <code class="docutils literal notranslate"><span class="pre">dos2unix</span></code> tool via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">dos2unix</span></code>
+Then reformat the installer script with <code class="docutils literal notranslate"><span class="pre">dos2unix</span> <span class="pre">~/comnetsemu/util/install.sh</span></code>
+Run the installer script inside the VM via <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">~/comnetsemu/util/install.sh</span> <span class="pre">&amp;&amp;</span> <span class="pre">bash</span> <span class="pre">./install.sh</span> <span class="pre">-a</span></code></p></li>
+<li><p>Suggestion:
+If you want to keep the synced folder feature e.g. for develop in host OS and test codes inside the VM.
+It is suggested to make sure the used editor/IDE on Windows host OS save files with Unix-style format to avoid
+conflicts.
+You can also disable synced folder feature in Vagrantfile by commenting out lines starts with <code class="docutils literal notranslate"><span class="pre">comnetsemu.vm.synced_folder</span></code>.</p></li>
+</ul>
+</li>
+<li><p>Issue: Failed to open xterms for running nodes.</p>
+<ul class="simple">
+<li><p>Potential cause:
+The terminal you use does not support X11-forwarding via SSH.</p></li>
+<li><p>Solution:
+<a class="reference external" href="https://mobaxterm.mobatek.net/">Mobaxterm</a> could be used as the console to solve the problem.</p></li>
+</ul>
+</li>
+<li><p>Issue: Failed to open xterms with sudo inside the VM.</p>
+<p>If run <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">xterm</span></code> inside the VM or run <code class="docutils literal notranslate"><span class="pre">xterm</span> <span class="pre">h1</span></code> inside the ComNetsEmu’s CLI returns the following error:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Warning: This program is an suid-root program or is being run by the root user.
+The full text of the error or warning message cannot be safely formatted
+in this environment. You may get a more descriptive message by running the
+program as a non-root user or by removing the suid bit on the executable.
+xterm: Xt error: Can&#39;t open display: %s
+</pre></div>
+</div>
+<ul>
+<li><p>Potential cause: It is not allowed on most Unix/Linux systems to keep the X11-forwarding working after changing user to root inside a SSH session.  This is by
+default not allowed (e.g. It is allowed in Ubuntu 18.04 but not allowed on Ubuntu 20.04), because the X11 display connection belongs to the user you used to log with
+when connecting to your remote SSH server.  X11-forwarding mechanism does not allow anyone to use the open display.</p></li>
+<li><p>Solution: You could manually retrieve X credentials in the sudo context by looking up the <code class="docutils literal notranslate"><span class="pre">xauth</span> <span class="pre">list</span></code> for the original username (<code class="docutils literal notranslate"><span class="pre">vagrant</span></code> for the default VM) and
+then adding them using following command (You need to do this <strong>Everytime</strong> for a new SSH session.):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo xauth add <span class="k">$(</span>xauth -f /home/vagrant/.Xauthority list<span class="p">|</span>tail -1<span class="k">)</span>
+</pre></div>
+</div>
+<p>You can also run this command using Python’s <code class="docutils literal notranslate"><span class="pre">subprocess</span></code> module inside each emulation script.</p>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, The Deutsche Telekom Chair of Communication Networks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
