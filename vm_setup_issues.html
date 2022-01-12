@@ -4,8 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Known VM Setup Issues &#8212; ComNetsEmu v0.3.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
@@ -84,9 +83,9 @@
 
           <div class="body" role="main">
             
-  <section class="tex2jax_ignore mathjax_ignore" id="known-vm-setup-issues">
+  <div class="tex2jax_ignore mathjax_ignore section" id="known-vm-setup-issues">
 <h1>Known VM Setup Issues<a class="headerlink" href="#known-vm-setup-issues" title="Permalink to this headline">¶</a></h1>
-<section id="on-windows">
+<div class="section" id="on-windows">
 <h2>On Windows<a class="headerlink" href="#on-windows" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
 <li><p>Issue: Failed to run the install.sh during <code class="docutils literal notranslate"><span class="pre">vagrant</span> <span class="pre">up</span></code> on Windows. ‘bash\r’: No such file or directory or
@@ -118,11 +117,11 @@ The terminal you use does not support X11-forwarding via SSH.</p></li>
 </li>
 <li><p>Issue: Failed to open xterms with sudo inside the VM.</p>
 <p>If run <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">xterm</span></code> inside the VM or run <code class="docutils literal notranslate"><span class="pre">xterm</span> <span class="pre">h1</span></code> inside the ComNetsEmu’s CLI returns the following error:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Warning: This program is an suid-root program or is being run by the root user.
-The full text of the error or warning message cannot be safely formatted
-in this environment. You may get a more descriptive message by running the
-program as a non-root user or by removing the suid bit on the executable.
-xterm: Xt error: Can&#39;t open display: %s
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">Warning</span><span class="p">:</span> <span class="n">This</span> <span class="n">program</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">suid</span><span class="o">-</span><span class="n">root</span> <span class="n">program</span> <span class="ow">or</span> <span class="ow">is</span> <span class="n">being</span> <span class="n">run</span> <span class="n">by</span> <span class="n">the</span> <span class="n">root</span> <span class="n">user</span><span class="o">.</span>
+<span class="n">The</span> <span class="n">full</span> <span class="n">text</span> <span class="n">of</span> <span class="n">the</span> <span class="n">error</span> <span class="ow">or</span> <span class="n">warning</span> <span class="n">message</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">safely</span> <span class="n">formatted</span>
+<span class="ow">in</span> <span class="n">this</span> <span class="n">environment</span><span class="o">.</span> <span class="n">You</span> <span class="n">may</span> <span class="n">get</span> <span class="n">a</span> <span class="n">more</span> <span class="n">descriptive</span> <span class="n">message</span> <span class="n">by</span> <span class="n">running</span> <span class="n">the</span>
+<span class="n">program</span> <span class="k">as</span> <span class="n">a</span> <span class="n">non</span><span class="o">-</span><span class="n">root</span> <span class="n">user</span> <span class="ow">or</span> <span class="n">by</span> <span class="n">removing</span> <span class="n">the</span> <span class="n">suid</span> <span class="n">bit</span> <span class="n">on</span> <span class="n">the</span> <span class="n">executable</span><span class="o">.</span>
+<span class="n">xterm</span><span class="p">:</span> <span class="n">Xt</span> <span class="n">error</span><span class="p">:</span> <span class="n">Can</span><span class="s1">&#39;t open display: </span><span class="si">%s</span>
 </pre></div>
 </div>
 <ul>
@@ -139,8 +138,8 @@ then adding them using following command (You need to do this <strong>Everytime<
 </ul>
 </li>
 </ol>
-</section>
-</section>
+</div>
+</div>
 
 
           </div>

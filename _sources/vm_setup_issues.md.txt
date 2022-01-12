@@ -35,7 +35,7 @@
 
    If run `sudo xterm` inside the VM or run `xterm h1` inside the ComNetsEmu's CLI returns the following error:
 
-   ```bash
+   ```
    Warning: This program is an suid-root program or is being run by the root user.
    The full text of the error or warning message cannot be safely formatted
    in this environment. You may get a more descriptive message by running the
