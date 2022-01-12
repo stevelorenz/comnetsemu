@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # Run netserver not in daemon mode, avoid container termination.
     srv1_1 = mgr.addContainer(
-        "srv1_1", "h1", "network_measurement", "netserver -D", docker_args={},
+        "srv1_1", "h1", "network_measurement", "netserver -D", docker_args={}
     )
     # Wait netserver to start.
     time.sleep(1)

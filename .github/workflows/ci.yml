@@ -32,7 +32,21 @@ jobs:
           # The CI VM can not resolve the runc and containerd dependency of docker.io automatically... I don't know the detailed reason yet...
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y runc containerd
           PYTHON=python3 ./util/install.sh -a
+          PYTHON=python3 ./util/install.sh -d
 
       - name: Run core tests
         run:  |
           sudo make test-quick
+
+      # Thanks to Baldomo (https://github.com/Baldomo)
+      # Github pages actions are copied/modified from his contribution
+      - name: Build HTML docs
+        run: |
+          make doc
+
+      - name: Deploy HTML docs
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/master' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./doc/build/html

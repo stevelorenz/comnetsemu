@@ -1,104 +1,89 @@
 # vim:ft=make
 
-COMNETSEMU = comnetsemu/*.py
+COMNETSEMU = $(shell find ./comnetsemu/ -name '*.py')
 CE_BIN = bin/ce
 UNITTESTS = comnetsemu/test/unit/*.py
 TESTS = $(UNITTESTS) comnetsemu/test/*.py
 EXAMPLES = $(shell find ./examples/ -name '*.py')
 PYSRC = $(COMNETSEMU) $(EXAMPLES) $(CE_BIN) $(TESTS)
 PYTHON ?= python3
+PIP ?= pip3
 PYTYPE = pytype
-CHECKERRIGNORE=W503,E501,C0330
-PREFIX ?= /usr
-DOCDIRS = doc/html doc/latex
-BASHSRCS := $(shell find ./ -name '*.sh')
-
-CFLAGS += -Wall -Wextra
+FLAKE8IGNORE=W503,E501,C0330
+DOCBUILD = doc/build/
+BASHSRC = $(shell find ./ -name '*.sh')
+PYC = $(shell find ./ -name '*.pyc')
 
 all: errcheck
 
+.PHONY: clean
 clean:
-	rm -rf build dist *.egg-info *.pyc $(DOCDIRS)
+	@echo "*** Remove Python dist files, eggs and documentation build directory"
+	rm -rf build dist *.egg-info $(PYC) $(DOCBUILD)
 
+.PHONY: codecheck
 codecheck: $(PYSRC)
-	@echo "*** Running checks for code quality"
-	$(PYTHON) -m flake8 --ignore=W503,E501,C0330 --max-complexity 10 $(PYSRC)
-	$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
-	@echo "*** Run shellcheck for BASH sources"
-	shellcheck $(BASHSRCS)
+	@echo "Run checks for Python sources quality"
+	-$(PYTHON) -m flake8 --ignore=W503,E501,C0330 --max-complexity 10 $(PYSRC)
+	-$(PYTHON) -m pylint --rcfile=.pylint $(PYSRC)
+	@echo "*** Run shellcheck for Bash sources"
+	-shellcheck $(BASHSRC)
 
+.PHONY: errcheck
 errcheck: $(PYSRC)
-	@echo "*** Running checks for errors only"
-	$(PYTHON) -m flake8 --ignore=$(CHECKERRIGNORE) $(PYSRC)
+	@echo "Run checks for Python sources errors"
+	$(PYTHON) -m flake8 --ignore=$(FLAKE8IGNORE) $(PYSRC)
 	$(PYTHON) -m pylint -E --rcfile=.pylint $(PYSRC)
-	@echo "*** Run shellcheck for BASH sources"
-	shellcheck $(BASHSRCS)
+	@echo "Run shellcheck for Bash sources"
+	shellcheck $(BASHSRC)
 
-typecheck: $(PYSRC)
-	@echo "*** Running type checks with $(PYTYPE)..."
-	$(PYTYPE) $(COMNETSEMU)
+# typecheck: $(PYSRC)
+# 	@echo "*** Running type checks with $(PYTYPE)..."
+# 	$(PYTYPE) $(COMNETSEMU)
 
+.PHONY: test-examples
 test-examples: $(COMNETSEMU) $(EXAMPLES)
 	cd ./examples && bash ./run.sh
 
+.PHONY: test-examples-all
 test-examples-all: $(COMNETSEMU) $(EXAMPLES)
 	cd ./examples && bash ./run.sh -a
 
+.PHONY: test
 test: $(COMNETSEMU) $(UNITTESTS)
-	@echo "Running all unit tests of ComNetsEmu python package."
+	@echo "Run all unit tests of ComNetsEmu Python package."
 	$(PYTHON) ./comnetsemu/test/unit/runner.py -v
 
+.PHONY: test-quick
 test-quick: $(COMNETSEMU) $(UNITTESTS)
-	@echo "Running quick unit tests of ComNetsEmu python package."
+	@echo "Run quick unit tests of ComNetsEmu Python package."
 	$(PYTHON) ./comnetsemu/test/unit/runner.py -v -quick
 
+.PHONY: coverage
 coverage: $(COMNETSEMU) $(UNITTESTS)
-	@echo "Running coverage tests of ComNetsEmu core functions."
+	@echo "Run coverage tests of ComNetsEmu core functions."
 	$(PYTHON) -m coverage run --source ./comnetsemu ./comnetsemu/test/unit/runner.py -v
 	$(PYTHON) -m coverage report -m
 
-installercheck: ./util/install.sh
-	@echo "*** Check installer"
-	bash ./check_installer.sh
-
-update-deps:
-	@echo "*** Update ComNetsEmu's dependencies."
-	cd ./util/ && ./install.sh -u
-
-# PLEASE run following tests before any pushes to master/dev branches.
-run-tests-before-push-dev: errcheck typecheck test test-examples-all doc
-
+.PHONY: format
 format: $(PYSRC)
 	@echo "Format Python sources with black"
 	black $(PYSRC)
 
-
+.PHONY: install
 install:
-	$(PYTHON) setup.py install
+	$(PIP) install .
 
-develop: $(MNEXEC) $(MANPAGES)
-	$(PYTHON) setup.py develop
+.PHONY: develop
+develop:
+	$(PIP) install --editable .
 
 .PHONY: doc
-
 doc: $(PYSRC)
 	@echo "Build documentation in HTML format"
+	-rm ./doc/api/*.rst
+	-rm -r ./doc/build/
+	# Use sphinx-apidoc to generate API sources
+	cd ./doc/ && sphinx-apidoc -o api ../comnetsemu -H 'Python API' --separate
+	# Build HTML files
 	cd ./doc/ && make html
-
-build-test-containers:
-	@echo "Build all test containers"
-	cd ./test_containers/ && python3 ./build.py
-
-## Cleanup utilities
-
-rm-all-containers:
-	@echo "Remove all docker containers"
-	docker container rm $$(docker ps -aq) -f
-
-rm-dangling-images:
-	@echo "Remove all dangling docker images"
-	docker image prune -f
-
-pp-empty-dirs:
-	@echo "Print empty directories"
-	@find -maxdepth 3 -type d -empty

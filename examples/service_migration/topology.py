@@ -45,10 +45,7 @@ if __name__ == "__main__":
 
     info("*** Creating the client and hosts\n")
     h1 = net.addDockerHost(
-        "h1",
-        dimage="dev_test",
-        ip="10.0.0.11/24",
-        docker_args={"hostname": "h1"},
+        "h1", dimage="dev_test", ip="10.0.0.11/24", docker_args={"hostname": "h1"}
     )
 
     h2 = net.addDockerHost(
@@ -72,20 +69,10 @@ if __name__ == "__main__":
     net.addLinkNamedIfce(s1, h3, bw=1000, delay="5ms")
     # Add the interface for host internal traffic.
     net.addLink(
-        s1,
-        h2,
-        bw=1000,
-        delay="1ms",
-        intfName1="s1-h2-int",
-        intfName2="h2-s1-int",
+        s1, h2, bw=1000, delay="1ms", intfName1="s1-h2-int", intfName2="h2-s1-int"
     )
     net.addLink(
-        s1,
-        h3,
-        bw=1000,
-        delay="1ms",
-        intfName1="s1-h3-int",
-        intfName2="h3-s1-int",
+        s1, h3, bw=1000, delay="1ms", intfName1="s1-h3-int", intfName2="h3-s1-int"
     )
 
     info("\n*** Starting network\n")
@@ -139,10 +126,7 @@ if __name__ == "__main__":
 
     info("*** Deploy counter service on h2.\n")
     counter_server_h2 = mgr.addContainer(
-        "counter_server_h2",
-        "h2",
-        "service_migration",
-        "python /home/server.py h2",
+        "counter_server_h2", "h2", "service_migration", "python /home/server.py h2"
     )
     time.sleep(3)
     info("*** Deploy client app on h1.\n")

@@ -24,10 +24,10 @@ if __name__ == "__main__":
 
     info("*** Creating hosts\n")
     h1 = net.addDockerHost(
-        "h1", dimage="dev_test", ip="10.0.0.1", docker_args={"hostname": "h1"},
+        "h1", dimage="dev_test", ip="10.0.0.1", docker_args={"hostname": "h1"}
     )
     h2 = net.addDockerHost(
-        "h2", dimage="dev_test", ip="10.0.0.2", docker_args={"hostname": "h2"},
+        "h2", dimage="dev_test", ip="10.0.0.2", docker_args={"hostname": "h2"}
     )
 
     info("*** Adding switch and links\n")
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     net.start()
 
     srv1 = mgr.addContainer(
-        "srv1", "h1", "echo_server", "python /home/server.py", docker_args={},
+        "srv1", "h1", "echo_server", "python /home/server.py", docker_args={}
     )
     srv2 = mgr.addContainer("srv2", "h2", "dev_test", "bash", docker_args={})
 

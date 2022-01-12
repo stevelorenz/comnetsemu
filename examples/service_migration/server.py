@@ -75,9 +75,7 @@ if __name__ == "__main__":
         help="The name of the host on which the server is deployed.",
     )
     parser.add_argument(
-        "--get_state",
-        action="store_true",
-        help="Get state from network.",
+        "--get_state", action="store_true", help="Get state from network."
     )
 
     args = parser.parse_args()

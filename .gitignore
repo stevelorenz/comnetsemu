@@ -108,10 +108,11 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# built documentation
+# documentation
 doc/html
 doc/latex
 doc/build/
+# API sources are auto-generated with sphinx-apidoc
 doc/api/*.rst
 
 ----------
@@ -119,6 +120,7 @@ doc/api/*.rst
 ----------
 
 .vagrant/*
+
 app/network_coding_for_transport/*.csv
 app/network_coding_for_transport/*.pcap
 app/realizing_mobile_edge_clouds/*.txt
@@ -127,7 +129,7 @@ util/vm_customize.sh
 
 extern_deps/
 
-examples/**/*.png
 examples/**/*.gz
+examples/**/*.png
 
 prototype/*
