@@ -173,18 +173,7 @@ class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
 
 
 class APPContainerManager:
-    """Manager for application containers (sibling containers) deployed on
-    Mininet hosts.
-
-    - To make is simple. It uses docker-py APIs to manage internal containers
-      from host system.
-
-    - Internal methods (starts with an underscore) should be documented after
-      tests and before stable releases.
-
-    Ref:
-        [1] https://docker-py.readthedocs.io/en/stable/containers.html
-    """
+    """Manager for application containers (sibling containers) deployed on Mininet hosts."""
 
     reserved_docker_args = [
         "init",
@@ -220,8 +209,7 @@ class APPContainerManager:
     def __init__(self, net: Mininet):
         """Init the APPContainerManager.
 
-        :param net (Mininet): The mininet object, used to manage hosts via
-        Mininet's API.
+        :param net (Mininet): The mininet object, used to manage hosts via Mininet's API.
         """
         self.net = net
         self.dclt = docker.from_env()
