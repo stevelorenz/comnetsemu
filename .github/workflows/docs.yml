@@ -23,32 +23,22 @@ jobs:
           # install pip=>20.1 to use "pip cache dir"
           python3 -m pip install --upgrade pip
 
-      - name: Get pip cache dir
-        id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
+      - name: Install ComNetsEmu
+        run: |
+          # Full upgrade is too slow...
+          sudo apt-get update -qq
+          # Remove the pre-installed versions on the CI VM. They are too old and lead to install errors
+          sudo apt-get remove -q -y docker docker-engine docker.io containerd runc
+          # The CI VM can not resolve the runc and containerd dependency of docker.io automatically... I don't know the detailed reason yet...
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y runc containerd
+          PYTHON=python3 ./util/install.sh -a
+          PYTHON=python3 ./util/install.sh -d
 
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - name: Build HTML docs
+        run: |
+          make doc
 
-      - name: Install doc dependencies
-        run: python3 -m pip install -r ./doc/requirements.txt
-
-      - name: Install mininet and ryu from source
-        run: python3 -m pip install git+https://github.com/mininet/mininet.git git+https://github.com/faucetsdn/ryu.git@v4.34
-
-      - name: Install all other dependencies
-        run: python3 -m pip install wheel docker pyroute2 requests
-
-      - name: Build docs
-        working-directory: "./doc"
-        run: sphinx-build -M html . ./build
-
-      - name: Deploy
+      - name: Deploy HTML docs
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/master' }}
         with:
