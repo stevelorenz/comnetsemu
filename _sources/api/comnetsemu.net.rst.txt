@@ -1,7 +1,0 @@
-comnetsemu.net module
-=====================
-
-.. automodule:: comnetsemu.net
-   :members:
-   :undoc-members:
-   :show-inheritance:

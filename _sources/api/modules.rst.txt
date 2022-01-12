@@ -1,7 +1,0 @@
-ComNetsEmu API
-==============
-
-.. toctree::
-   :maxdepth: 6
-
-   comnetsemu
