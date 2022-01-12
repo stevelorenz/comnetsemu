@@ -1,0 +1,7 @@
+comnetsemu.cli module
+=====================
+
+.. automodule:: comnetsemu.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

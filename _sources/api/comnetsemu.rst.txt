@@ -1,0 +1,25 @@
+comnetsemu package
+==================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   comnetsemu.clean
+   comnetsemu.cli
+   comnetsemu.exceptions
+   comnetsemu.net
+   comnetsemu.node
+   comnetsemu.overrides
+   comnetsemu.tool
+   comnetsemu.util
+
+Module contents
+---------------
+
+.. automodule:: comnetsemu
+   :members:
+   :undoc-members:
+   :show-inheritance:

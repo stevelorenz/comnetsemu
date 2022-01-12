@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>comnetsemu.cli module &#8212; ComNetsEmu v0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="comnetsemu.exceptions module" href="comnetsemu.exceptions.html" />
+    <link rel="prev" title="comnetsemu.clean module" href="comnetsemu.clean.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ComNetsEmu</a></h1>
+
+
+
+<p class="blurb">A virtual emulator/testbed designed for the book: Computing in Communication Networks: From Theory to Practice</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Python API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="comnetsemu.html">comnetsemu package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref_links.html">Reference Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap of ComNetsEmu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vm_setup_issues.html">Known VM Setup Issues</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">Python API</a><ul>
+  <li><a href="comnetsemu.html">comnetsemu package</a><ul>
+      <li>Previous: <a href="comnetsemu.clean.html" title="previous chapter">comnetsemu.clean module</a></li>
+      <li>Next: <a href="comnetsemu.exceptions.html" title="next chapter">comnetsemu.exceptions module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-comnetsemu.cli">
+<span id="comnetsemu-cli-module"></span><h1>comnetsemu.cli module<a class="headerlink" href="#module-comnetsemu.cli" title="Permalink to this headline">¶</a></h1>
+<p>About: ComNetsEmu simple command-line interface</p>
+<p>This module sub-class the Mininet’s CLI class to add some ComNetsEmu’s specific
+properly for DockerHost instances.
+commands, and also add fixes to some Mininet’s default methods to make it work</p>
+<dl class="simple">
+<dt>ISSUE: Current approach has too much Mininet codes included… Make it dependent</dt><dd><p>on the upstream. A better solution should be added.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">comnetsemu.cli.</span></span><span class="sig-name descname"><span class="pre">CLI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mininet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdin=&lt;_io.TextIOWrapper</span> <span class="pre">name='&lt;stdin&gt;'</span> <span class="pre">mode='r'</span> <span class="pre">encoding='utf-8'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mininet.cli.CLI</span></code></p>
+<p>Mininet’s CLI subclass with support for Docker containers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI.default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called on an input line when the command prefix is not recognized</p>
+<ul class="simple">
+<li><p>Show warning message if first parameter is a DockerHost</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.do_appcontainers">
+<span class="sig-name descname"><span class="pre">do_appcontainers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI.do_appcontainers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List deployed app containers.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.do_help">
+<span class="sig-name descname"><span class="pre">do_help</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI.do_help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe available CLI commands.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.do_xterm">
+<span class="sig-name descname"><span class="pre">do_xterm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xterm'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI.do_xterm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawn xterm(s) for the given node(s).
+Usage: xterm node1 node2 …</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.helpStr">
+<span class="sig-name descname"><span class="pre">helpStr</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'You</span> <span class="pre">can</span> <span class="pre">send</span> <span class="pre">commands</span> <span class="pre">to</span> <span class="pre">Docker</span> <span class="pre">hosts</span> <span class="pre">with</span> <span class="pre">the</span> <span class="pre">same</span> <span class="pre">method</span> <span class="pre">of</span> <span class="pre">Mininet.\nYou</span> <span class="pre">can</span> <span class="pre">open</span> <span class="pre">xterm(s)</span> <span class="pre">to</span> <span class="pre">have</span> <span class="pre">interactive</span> <span class="pre">shells</span> <span class="pre">of</span> <span class="pre">Docker</span> <span class="pre">hostswith</span> <span class="pre">xterm</span> <span class="pre">command:\n</span>&#160; <span class="pre">mininet&gt;</span> <span class="pre">xterm</span> <span class="pre">h1</span> <span class="pre">h2\n'</span></em><a class="headerlink" href="#comnetsemu.cli.CLI.helpStr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.cli.CLI.waitForNode">
+<span class="sig-name descname"><span class="pre">waitForNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI.waitForNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a node to finish, and print its output.</p>
+<ul class="simple">
+<li><p>Force to break the while loop if KeyboardInterrupt is detected.</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="comnetsemu.cli.spawnXtermDocker">
+<span class="sig-prename descclassname"><span class="pre">comnetsemu.cli.</span></span><span class="sig-name descname"><span class="pre">spawnXtermDocker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dcontainer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.spawnXtermDocker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawn the xterm and attach to a Docker container with docker exec -it
+container. Bash is used as the interactive shell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>(</strong><strong>str</strong><strong>)</strong> (<em>dcontainer_name</em>) – Name of a Docker container.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2022 The Deutsche Telekom Chair of Communication Networks.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/comnetsemu.cli.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

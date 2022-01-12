@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>comnetsemu.node module &#8212; ComNetsEmu v0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="comnetsemu.overrides module" href="comnetsemu.overrides.html" />
+    <link rel="prev" title="comnetsemu.net module" href="comnetsemu.net.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ComNetsEmu</a></h1>
+
+
+
+<p class="blurb">A virtual emulator/testbed designed for the book: Computing in Communication Networks: From Theory to Practice</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Python API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="comnetsemu.html">comnetsemu package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ref_links.html">Reference Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap of ComNetsEmu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vm_setup_issues.html">Known VM Setup Issues</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">Python API</a><ul>
+  <li><a href="comnetsemu.html">comnetsemu package</a><ul>
+      <li>Previous: <a href="comnetsemu.net.html" title="previous chapter">comnetsemu.net module</a></li>
+      <li>Next: <a href="comnetsemu.overrides.html" title="next chapter">comnetsemu.overrides module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-comnetsemu.node">
+<span id="comnetsemu-node-module"></span><h1>comnetsemu.node module<a class="headerlink" href="#module-comnetsemu.node" title="Permalink to this headline">¶</a></h1>
+<p>About: ComNetsEmu Node</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="comnetsemu.node.APPContainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">comnetsemu.node.</span></span><span class="sig-name descname"><span class="pre">APPContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dcmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.APPContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Application containers that should run inside a DockerHost.</p>
+<p>A wrapper class to hide the implementation details of used container
+runtime. For example, it should expose the same API for different container
+runtimes like Docker, LXC or CRI-O (If ComNetsEmu project decides to support
+them).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.APPContainer.getCurrentStats">
+<span class="sig-name descname"><span class="pre">getCurrentStats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.APPContainer.getCurrentStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get decoded current stats of the Docker container.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.APPContainer.getLogs">
+<span class="sig-name descname"><span class="pre">getLogs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.APPContainer.getLogs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get logs from this container.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">comnetsemu.node.</span></span><span class="sig-name descname"><span class="pre">DockerHost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dcmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ishell</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bash'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ishell_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'--norc</span> <span class="pre">-is'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mininet.node.Host</span></code></p>
+<p>Node that represents a docker container.</p>
+<p>This part is inspired by:
+- <a class="reference external" href="http://techandtrains.com/2014/08/21/docker-container-as-mininet-host/">http://techandtrains.com/2014/08/21/docker-container-as-mininet-host/</a>
+- DockerHost implementation from Patrick Ziegler (<a class="reference external" href="mailto:patrick&#46;ziegler&#37;&#52;&#48;tu-dresden&#46;de">patrick<span>&#46;</span>ziegler<span>&#64;</span>tu-dresden<span>&#46;</span>de</a>)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Help python collect its garbage.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.cmd">
+<span class="sig-name descname"><span class="pre">cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a command, wait for output, and return it.
+cmd: string</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.docker_args_default">
+<span class="sig-name descname"><span class="pre">docker_args_default</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'auto_remove':</span> <span class="pre">True,</span> <span class="pre">'detach':</span> <span class="pre">True,</span> <span class="pre">'init':</span> <span class="pre">True,</span> <span class="pre">'labels':</span> <span class="pre">{'comnetsemu':</span> <span class="pre">'dockerhost'},</span> <span class="pre">'network_mode':</span> <span class="pre">'bridge',</span> <span class="pre">'privileged':</span> <span class="pre">True,</span> <span class="pre">'stdin_open':</span> <span class="pre">True,</span> <span class="pre">'tty':</span> <span class="pre">True}</span></em><a class="headerlink" href="#comnetsemu.node.DockerHost.docker_args_default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.popen">
+<span class="sig-name descname"><span class="pre">popen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.popen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Popen() object in node’s namespace
+args: Popen() args, single list, or string
+kwargs: Popen() keyword args</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.sendCmd">
+<span class="sig-name descname"><span class="pre">sendCmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.sendCmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a command, followed by a command to echo a sentinel,
+and return without waiting for the command to complete.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.setIP">
+<span class="sig-name descname"><span class="pre">setIP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefixLen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.setIP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the IP address for an interface.
+intf: intf or intf name
+ip: IP address as a string
+prefixLen: prefix length, e.g. 8 for /8 or 16M addrs
+kwargs: any additional arguments for intf.setIP</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.startShell">
+<span class="sig-name descname"><span class="pre">startShell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.startShell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a shell process for running commands</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="comnetsemu.node.DockerHost.terminate">
+<span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.node.DockerHost.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop docker container</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2022 The Deutsche Telekom Chair of Communication Networks.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/comnetsemu.node.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

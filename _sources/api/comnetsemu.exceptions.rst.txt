@@ -1,0 +1,7 @@
+comnetsemu.exceptions module
+============================
+
+.. automodule:: comnetsemu.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
