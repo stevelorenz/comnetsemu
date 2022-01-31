@@ -1,0 +1,6 @@
+[onlab]
+name=ON.Lab Software Releases
+baseurl=http://updates.onlab.us/rpm/stable
+enabled=1
+gpgcheck=1
+
