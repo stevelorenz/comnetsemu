@@ -1,0 +1,7 @@
+FROM python:3.6-alpine3.9
+
+RUN pip install paho-mqtt
+
+COPY ./drone_client_mqtt.py /home/drone_client_mqtt.py
+
+CMD python3 /home/drone_client_mqtt.py
