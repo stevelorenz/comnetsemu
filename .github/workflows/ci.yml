@@ -11,6 +11,10 @@ on:
       - master
       - dev
 
+  schedule:
+    # Run CI at 00:00 on every Monday
+    - cron: '0 0 * * MON'
+
 jobs:
   test:
     runs-on: ubuntu-20.04

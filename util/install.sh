@@ -5,6 +5,8 @@
 #        It ONLY supports the latest Ubuntu LTS version (20.04).
 #        Supporting multiple GNU/Linux distributions and versions is OUT OF SCOPE.
 #
+# TODO: Replace this imperative shell script to a declarative approach, e.g. Ansible
+#
 
 # Fail on error
 set -e
@@ -86,7 +88,7 @@ UBUNTU_RELEASE="20.04"
 # Truly non-interactive apt-get installation
 INSTALL="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install"
 # REMOVE="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q remove"
-UPDATE="sudo apt-get update"
+UPDATE="sudo apt-get update --fix-missing"
 
 DIST=Unknown
 grep Ubuntu /etc/lsb-release &>/dev/null && DIST="Ubuntu"
@@ -150,7 +152,9 @@ DEPS_INSTALLED_FROM_SRC=(mininet)
 # - Installed from source, versions are tags or branch names of dependencies
 # For potential fast fixes, patches and extensions, a mirrrored/synced repo of Mininet is used.
 MININET_GIT_URL="https://github.com/mininet/mininet.git"
-MININET_VER="2.3.0"
+# Note: The git URL issues are fixed with this commit (2.3.1b1 (#1124)), but it is not official released.
+# So use this commit now can fix the install the issue, should use a release later.
+MININET_VER="aa0176f"
 DEPS_VERSIONS=("$MININET_VER")
 DEP_INSTALL_FUNCS=(install_mininet_with_deps)
 

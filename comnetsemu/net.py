@@ -429,7 +429,7 @@ class APPContainerManager:
         while n < sample_num:
             stats = container.getCurrentStats()
             mem_stats = stats["memory_stats"]
-            mem_usg = mem_stats["usage"] / (1024 ** 2)
+            mem_usg = mem_stats["usage"] / (1024**2)
             cpu_usg = self._calculate_cpu_percent(stats)
             usages.append((cpu_usg, mem_usg))
             sleep(sample_period)
