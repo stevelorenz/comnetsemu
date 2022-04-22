@@ -35,8 +35,7 @@ jobs:
           sudo apt-get remove -q -y docker docker-engine docker.io containerd runc
           # The CI VM can not resolve the runc and containerd dependency of docker.io automatically... I don't know the detailed reason yet...
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y runc containerd
-          PYTHON=python3 ./util/install.sh -a
-          PYTHON=python3 ./util/install.sh -d
+          bash ./util/install.sh -a
 
       - name: Run core tests
         run:  |

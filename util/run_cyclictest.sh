@@ -16,12 +16,12 @@ stress-ng -c $(nproc) --cpu-method fft -t "${DURATION}" &
 echo "* Run cyclictest for ${DURATION}"
 # Check the proper configuration for NUMA node.
 cyclictest \
-	--smp \
-	--mlockall \
-	--priority=80 \
-	--interval=1000 \
-	--distance=0 \
-	-D "${DURATION}" \
+    --smp \
+    --mlockall \
+    --priority=80 \
+    --interval=1000 \
+    --distance=0 \
+    -D "${DURATION}"
 
 echo "The Max value in the table shows the Maximum latency that was measured (in us)."
 echo "This value can give an idea of the WORST CASE latency length in the evaluated situation!"
