@@ -124,10 +124,11 @@ function usage() {
 }
 
 function ansible_install_comnetsemu_localhost() {
+    SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
     ansible-playbook \
         --connection=local \
         --inventory 127.0.0.1, \
-        --limit 127.0.0.1 ./playbooks/install_comnetsemu.yml
+        --limit 127.0.0.1 "${SCRIPT_DIR}/playbooks/install_comnetsemu.yml"
 }
 
 function all() {

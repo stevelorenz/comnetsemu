@@ -3,12 +3,14 @@
 
 ComNetsEmu
 ==========
-*A virtual emulator/testbed designed for the book: [Computing in Communication Networks: From Theory to Practice](https://www.amazon.com/Computing-Communication-Networks-Theory-Practice-ebook/dp/B088ZS597R)*
+*A virtual emulator/testbed designed for the book:
+[Computing in Communication Networks: From Theory to Practice](https://www.amazon.com/Computing-Communication-Networks-Theory-Practice-ebook/dp/B088ZS597R)*
 
 This project has a online [Github page](https://stevelorenz.github.io/comnetsemu/) for Python API documentation and other useful documentation.
 Please check it when you develop or use ComNetsEmu's Python APIs. 
 
-**INFO: This project is currently still under development [beta]. Version 1.0.0 has not yet been released. We try to make it stable but breaking changes might happen.**
+**INFO: This project is currently still under development [beta]. Version 1.0.0 has not yet been released.
+We try to make it stable but breaking changes might happen.**
 
 The repository is hosted both on the internal [Gitlab server of ComNets TUD](https://git.comnets.net/public-repo/comnetsemu) and
 [Github](https://github.com/stevelorenz/comnetsemu).
@@ -34,11 +36,13 @@ For all public users, if you have a question or want to contribute, please creat
 
 ## Description
 
-ComNetsEmu is a testbed and network emulator designed for the NFV/SDN teaching book ["Computing in Communication Networks: From Theory to Practice"](https://www.amazon.com/Computing-Communication-Networks-Theory-Practice-ebook/dp/B088ZS597R).
+ComNetsEmu is a testbed and network emulator designed for the NFV/SDN teaching book
+["Computing in Communication Networks: From Theory to Practice"](https://www.amazon.com/Computing-Communication-Networks-Theory-Practice-ebook/dp/B088ZS597R).
 The design focuses on emulating all examples and applications on a single computer, for example on a laptop.
-ComNetsEmu extends the famous [Mininet](http://mininet.org/) network emulator to support better emulation of versatile
-**Computing In The Network (COIN) applications**.
-It extends and puts forward the concepts and work in the [Containernet](https://containernet.github.io/) project.
+ComNetsEmu extends the famous [Mininet](http://mininet.org/) network emulator to support
+better emulation of versatile **Computing In The Network (COIN) applications**.
+It extends and puts forward the concepts and work in the
+[Containernet](https://containernet.github.io/) project.
 It uses a slightly different approach to extend the Mininet compared to Containernet.
 It's main focus is to use "sibling containers" to emulate network systems with **computing**.
 See a more detailed comparison between upstream Mininet and Containernet [here](./doc/comparison.md).
@@ -55,12 +59,17 @@ Common facts about ComNetsEmu:
     RT-Tests can be used to evaluate the real-time performance of the current emulation system.
 
 -   ComNetsEmu is mainly developed with **Python3.8**.
-    To reduce the complexity of dependencies (third-party packages, frameworks etc.), ComNetsEmu tries to leverage as much of the powerful Python standard library as possible, and prefers simple third-party dependencies when necessary.
+    To reduce the complexity of dependencies (third-party packages, frameworks etc.),
+	ComNetsEmu tries to leverage as much of the powerful Python standard library as possible,
+	and prefers simple third-party dependencies when necessary.
 
--   Examples and applications in this repository are mainly developed with **high-level** script language for simplicity.
+-   Examples and applications in this repository are mainly developed with **high-level**
+	script language for simplicity.
     These programs are **not** performance optimized.
-    Please contact us if you want highly optimized implementation of the concepts introduced in this book.
-    For example, we have [DPDK](https://www.dpdk.org/) accelerated version for low latency (sub-millisecond) Network Coding (NC) as a network function.
+    Please contact us if you want highly optimized implementation of the concepts
+	introduced in this book.
+	For example, we had a [DPDK](https://www.dpdk.org/)-accelerated version of the 
+	low-latency (sub-millisecond) Random Linear Network Coding (RLNC) network function.
 
 ### Main Features
 
@@ -68,10 +77,11 @@ Common facts about ComNetsEmu:
 
 -   Manage application Docker containers deployed **inside** Docker hosts.
     "Docker-in-Docker" (sibling containers) is used as a lightweight emulation of nested virtualization.
-    A Docker host with multiple **internal** Docker containers deployed is used to **mimic** an actual physical host running Docker containers (application containers).
+    A Docker host with multiple **internal** Docker containers deployed is used to
+	**mimic** an actual physical host running Docker containers (application containers).
 
--   A collection of application examples for "Computing In Communication Networks" with sample codes and
-    detailed documentation.
+-   A collection of application examples for "Computing In Communication Networks" with
+	sample codes and detailed documentation.
     All examples can be easily reproduced and extended.
 
 Check the [Roadmap](./doc/roadmap.md) for planed and WIP features.
@@ -79,68 +89,96 @@ Check the [Roadmap](./doc/roadmap.md) for planed and WIP features.
 ## Installation
 
 **Currently, only the latest Ubuntu 20.04 LTS is supported.**
-**Supporting multiple Linux distributions is not the goal of this project.**
+**Supporting multiple Linux distributions and versions is not the goal of this project.**
 
-It is highly recommended to run ComNetsEmu **inside** a virtual machine.
+It is highly recommended to run ComNetsEmu **inside** a virtual machine (VM).
 **Root privileges** are required to run the ComNetsEmu/Mininet applications.
 ComNetsEmu also uses privileged Docker containers by default.
 It's also safer to play it inside a VM.
-ComNetsEmu's [installation script](./util/install.sh) uses Mininet's install script to install Mininet natively from source.
+ComNetsEmu's [installation script](./util/install.sh) is a wrapper of 
+an Ansible [playbook](./util/playbooks/install_comnetsemu.yml).
+This playbook uses Mininet's install script to install Mininet natively from source.
 As described in Mininet's doc, the install script is a bit **intrusive** and may possible **damage** your OS
 and/or home directory.
 ComNetsEmu runs smoothly in a VM with 2 vCPUs and 2GB RAM. (Host Physical CPU: Intel i7-7600U @ 2.80GHz).
 Some more complex applications require more resources.
 For example, the YOLO object detection application requires a minimum of 5GB of memory.
 
-Firstly, clone the repository with `git`.
-$TOP_DIR is the directory that you want to download the ComNetsEmu's source code.
-In Vagrant VM, TOP_DIR="$HOME".
-ComNetsEmu's installer (`BASH` scripts) assumes the name of the source directory is **comnetsemu** and will download external source dependencies in `$TOP_DIR/comnetsemu_dependencies`.
+The recommended and easiest way to install ComNetsEmu is to use Vagrant and Virtualbox.
+Assuming that the directory where ComNetsEmu is stored is "~/comnetsemu" in your home directory, 
+just run the following commands to get a fully configured VM using vagrant with Virtualbox provider:
 
 ```bash
-$ cd $TOP_DIR
-$ git clone https://git.comnets.net/public-repo/comnetsemu.git comnetsemu
+$ cd ~
+$ git clone https://git.comnets.net/public-repo/comnetsemu.git
+$ cd ./comnetsemu
+$ vagrant up comnetsemu
+# Take a coffee and wait about 15 minutes
+
+# SSH into the VM when it's up and ready (The ComNetsEmu banner is printed on the screen)
+$ vagrant ssh comnetsemu
 ```
 
-ComNetsEmu's [installer](./util/install.sh) tries to install dependencies with package manager (apt, pip etc.) if they are available.
-Unavailable dependencies (e.g. latest stable Mininet) are installed from source code.
-The source codes are downloaded into `"$TOP_DIR/comnetsemu_dependencies"` directory by default (It does not use a subdirectory inside the ComNetsEmu's source due to a file-permission issue of Vagrant (v2.2.5)).
-The installer also checks the status of the dependency directory when upgrading is performed.
-The ComNetsEmu's installer script is designed **mainly** for easy/simple setup/upgrade of the **Vagrant VM environment**.
+Mainly due to performance and special feature requirements,
+some examples and applications can only run on virtual machines with KVM as the hypervisor.
+The built-in Vagrantfile provided by ComNetsEmu supports libvirt provider.
+Please check the detailed documentation of Option 1 [here](./doc/installation.md)
+if you want to use the libvirt provider for Vagrant.
+
+Congratulations! The installation is done successfully!
+You can now run the tests, examples, and **skip** the rest of the documentation in this section.
+Continue reading only if you are interested in the details of the installation
+or want other installation options.
 
 **For users running Windows as the host OS:**
 
-WARN: ComNetsEmu's main developer does not use Windows and does not have a Windows machine to test on.
+**Warning**: Main developers of ComNetsEmu does not use Windows
+and does not have a Windows machine to test on.
 
-1.  If you are using Windows, we recommend using [Mobaxterm](https://mobaxterm.mobatek.net/) as the console.
-    This will solve problems opening `xterm` in the emulator.
+1.  If you are using Windows, we recommend using [Mobaxterm](https://mobaxterm.mobatek.net/)
+	as the console.
+    This should solve problems opening `xterm` in the emulator.
 
-The **recommended** way to install ComNetsEmu is to use Vagrant, please check
-the installation guide [here](./doc/installation.md) (Use option 1 is recommend).
+---
+
+ComNetsEmu's installer will try to install the dependencies using a package manager (apt, pip, etc.)
+if the desired version is available.
+Unavailable dependencies (e.g. the latest Mininet) and dependencies that require patching
+are installed directly from source code.
+By default, the dependency source codes are downloaded into `"~/comnetsemu_dependencies"`.
+You can modify the Ansible [playbook](./util/playbooks/install_comnetsemu.yml) based on your needs.
+
+Please see the detailed installation guide [here](./doc/installation.md)
+for additional installation options.
 
 ## Upgrade ComNetsEmu and Dependencies
 
-ComNetsEmu's installer can only upgrade when ComNetsEmu's underlying Linux distribution is **not changed/upgraded**.
+ComNetsEmu's installer can only upgrade when ComNetsEmu's
+underlying Linux distribution is **not changed/upgraded**.
 For example, you can use this upgrade function when Ubuntu 20.04 LTS is used as the base VM.
-When the base VM is upgraded to the next LTS version, the upgrade function is not guaranteed to work since many packages are upgraded.
-Therefore, it's suggested to `vagrant destroy` and `vagrant up` again when a new Ubuntu LTS is used as the base VM.
-Thanks to Vagrant and Docker packaging, it should be not too difficult to re-create the environment after rebuild the VM.
+When the base VM is upgraded to the next LTS version, 
+the upgrade function is not guaranteed to work since many packages are upgraded.
+Therefore, it's suggested to `vagrant destroy` and `vagrant up` again
+when a new Ubuntu LTS is used as the base VM.
+Thanks to Vagrant and Docker packaging, it should be not too difficult to
+re-create the environment after rebuild the VM.
 
 Example screenshots for running the upgrade process in terminal:
 
 ![Screenshots for Running Upgrade Process](./doc/comnetsemu_upgrade.gif)
 
-The **master** branch contains stable/tested sources for ComNetsEmu's python package, utility scripts, examples and applications.
-It is **recommended** to upgraded to **latest** commit of the **master** branch or the latest tag published [here](https://git.comnets.net/public-repo/comnetsemu/-/tags).
+The **master** branch contains stable/tested sources for ComNetsEmu's Python package,
+utility scripts, examples and applications.
+It is **recommended** to upgraded to **latest** published tag of the **master** branch.
 
 The [installer script](./util/install.sh) has a function to upgrade ComNetsEmu automatically.
 And the installer script also needs to be updated firstly.
 Therefore, it takes **three** steps to upgrade everything.
 It is assumed here the ComNetsEmu is installed using option 1 with Vagrant.
 
-### Step 1: Upgrade source code of ComNetsEmu Python package, examples and applications on your host OS.
+### Step 1: Upgrade source code of ComNetsEmu Python package, examples and applications
 
-Use git to pull (or fetch+merge if you want to) the latest commit in master branch:
+Use git to pull (or fetch+merge) the latest tag (or commit) in master branch:
 
 ```bash
 $ cd ~/comnetsemu
@@ -148,26 +186,22 @@ $ git checkout master
 $ git pull origin master
 ```
 
-### Step 2: Upgrade ComNetsEmu Python module and all dependencies automatically inside VM.
+### Step 2: Automatically upgrade ComNetsEmu Python modules and all dependencies
 
 The [installer script](./util/install.sh) is used to perform this step.
-This script **ONLY** works on supported distributions and has some default variables:
-
-1. The ComNetsEmu's source files are located in "~/comnetsemu"
-2. The dependencies installed from source are located in "~/comnetsemu_dependencies"
-
-Run following command to upgrade automatically:
+Run following commands **inside** the VM to upgrade automatically:
 
 ```bash
 $ cd ~/comnetsemu/util
 $ bash ./install.sh -u
 ```
 
-The script may ask you to input yes or no several times, please read the terminal output for information.
+The script may ask you to input yes or no several times,
+please read the terminal output for information.
 
-### Step 3: Check if the upgrading is successful inside VM.
+### Step 3: Check if the upgrade is successful
 
-Run following commands to run tests:
+Run following commands inside the VM to run tests:
 
 ```bash
 $ cd ~/comnetsemu/
@@ -194,7 +228,8 @@ Dependencies of specific applications (e.g. Python packages like numpy, scipy et
 Therefore, the user need to install them **only if** she or he wants to run that application.
 
 -   [app](./app/): All application programs are classified in this directory.
-    Each subdirectory contains a brief introduction, source codes, Dockerfiles for internal containers and utility scripts of the application
+    Each subdirectory contains a brief introduction, source codes, Dockerfiles for internal containers
+	and utility scripts of the application
 
 -   [bin](./bin): Commands and binaries provided by ComNetsEmu
 

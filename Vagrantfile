@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.provider "libvirt" do |libvirt, override|
       # Overrides are used to modify default options that do not work for libvirt provider.
       override.vm.box = BOX_LIBVIRT
-      override.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: "nfs", nfs_version: 3
+      override.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: "nfs", nfs_version: 4
 
       libvirt.driver = "kvm"
       libvirt.cpus = CPUS
@@ -143,7 +143,7 @@ it will not take much time.
 
     comnetsemu.vm.provision :shell, inline: $bootstrap, privileged: true
     comnetsemu.vm.provision :shell, inline: $setup_x11_server, privileged: true
-    comnetsemu.vm.provision :shell, inline: $setup_comnetsemu, privileged: false, reboot: true
+    comnetsemu.vm.provision :shell, inline: $setup_comnetsemu, privileged: false
     comnetsemu.vm.provision :shell, inline: $post_installation, privileged: true
 
     comnetsemu.vm.provider "libvirt" do |libvirt, override|

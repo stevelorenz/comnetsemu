@@ -9,7 +9,8 @@
 
   vars:
     # The directory where comnetsemu's source code is located.
-    TOP_DIR: "{{ ansible_user_dir }}"
+    # Use relative path
+    TOP_DIR: "../../../"
 
   tasks:
 
@@ -65,7 +66,7 @@
   - name: Install Mininet and its minimal dependencies
     shell: PYTHON=python3 ./install.sh -nfvw
     args:
-      chdir: ~/comnetsemu_dependencies/mininet/util
+      chdir: "{{ TOP_DIR }}/comnetsemu_dependencies/mininet/util"
 
   - name: Install all deb packages required by ComNetsEmu from the official Ubuntu repo
     become: true
@@ -119,10 +120,11 @@
   - name: Install packages required to build HTML documentation of ComNetsEmu
     become: true
     # Pip must be used here since many required packages are not currently in Ubuntu's repo.
-    pip:
-      requirements: "{{ TOP_DIR }}/comnetsemu/doc/requirements.txt"
+    shell: pip3 install -r ./requirements.txt
+    args:
+      chdir: "{{ TOP_DIR }}/comnetsemu/doc"
 
-  - name: Start and enable Docker service
+  - name: Start and enable the Docker service
     become: true
     systemd:
       name: docker
