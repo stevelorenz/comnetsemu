@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-import comnetsemu.tool as tool
+import comnetsemu.util as util
 from comnetsemu.net import Containernet
 from time import sleep
 from mininet.link import TCLink
@@ -107,7 +107,7 @@ def generate_key_pair_for_host(center):
 
 def test_connection(source_container, target_ip):
     ret = source_container.cmd("ping -W 1 -c " + str(PING_COUNT) + " " + target_ip)
-    sent, received = tool.parsePing(ret)
+    sent, received = util.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     if measured == 0.0:
         return True

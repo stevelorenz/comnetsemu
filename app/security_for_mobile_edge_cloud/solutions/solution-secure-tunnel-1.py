@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-import comnetsemu.tool as tool
+import comnetsemu.util as util
 from comnetsemu.net import Containernet
 from time import sleep
 from mininet.link import TCLink
@@ -125,7 +125,7 @@ def test_connection(source_container, target_ip):
     info("*** Test the connection\n")
     info("* Ping test count: %d" % PING_COUNT)
     ret = source_container.cmd("ping -c " + str(PING_COUNT) + " " + target_ip)
-    sent, received = tool.parsePing(ret)
+    sent, received = util.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     info("* Measured loss rate: {:.2f}%\n".format(measured))
 

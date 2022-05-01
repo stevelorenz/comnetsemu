@@ -120,6 +120,8 @@ Vagrant.configure("2") do |config|
     comnetsemu.vm.provider "libvirt" do |libvirt, override|
       # Overrides are used to modify default options that do not work for libvirt provider.
       override.vm.box = BOX_LIBVIRT
+      # Please modify the nfs_version to the supported version on your host system
+      # if there is a NFS version error.
       override.vm.synced_folder ".", "/home/vagrant/comnetsemu", type: "nfs", nfs_version: 4
 
       libvirt.driver = "kvm"

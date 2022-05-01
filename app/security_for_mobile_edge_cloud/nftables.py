@@ -6,7 +6,7 @@
 About: This examples shows the basic setup of a firewall with nftables.
 """
 
-import comnetsemu.tool as tool
+import comnetsemu.util as util
 from comnetsemu.net import Containernet
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
@@ -62,7 +62,7 @@ def test_connection(client):
     info("*** Test the connection\n")
     print("* Ping test count: %d" % PING_COUNT)
     ret = client.cmd("ping -c %d 10.0.0.1" % PING_COUNT)
-    sent, received = tool.parsePing(ret)
+    sent, received = util.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     print("* Measured loss rate: {:.2f}%".format(measured))
 

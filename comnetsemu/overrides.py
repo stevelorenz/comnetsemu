@@ -45,15 +45,15 @@ def makeIntfPairFixed(
     runCmd=None,
 ):
     """Make a veth pair connnecting new interfaces intf1 and intf2
-       intf1: name for interface 1
-       intf2: name for interface 2
-       addr1: MAC address for interface 1 (optional)
-       addr2: MAC address for interface 2 (optional)
-       node1: home node for interface 1 (optional)
-       node2: home node for interface 2 (optional)
-       deleteIntfs: delete intfs before creating them
-       runCmd: function to run shell commands (quietRun)
-       raises Exception on failure"""
+    intf1: name for interface 1
+    intf2: name for interface 2
+    addr1: MAC address for interface 1 (optional)
+    addr2: MAC address for interface 2 (optional)
+    node1: home node for interface 1 (optional)
+    node2: home node for interface 2 (optional)
+    deleteIntfs: delete intfs before creating them
+    runCmd: function to run shell commands (quietRun)
+    raises Exception on failure"""
     if not runCmd:
         runCmd = quietRun if not node1 else node1.cmd
         runCmd2 = quietRun if not node2 else node2.cmd

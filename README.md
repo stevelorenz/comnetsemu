@@ -28,6 +28,7 @@ For all public users, if you have a question or want to contribute, please creat
 * [Run the Docker-in-Docker example](#run-the-docker-in-docker-example)
 * [Project Structure](#project-structure)
 * [Development Guide and API Documentation](#development-guide-and-api-documentation)
+* [Projects using ComNetsEmu](#projects-using-comnetsemu)
 * [FAQ](#faq)
 * [Contributing](#contributing)
 * [Contact](#contact)
@@ -163,10 +164,6 @@ when a new Ubuntu LTS is used as the base VM.
 Thanks to Vagrant and Docker packaging, it should be not too difficult to
 re-create the environment after rebuild the VM.
 
-Example screenshots for running the upgrade process in terminal:
-
-![Screenshots for Running Upgrade Process](./doc/comnetsemu_upgrade.gif)
-
 The **master** branch contains stable/tested sources for ComNetsEmu's Python package,
 utility scripts, examples and applications.
 It is **recommended** to upgraded to **latest** published tag of the **master** branch.
@@ -252,6 +249,16 @@ Therefore, the user need to install them **only if** she or he wants to run that
 ## Development Guide and API Documentation
 
 Please check the online [documentation page](https://stevelorenz.github.io/comnetsemu/).
+
+## Projects using ComNetsEmu
+
+A list of projects/repositories using ComNetsEmu:
+
+-   [Molle94/comnetsemu_open5gs](https://github.com/Molle94/comnetsemu_open5gs):
+    Deploy open5gs and ueransim in comnetsemu to perform cp state access measurements.
+
+If you use ComNetsEmu and would like to add your project to this list.
+Please create a Github issue or send me an email.
 
 ## FAQ
 

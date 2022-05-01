@@ -43,7 +43,7 @@
     become: true
     apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
-  - name: Clone Mininet repo
+  - name: Clone Mininet repo commit aa0176fce6fb718a03474f8719261b07b670d30d
     git:
       repo: https://github.com/mininet/mininet
       dest: "{{ TOP_DIR }}/comnetsemu_dependencies/mininet"
@@ -67,6 +67,8 @@
     shell: PYTHON=python3 ./install.sh -nfvw
     args:
       chdir: "{{ TOP_DIR }}/comnetsemu_dependencies/mininet/util"
+
+  # - name: Install P4 compiler
 
   - name: Install all deb packages required by ComNetsEmu from the official Ubuntu repo
     become: true
@@ -112,10 +114,6 @@
         - python3-pytest
         - shellcheck
       state: latest
-
-  # TODO: Install P4 related dependencies
-
-  # TODO: Install a high-performance data plane solutions e.g. VPP or OVS-DPDK
 
   - name: Install packages required to build HTML documentation of ComNetsEmu
     become: true

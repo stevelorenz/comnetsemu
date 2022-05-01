@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-import comnetsemu.tool as tool
+import comnetsemu.util as util
 from comnetsemu.net import Containernet
 from mininet.link import TCLink
 from mininet.log import info, setLogLevel
@@ -157,7 +157,7 @@ def check_open_port(source_container, target_ip, target_port):
 
 def test_connection(source_container, target_ip):
     ret = source_container.cmd("ping -c " + str(PING_COUNT) + " " + target_ip)
-    sent, received = tool.parsePing(ret)
+    sent, received = util.parsePing(ret)
     measured = ((sent - received) / float(sent)) * 100.0
     if measured == 0.0:
         return info("* Connection established\n")

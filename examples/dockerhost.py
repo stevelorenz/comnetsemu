@@ -13,7 +13,7 @@ Tests:
 - Packet losses test with ping and increased link loss rate.
 """
 
-import comnetsemu.tool as tool
+import comnetsemu.util as util
 from comnetsemu.net import Containernet
 from comnetsemu.node import DockerHost
 from mininet.link import TCLink
@@ -79,7 +79,7 @@ def run_net():
             print("Failed to change loss. Error:%s\n", ret)
 
         ret = h1.cmd("ping -c %d 10.0.0.2" % PING_COUNT)
-        sent, received = tool.parsePing(ret)
+        sent, received = util.parsePing(ret)
         measured = ((sent - received) / float(sent)) * 100.0
         print(
             "Expected loss rate: {:.2f}%, measured loss rate: {:.2f}%".format(
