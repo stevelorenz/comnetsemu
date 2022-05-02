@@ -41,10 +41,6 @@ jobs:
         run:  |
           sudo make test-quick
 
-      - name: Run built-in examples
-        run:  |
-          cd ./examples/ && sudo bash ./run.sh
-
       # Thanks to Baldomo (https://github.com/Baldomo)
       # Github pages actions are copied/modified from his contribution
       - name: Build HTML docs

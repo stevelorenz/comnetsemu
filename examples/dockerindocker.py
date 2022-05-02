@@ -93,7 +93,9 @@ def testDockerInDocker(n):
     # 100ms = 100000 us
     for i, h in enumerate(hosts):
         h.dins.update(cpu_quota=int(50000 / n))
-        h.dins.update(mem_limit=10 * (1024 ** 2))  # in bytes
+        h.dins.update(
+            mem_limit=10 * (1024**2), memswap_limit=10 * (1024**2)
+        )  # in bytes
         c = mgr.addContainer(
             "stress_app_%s" % (i + 1),
             h.name,
