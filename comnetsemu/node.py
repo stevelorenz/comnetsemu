@@ -6,13 +6,19 @@ import os
 import pty
 import select
 import shlex
+import tempfile
 import time
+
+from sys import exit
+from time import sleep
 
 import docker
 
 from comnetsemu.exceptions import InvalidDockerArgs
+from comnetsemu.util import checkListeningOnPort, dpidToStr
 from mininet.log import debug, error, info, warn
-from mininet.node import Host
+from mininet.moduledeps import pathCheck
+from mininet.node import Host, Switch
 
 
 class DockerHost(Host):
@@ -335,3 +341,195 @@ class APPContainer:
     def _terminate(self):
         """APPContainer specific cleanups."""
         pass
+
+
+# INFO: Following P4 related host and switch source codes are copied/modified
+# from the official p4-tutorial repository
+# (https://github.com/p4lang/tutorials).
+
+# Copyright 2013-present Barefoot Networks, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+P4_SWITCH_START_TIMEOUT = 10  # seconds
+P4_SWITCH_STOP_TIMEOUT = 10
+
+
+class P4DockerHost(DockerHost):
+    """DockerHost with custom configuration to work with software P4 switches (BMv2)"""
+
+    def config(self, **params):
+        """Configure host"""
+        r = super(Host, self).config(**params)
+
+        # Diable RX and TX checksum offloading and disable scatter-gather
+        # ON the default interface.
+        for off in ["rx", "tx", "sg"]:
+            cmd = "/sbin/ethtool --offload {} {} off".format(
+                self.defaultIntf().name, off
+            )
+            self.cmd(cmd)
+
+        # Disable IPv6
+        self.cmd("sysctl -w net.ipv6.conf.all.disable_ipv6=1")
+        self.cmd("sysctl -w net.ipv6.conf.default.disable_ipv6=1")
+        self.cmd("sysctl -w net.ipv6.conf.lo.disable_ipv6=1")
+
+        return r
+
+
+class P4Switch(Switch):
+    """P4 virtual switch"""
+
+    device_id = 0
+
+    def __init__(
+        self,
+        name: str,
+        sw_path: str = None,
+        json_path: str = None,
+        thrift_port: int = None,
+        pcap_dump: bool = False,
+        log_console: bool = False,
+        log_file: str = None,
+        device_id: int = None,
+        enable_debugger: bool = False,
+        **kwargs,
+    ):
+        """Init the P4 switch
+
+        :param name: Name of the P4 switch
+        :type name: str
+        :param sw_path: The path of the switch binary to execute
+        :type sw_path: str
+        :param json_path: Path to the P4 compiled JSON configuration
+        :type json_path: str
+        :param thrift_port: The port number of the Thrift server
+        :type thrift_port: int
+        :param pcap_dump: Whether to save pcap logs to the disk
+        :type pcap_dump: bool
+        :param log_console: Whether to enable console logging
+        :type log_console: bool
+        :param log_file: The path of the switch logging file
+        :type log_file: str
+        :param device_id: The unique ID for the switch
+        :type device_id: int
+        :param enable_debugger: Whether to enable debugger
+        :type enable_debugger: bool
+        """
+
+        if device_id:
+            self.device_id = device_id
+            P4Switch.device_id = max(P4Switch.device_id, device_id)
+        else:
+            self.device_id = P4Switch.device_id
+            P4Switch.device_id += 1
+
+        dpid = dpidToStr(self.device_id)
+        kwargs.update(dpid=dpid)
+        super().__init__(name, **kwargs)
+
+        assert sw_path
+        assert json_path
+        # make sure that the provided sw_path is valid
+        pathCheck(sw_path)
+        # make sure that the provided JSON file exists
+        if not os.path.isfile(json_path):
+            error("Invalid JSON file.\n")
+            exit(1)
+        self.sw_path = sw_path
+        self.json_path = json_path
+
+        self.thrift_port = thrift_port
+        if checkListeningOnPort(self.thrift_port):
+            error(
+                "%s cannot bind port %d because it is bound by another process\n"
+                % (self.name, self.grpc_port)
+            )
+            exit(1)
+
+        # TODO: Improve the handling of logging here.
+        self.pcap_dump = pcap_dump
+        self.enable_debugger = enable_debugger
+        self.log_console = log_console
+        if log_file is not None:
+            self.log_file = log_file
+        else:
+            self.log_file = "/tmp/p4s.{}.log".format(self.name)
+
+        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
+
+    @classmethod
+    def setup(cls):
+        pass
+
+    def check_switch_started(self, pid):
+        """While the process is running (pid exists), we check if the Thrift
+        server has been started. If the Thrift server is ready, we assume that
+        the switch was started successfully. This is only reliable if the Thrift
+        server is started at the end of the init process"""
+        while True:
+            if not os.path.exists(os.path.join("/proc", str(pid))):
+                return False
+            if checkListeningOnPort(self.thrift_port):
+                return True
+            sleep(0.5)
+
+    def start(self, controllers=None):
+        """Start up a new P4 switch
+
+        :param controllers:
+        :type controllers: list
+        """
+        info("Starting P4 switch {}.\n".format(self.name))
+        args = [self.sw_path]
+
+        for port, intf in list(self.intfs.items()):
+            if not intf.IP():
+                args.extend(["-i", str(port) + "@" + intf.name])
+
+        if self.pcap_dump:
+            args.append("--pcap %s" % self.pcap_dump)
+        if self.thrift_port:
+            args.extend(["--thrift-port", str(self.thrift_port)])
+        if self.nanomsg:
+            args.extend(["--nanolog", self.nanomsg])
+        args.extend(["--device-id", str(self.device_id)])
+        # TODO: Why here device_id += 1? Handle the device_id in the __init__.
+        P4Switch.device_id += 1
+        args.append(self.json_path)
+        if self.enable_debugger:
+            args.append("--debugger")
+        if self.log_console:
+            args.append("--log-console")
+        info(" ".join(args) + "\n")
+
+        pid = None
+        with tempfile.NamedTemporaryFile() as f:
+            # self.cmd(' '.join(args) + ' > /dev/null 2>&1 &')
+            self.cmd(
+                " ".join(args) + " >" + self.log_file + " 2>&1 & echo $! >> " + f.name
+            )
+            pid = int(f.read())
+        debug("P4 switch {} PID is {}.\n".format(self.name, pid))
+        if not self.check_switch_started(pid):
+            error("P4 switch {} did not start correctly.\n".format(self.name))
+            exit(1)
+        info("P4 switch {} has been started.\n".format(self.name))
+
+    def stop(self):
+        "Terminate P4 switch."
+        self.cmd("kill %" + self.sw_path)
+        self.cmd("wait")
+        self.deleteIntfs()

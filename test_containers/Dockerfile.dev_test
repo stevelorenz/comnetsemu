@@ -17,11 +17,13 @@ RUN apt-get -qy update && \
 	bash \
 	bash-completion \
 	curl \
+	ethtool \
 	iperf \
 	iperf3 \
 	iproute2 \
 	iputils-ping \
 	net-tools \
+	python3-scapy \
 	stress-ng \
 	tcpdump \
 	telnet && \

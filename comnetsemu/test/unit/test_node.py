@@ -10,9 +10,9 @@ import functools
 import unittest
 
 from comnetsemu.clean import cleanup
+from comnetsemu.log import setLogLevel
 from comnetsemu.net import Containernet, APPContainerManager
 from comnetsemu.node import DockerHost
-from mininet.log import setLogLevel
 from mininet.node import OVSBridge
 from mininet.topo import Topo
 

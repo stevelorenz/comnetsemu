@@ -132,37 +132,43 @@ class TestVNFManager(unittest.TestCase):
                 raise ValueError("Unkown mount is added!")
         self.mgr.removeContainer("d1")
 
-    @unittest.skipIf(len(sys.argv) == 3 and sys.argv[2] == "-quick", "Schneller!")
-    def test_container_isolation(self):
-        h1 = self.net.get("h1")
-        h2 = self.net.get("h2")
-        h3 = self.net.get("h3")
+    # MARK: the test_container_isolation is disabled currently.
+    # Because this test requires the underlying host machine to have enough computational resources
+    # for isolation of nodes in the network.
+    # The machine of the student or CI machine typically runs many background processes. So this test
+    # will usually fail on these machines (VMs).
 
-        # CPU and memory
-        h1.dins.update(cpu_quota=10000)
-        h1.dins.update(
-            mem_limit=10 * (1024**2), memswap_limit=10 * (1024**2)
-        )  # in bytes
+    # @unittest.skipIf(len(sys.argv) == 3 and sys.argv[2] == "-quick", "Schneller!")
+    # def test_container_isolation(self):
+    #     h1 = self.net.get("h1")
+    #     h2 = self.net.get("h2")
+    #     h3 = self.net.get("h3")
 
-        c1 = self.mgr.addContainer(
-            "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M", {}
-        )
-        usages = self.mgr.monResourceStats(c1.name, sample_period=0.1, sample_num=2)
-        cpu = sum(u[0] for u in usages) / len(usages)
-        mem = sum(u[1] for u in usages) / len(usages)
-        self.assertTrue(abs(cpu - 10.0) <= CPU_ERR_THR)
-        self.assertTrue(abs(mem - 10.0) <= MEM_ERR_THR)
-        self.mgr.removeContainer(c1.name)
-        h1.dins.update(cpu_quota=-1)
-        h1.dins.update(mem_limit=100 * (1024**3))
+    #     # CPU and memory
+    #     h1.dins.update(cpu_quota=10000)
+    #     h1.dins.update(
+    #         mem_limit=10 * (1024**2), memswap_limit=10 * (1024**2)
+    #     )  # in bytes
 
-        # Network
-        for r in [h2, h3]:
-            c1 = self.mgr.addContainer("c1", r.name, "dev_test", "iperf -s", {})
-            ret = h1.cmd("iperf -c {} -u -b 10M -t 3".format(r.IP()))
-            clt_bw = float(self.net._parseIperf(ret).split(" ")[0])
-            self.assertTrue(clt_bw > 0.0)
-            self.mgr.removeContainer(c1.name)
+    #     c1 = self.mgr.addContainer(
+    #         "c1", "h1", "dev_test", "stress-ng -c 1 -m 1 --vm-bytes 300M", {}
+    #     )
+    #     usages = self.mgr.monResourceStats(c1.name, sample_period=0.1, sample_num=2)
+    #     cpu = sum(u[0] for u in usages) / len(usages)
+    #     mem = sum(u[1] for u in usages) / len(usages)
+    #     self.assertTrue(abs(cpu - 10.0) <= CPU_ERR_THR)
+    #     self.assertTrue(abs(mem - 10.0) <= MEM_ERR_THR)
+    #     self.mgr.removeContainer(c1.name)
+    #     h1.dins.update(cpu_quota=-1)
+    #     h1.dins.update(mem_limit=100 * (1024**3))
+
+    #     # Network
+    #     for r in [h2, h3]:
+    #         c1 = self.mgr.addContainer("c1", r.name, "dev_test", "iperf -s", {})
+    #         ret = h1.cmd("iperf -c {} -u -b 10M -t 3".format(r.IP()))
+    #         clt_bw = float(self.net._parseIperf(ret).split(" ")[0])
+    #         self.assertTrue(clt_bw > 0.0)
+    #         self.mgr.removeContainer(c1.name)
 
     # def test_container_migration(self):
     #     self.mgr.addContainer("c1", "h1", "dev_test", "/bin/bash", {})

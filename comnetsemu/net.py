@@ -16,7 +16,7 @@ import docker
 
 from comnetsemu.cli import spawnXtermDocker
 from comnetsemu.exceptions import InvalidDockerArgs
-from comnetsemu.node import APPContainer, DockerHost
+from comnetsemu.node import APPContainer, DockerHost, P4Switch
 from mininet.log import debug, error, info
 from mininet.net import Mininet
 from mininet.term import cleanUpScreens, makeTerms
@@ -51,14 +51,6 @@ class Containernet(Mininet):
 
         Mininet.__init__(self, **params)
 
-    def addDockerHost(self, name: str, **params):  # pragma: no cover
-        """Wrapper for addHost method that adds a Docker container as a host.
-
-        :param name: Name of the host.
-        :type name: str
-        """
-        return self.addHost(name, cls=DockerHost, **params)
-
     def startTerms(self):  # pragma: no cover
         "Start a terminal for each node."
         if "DISPLAY" not in os.environ:
@@ -90,6 +82,27 @@ class Containernet(Mininet):
             *args,
             **kwargs,
         )
+
+    ##################
+    #  Docker Hosts  #
+    ##################
+
+    def addDockerHost(self, name: str, **params):  # pragma: no cover
+        """Wrapper for addHost method that adds a Docker container as a host.
+
+        :param name: Name of the host.
+        :type name: str
+        """
+        return self.addHost(name, cls=DockerHost, **params)
+
+    #################
+    #  P4 Switches  #
+    #################
+
+    def addP4Switch(self, name: str, **kwargs):
+
+        kwargs.update(cls=P4Switch)
+        return self.addSwitch(name, **kwargs)
 
 
 class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
