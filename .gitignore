@@ -115,6 +115,14 @@ doc/build/
 # API sources are auto-generated with sphinx-apidoc
 doc/api/*.rst
 
+
+--------
+-  P4  -
+--------
+
+build/
+logs/
+
 ----------
 -  MISC  -
 ----------

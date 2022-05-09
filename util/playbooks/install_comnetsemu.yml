@@ -8,11 +8,20 @@
   gather_facts: true
 
   vars:
+
     # The directory where comnetsemu's source code is located.
     # Use relative path
     TOP_DIR: "../../../"
 
+    # Unreleased version 2.3.1b1
+    # This Mininet version is needed because it replace all git URLs to https!
+    MININET_VER: "aa0176fce6fb718a03474f8719261b07b670d30d"
+
   tasks:
+
+  - name: Update apt-get repo and cache
+    become: true
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
   - name: Create directories
     file:
@@ -39,17 +48,13 @@
       state: absent
     with_items: "{{ directories_to_remove.files }}"
 
-  - name: Update apt-get repo and cache
-    become: true
-    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
-
-  - name: Clone Mininet repo commit aa0176fce6fb718a03474f8719261b07b670d30d
+  ### Install Mininet
+  # ----------------------------------------------------------------------------
+  - name: Clone Mininet repo
     git:
       repo: https://github.com/mininet/mininet
       dest: "{{ TOP_DIR }}/comnetsemu_dependencies/mininet"
-      # Unreleased version 2.3.1b1
-      # This version is needed because it replace all git URLs to https!
-      version: aa0176fce6fb718a03474f8719261b07b670d30d
+      version: "{{ MININET_VER }}"
       force: yes
 
   # Patch source code directly, instead of using runtime monkey patching
@@ -67,8 +72,43 @@
     shell: PYTHON=python3 ./install.sh -nfvw
     args:
       chdir: "{{ TOP_DIR }}/comnetsemu_dependencies/mininet/util"
+  # ----------------------------------------------------------------------------
 
-  # - name: Install P4 compiler
+  ### Install open source P4 development tools
+  # MARK: Now release (pre-compiled) deb packages are installed.
+  #       Check if install directly from source code is needed for ComNetsEmu's use cases.
+  # ----------------------------------------------------------------------------
+  - name: Add repository with compiled P4 packages
+    become: true
+    apt_repository:
+      repo: "deb http://download.opensuse.org/repositories/home:/p4lang/xUbuntu_20.04/ /"
+      state: present
+      update_cache: no
+
+  - name: Add apt key of the repository with P4 packages
+    become: true
+    apt_key:
+      url: "http://download.opensuse.org/repositories/home:/p4lang/xUbuntu_20.04/Release.key"
+      state: present
+
+  - name: Update apt-get repo and cache
+    become: true
+    apt: update_cache=yes force_apt_get=yes
+
+  - name: Install P4 deb packages
+    become: true
+    apt:
+      name:
+        - p4lang-bmv2
+        - p4lang-p4c
+        - p4lang-pi
+        - python3-grpcio
+        - python3-ipaddr
+        - python3-psutil
+        - python3-scapy
+      state: latest
+
+  # ----------------------------------------------------------------------------
 
   - name: Install all deb packages required by ComNetsEmu from the official Ubuntu repo
     become: true
@@ -122,9 +162,11 @@
     args:
       chdir: "{{ TOP_DIR }}/comnetsemu/doc"
 
-  - name: Start and enable the Docker service
+  - name: Start and enable services
     become: true
     systemd:
-      name: docker
+      name: "{{ item }}"
       state: started
       enabled: yes
+    loop:
+      - docker
