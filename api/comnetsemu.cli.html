@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,6 +11,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -73,7 +74,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -91,7 +92,7 @@
           <div class="body" role="main">
             
   <div class="section" id="module-comnetsemu.cli">
-<span id="comnetsemu-cli-module"></span><h1>comnetsemu.cli module<a class="headerlink" href="#module-comnetsemu.cli" title="Permalink to this headline">¶</a></h1>
+<span id="comnetsemu-cli-module"></span><h1>comnetsemu.cli module<a class="headerlink" href="#module-comnetsemu.cli" title="Permalink to this heading">¶</a></h1>
 <p>About: ComNetsEmu simple command-line interface</p>
 <p>This module sub-class the Mininet’s CLI class to add some ComNetsEmu’s specific
 properly for DockerHost instances.
@@ -103,7 +104,7 @@ commands, and also add fixes to some Mininet’s default methods to make it work
 <dl class="py class">
 <dt class="sig sig-object py" id="comnetsemu.cli.CLI">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">comnetsemu.cli.</span></span><span class="sig-name descname"><span class="pre">CLI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mininet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdin=&lt;_io.TextIOWrapper</span> <span class="pre">name='&lt;stdin&gt;'</span> <span class="pre">mode='r'</span> <span class="pre">encoding='utf-8'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.cli.CLI" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mininet.cli.CLI</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CLI</span></code></p>
 <p>Mininet’s CLI subclass with support for Docker containers.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="comnetsemu.cli.CLI.default">
@@ -174,7 +175,7 @@ container. Bash is used as the interactive shell.</p>
       &copy;2022 The Deutsche Telekom Chair of Communication Networks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,6 +11,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -72,7 +73,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -90,9 +91,9 @@
           <div class="body" role="main">
             
   <div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="option-1-install-in-a-vagrant-managed-vm-highly-recommended">
-<h2>Option 1: Install in a Vagrant managed VM (Highly Recommended)<a class="headerlink" href="#option-1-install-in-a-vagrant-managed-vm-highly-recommended" title="Permalink to this headline">¶</a></h2>
+<h2>Option 1: Install in a Vagrant managed VM (Highly Recommended)<a class="headerlink" href="#option-1-install-in-a-vagrant-managed-vm-highly-recommended" title="Permalink to this heading">¶</a></h2>
 <p>The comfortable way to setup the test and development environment is to run a
 pre-configured VM managed by <a class="reference external" href="https://www.vagrantup.com/">Vagrant</a>.
 Vagrant supports multiple providers including Virtualbox and <a class="reference external" href="https://libvirt.org/">Libvirt</a> (With <a class="reference external" href="https://github.com/vagrant-libvirt/vagrant-libvirt">vagrant-libvirt plugin</a>).
@@ -186,7 +187,7 @@ You can SSH into the VM to run examples and applications.
 The option 2 is <strong>only</strong> for users who want to install it on their own customized VM or bare metal.</p>
 </div>
 <div class="section" id="option-2-install-on-user-s-custom-vm-or-directly-on-host-os">
-<h2>Option 2: Install on user’s custom VM or directly on host OS<a class="headerlink" href="#option-2-install-on-user-s-custom-vm-or-directly-on-host-os" title="Permalink to this headline">¶</a></h2>
+<h2>Option 2: Install on user’s custom VM or directly on host OS<a class="headerlink" href="#option-2-install-on-user-s-custom-vm-or-directly-on-host-os" title="Permalink to this heading">¶</a></h2>
 <p>As described above, installation on user’s custom VM or directly on the host OS has several disadvantages.
 It is not convenient to manage the test environment compared to the option 1.
 For this option, it is recommended to install Ubuntu <strong>20.04 LTS</strong> <strong>freshly</strong>
@@ -209,7 +210,7 @@ $ bash ./install.sh -a
 </div>
 </div>
 <div class="section" id="option-3-download-the-pre-built-vm-image">
-<h2>Option 3: Download the pre-built VM image<a class="headerlink" href="#option-3-download-the-pre-built-vm-image" title="Permalink to this headline">¶</a></h2>
+<h2>Option 3: Download the pre-built VM image<a class="headerlink" href="#option-3-download-the-pre-built-vm-image" title="Permalink to this heading">¶</a></h2>
 <p>Only if the previous option does not suit you, please use this option.
 Because the VM image may not be updated frequently and you need to manually
 configure the VM for e.g. port forwarding, folder synchronization.</p>
@@ -228,7 +229,7 @@ $ qemu-img convert some_name.vmdk some_name.qcow2 -O qcow2
 </div>
 </div>
 <div class="section" id="post-installation">
-<h2>Post-Installation<a class="headerlink" href="#post-installation" title="Permalink to this headline">¶</a></h2>
+<h2>Post-Installation<a class="headerlink" href="#post-installation" title="Permalink to this heading">¶</a></h2>
 <p><strong>MARK</strong>: ComNetsEmu is developed with Python3 (3.8).
 Please use <code class="docutils literal notranslate"><span class="pre">python3</span></code> command to run examples or applications.
 Because the current master branch is still under heavy development, therefore
@@ -258,7 +259,7 @@ $ python ./build.py
       &copy;2022 The Deutsche Telekom Chair of Communication Networks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,6 +11,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -69,7 +70,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -87,18 +88,18 @@
           <div class="body" role="main">
             
   <div class="section" id="faq">
-<h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
+<h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="general-questions">
-<h2>General Questions<a class="headerlink" href="#general-questions" title="Permalink to this headline">¶</a></h2>
+<h2>General Questions<a class="headerlink" href="#general-questions" title="Permalink to this heading">¶</a></h2>
 <div class="section" id="why-not-the-vanilla-mininet">
-<h3>Why not the vanilla Mininet ?<a class="headerlink" href="#why-not-the-vanilla-mininet" title="Permalink to this headline">¶</a></h3>
+<h3>Why not the vanilla Mininet ?<a class="headerlink" href="#why-not-the-vanilla-mininet" title="Permalink to this heading">¶</a></h3>
 <p>Default Mininet (the latest version) does not support running Docker containers
 applications directly inside Mininet Host with sufficient network isolation.
 ComNetsEmu adds a new node type: DockerHost to deploy internal Docker
 application containers.</p>
 </div>
 <div class="section" id="why-not-containernet">
-<h3>Why not Containernet ?<a class="headerlink" href="#why-not-containernet" title="Permalink to this headline">¶</a></h3>
+<h3>Why not Containernet ?<a class="headerlink" href="#why-not-containernet" title="Permalink to this heading">¶</a></h3>
 <p>Containernet did a fork (hold all source codes of Mininet in its own Repo) of the Mininet.
 New features and fixes from upstream Mininet can not be <strong>merged</strong> into Containernet <strong>directly</strong>.
 ComNetsEmu is only an extension of the upstream Mininet:</p>
@@ -114,7 +115,7 @@ All examples, CLI commands of Mininet should also work on ComNetsEmu.</p></li>
 </ul>
 </div>
 <div class="section" id="why-not-kubernetes-k8s">
-<h3>Why not Kubernetes(K8s)?<a class="headerlink" href="#why-not-kubernetes-k8s" title="Permalink to this headline">¶</a></h3>
+<h3>Why not Kubernetes(K8s)?<a class="headerlink" href="#why-not-kubernetes-k8s" title="Permalink to this heading">¶</a></h3>
 <p>For teaching and emulation on a single laptop, K8s is too heavy and complex.
 ComNetsEmu can emulate typical K8s setup with more lightweight virtualisation.
 And thanks to Mininet, all links on the data plane can be configured with
@@ -135,7 +136,7 @@ It is great for teaching.</p>
       &copy;2022 The Deutsche Telekom Chair of Communication Networks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
