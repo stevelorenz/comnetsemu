@@ -84,6 +84,6 @@ doc: $(PYSRC)
 	-rm ./doc/api/*.rst
 	-rm -r ./doc/build/
 	# Use sphinx-apidoc to generate API sources
-	cd ./doc/ && sphinx-apidoc -o api ../comnetsemu -H 'Python API' --separate
+	cd ./doc/ && sphinx-apidoc -o api ../comnetsemu -H 'ComNetsEmu Python API' --separate
 	# Build HTML files
 	cd ./doc/ && make html

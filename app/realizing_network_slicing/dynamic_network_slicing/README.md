@@ -163,10 +163,6 @@ Assumption: We assume that (h1, h4) and (h2, h5) only use 50% of the slices' cap
 
 Note: In order to enable the ryu manager to listen to all the available functions in the emergency_slicing.py but also to automate the process of creating a new channel during an emergency scenario we create an additional thread (except the main thread). This thread is responsible to automate the process of activateing/deactivating the emergency scenario every K seconds. 
 
-### [FAQ](./doc/faq.md)
-
-### [Useful Links](./doc/ref_links.md)
-
 ### Contributing
 
 The Contributors of this project are the following:

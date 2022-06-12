@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
+
 """
 About: Test core features implemented in ComNetsEmu
 """
 
-import os
 import functools
+import os
 import sys
 import time
 import unittest
@@ -15,9 +16,10 @@ import pyroute2
 import requests
 
 from comnetsemu.clean import cleanup
+from comnetsemu.log import setLogLevel
 from comnetsemu.net import Containernet, VNFManager
 from comnetsemu.node import DockerHost
-from mininet.log import setLogLevel
+from comnetsemu.util import checkListeningOnIPPort
 from mininet.node import OVSBridge
 from mininet.topo import Topo
 
@@ -185,7 +187,9 @@ class TestVNFManager(unittest.TestCase):
 
         self.mgr.addContainer("c1", "h1", "dev_test", "bash", docker_args={})
         self.mgr.runRESTServerThread(ip=mgr_api_ip, port=mgr_api_port, enable_log=False)
-        time.sleep(0.5)
+
+        while not checkListeningOnIPPort(mgr_api_ip, mgr_api_port):
+            time.sleep(1)
 
         r = requests.get(base_url + "foo")
         self.assertEqual(r.status_code, 400)
@@ -225,5 +229,6 @@ class TestVNFManager(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    setLogLevel("warning")
+    cleanup()
+    setLogLevel("debug")
     unittest.main(verbosity=2)

@@ -27,9 +27,9 @@ copyright = "%d The Deutsche Telekom Chair of Communication Networks" % year
 author = "Zuo Xiang"
 
 # The short X.Y version
-version = "v0.3"
+version = "v0.4"
 # The full version, including alpha/beta/rc tags
-release = "v0.3.0"
+release = "v0.4.0"
 
 # -- General configuration ---------------------------------------------------
 
@@ -76,7 +76,8 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+# html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 
 # Theme options are theme-specific and customize the look and feel of a theme

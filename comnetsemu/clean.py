@@ -3,7 +3,8 @@
 # vim:fenc=utf-8
 
 """
-About: ComNetsEmu cleanup
+
+This module contains utilities for emulation environment cleanup.
 """
 
 import re
@@ -28,7 +29,12 @@ def sh(cmd, check=True):
 
 
 def cleanup():
-    """ComNetsEmu cleanup function."""
+    """ComNetsEmu cleanup function.
+
+    This function firstly calls the cleanup function of Mininet.
+    Then it removes all Docker containers created by ComNetsEmu.
+    Then it removes virtual network devices created by ComNetsEmu.
+    """
     info("-" * 80 + "\n" + "*** Run ComNetsEmu's cleanups\n" + "-" * 80 + "\n")
     info("*** Run mininet's cleanups\n")
     mn_cleanup()

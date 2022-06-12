@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 # flake8: noqa
+
 """
 About: Test high-fidelity compatibility between ComNetsEmu and upstream Mininet
 

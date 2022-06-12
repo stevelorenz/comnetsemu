@@ -1,5 +1,12 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
 """
-About: ComNetsEmu Node
+
+__ https://github.com/mininet/mininet/blob/master/mininet/node.py
+
+This module is an extension of `mininet.node`__ with additional and customized nodes.
 """
 
 import os
@@ -8,6 +15,7 @@ import select
 import shlex
 import tempfile
 import time
+import socket
 
 from sys import exit
 from time import sleep
@@ -28,6 +36,19 @@ class DockerHost(Host):
     This part is inspired by:
     - http://techandtrains.com/2014/08/21/docker-container-as-mininet-host/
     - DockerHost implementation from Patrick Ziegler (patrick.ziegler@tu-dresden.de)
+
+
+    :param name: Name of the DockerHost.
+    :param dimage: Name of the docker image.
+    :param docker_args (dict): All other keyword arguments supported by Docker-py.
+        e.g. CPU and memory related limitations. Some parameters are overriden for DockerHost's functionalities.
+    :param dcmd: Command to execute when create the DockerHost.
+    :param ishell: The command to run interactive shell on the host.
+    :param ishell_args: Arguments for running the ishell.
+
+    :var dins: Docker container instance created by the Docker-py run API.
+        Check https://docker-py.readthedocs.io/en/stable/containers.html#container-objects
+        for details.
     """
 
     docker_args_default = {
@@ -53,21 +74,6 @@ class DockerHost(Host):
         ishell_args: str = "--norc -is",
         **kwargs,
     ):
-        """
-        Creates a Docker container as Mininet host.
-
-        :param name: Name of the DockerHost.
-        :param dimage: Name of the docker image.
-        :param docker_args (dict): All other keyword arguments supported by Docker-py.
-            e.g. CPU and memory related limitations. Some parameters are overriden for DockerHost's functionalities.
-        :param dcmd: Command to execute when create the DockerHost.
-        :param ishell: The command to run interactive shell on the host.
-        :param ishell_args: Arguments for running the ishell.
-
-        :var dins: Docker container instance created by the Docker-py run API.
-            Check https://docker-py.readthedocs.io/en/stable/containers.html#container-objects
-            for details.
-        """
         self.name = name
         self.dcmd = dcmd if dcmd is not None else "/usr/bin/env sh"
         self.dimage = dimage
@@ -310,21 +316,20 @@ class APPContainer:
     runtime. For example, it should expose the same API for different container
     runtimes like Docker, LXC or CRI-O (If ComNetsEmu project decides to support
     them).
+
+
+    :param name: Name of the APP container.
+    :type name: str
+    :param dhost: Name of the DockerHost on which APP container will be deployed.
+    :type dhost: str
+    :param dimage: Name of the image.
+    :type dimage: str
+    :param dins: The Docker container instance.
+    :param dcmd: The Docker command.
+    :type dcmd: str
     """
 
     def __init__(self, name: str, dhost: str, dimage: str, dins, dcmd: str = None):
-        """Create a APPContainer.
-
-        :param name: Name of the APP container.
-        :type name: str
-        :param dhost: Name of the DockerHost on which APP container will be deployed.
-        :type dhost: str
-        :param dimage: Name of the image.
-        :type dimage: str
-        :param dins: The Docker container instance.
-        :param dcmd: The Docker command.
-        :type dcmd: str
-        """
         self.name = name
         self.dhost = dhost
         self.dimage = dimage
@@ -399,54 +404,53 @@ class P4DockerHost(DockerHost):
                 self.defaultIntf().MAC(),
             )
         )
+
         info("**********\n")
 
 
-# TODO:  <19-05-22, Zuo Xiang>
-# 1. Cleanup the classes for P4Switch and P4RuntimeSwitch. Remove duplicated/unnecessary code
-
-
 class P4Switch(Switch):
-    """P4 virtual switch"""
+    """P4Switch: BMv2 simple_switch
+
+    This is the `simple_switch` target (https://github.com/p4lang/behavioral-model/blob/main/targets/README.md)
+    provided by bmv2.
+
+    :param name: Name of the switch
+    :type name: str
+    :param json_path: Path to the P4 compiled JSON output
+    :type json_path: str
+    :param thrift_port: Port of the Thrift server
+    :type thrift_port: int
+    :param sw_path: Switch binary to execute. Must be available in system $PATH.
+    :type sw_path: str
+    :param log_file: The path of the logging file
+    :type log_file: str
+    :param pcap_dump: Whether to dump pcap files to disk
+    :type pcap_dump: bool
+    :param log_console: Whether to log into console
+    :type log_console: bool
+    :param device_id: Unique ID for the switch
+    :type device_id: int
+    :param enable_debugger: Whether to enable debugger
+    :type enable_debugger: bool
+    """
 
     device_id = 0
 
     def __init__(
         self,
         name: str,
-        sw_path: str = None,
-        json_path: str = None,
-        thrift_port: int = None,
+        json_path: str,
+        thrift_port: int,
+        sw_path: str = "simple_switch",
+        log_file: str = "",
         pcap_dump: bool = False,
         log_console: bool = False,
-        log_file: str = None,
-        device_id: int = None,
+        device_id: int = 0,
         enable_debugger: bool = False,
         **kwargs,
     ):
-        """Init the P4 switch
-
-        :param name: Name of the P4 switch
-        :type name: str
-        :param sw_path: The path of the switch binary to execute
-        :type sw_path: str
-        :param json_path: Path to the P4 compiled JSON configuration
-        :type json_path: str
-        :param thrift_port: The port number of the Thrift server
-        :type thrift_port: int
-        :param pcap_dump: Whether to save pcap logs to the disk
-        :type pcap_dump: bool
-        :param log_console: Whether to enable console logging
-        :type log_console: bool
-        :param log_file: The path of the switch logging file
-        :type log_file: str
-        :param device_id: The unique ID for the switch
-        :type device_id: int
-        :param enable_debugger: Whether to enable debugger
-        :type enable_debugger: bool
-        """
-
-        if device_id:
+        # Assign the device_id automatically
+        if not device_id:
             self.device_id = device_id
             P4Switch.device_id = max(P4Switch.device_id, device_id)
         else:
@@ -463,28 +467,17 @@ class P4Switch(Switch):
         pathCheck(sw_path)
         # make sure that the provided JSON file exists
         if not os.path.isfile(json_path):
-            error("Invalid JSON file.\n")
+            error("Invalid JSON file:{}.\n".format(json_path))
             exit(1)
         self.sw_path = sw_path
         self.json_path = json_path
-
+        self.log_file = log_file
+        if not self.log_file:
+            self.log_file = "/tmp/p4s.{}.log".format(self.name)
         self.thrift_port = thrift_port
-        if checkListeningOnPort(self.thrift_port):
-            error(
-                "%s cannot bind port %d because it is bound by another process\n"
-                % (self.name, self.grpc_port)
-            )
-            exit(1)
-
-        # TODO: Improve the handling of logging here.
         self.pcap_dump = pcap_dump
         self.enable_debugger = enable_debugger
         self.log_console = log_console
-        if log_file is not None:
-            self.log_file = log_file
-        else:
-            self.log_file = "/tmp/p4s.{}.log".format(self.name)
-
         self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
 
     @classmethod
@@ -499,32 +492,27 @@ class P4Switch(Switch):
         while True:
             if not os.path.exists(os.path.join("/proc", str(pid))):
                 return False
-            if checkListeningOnPort(self.thrift_port):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            result = sock.connect_ex(("localhost", self.thrift_port))
+            if result == 0:
                 return True
-            sleep(0.5)
 
-    def start(self, controllers=None):
-        """Start up a new P4 switch
-
-        :param controllers:
-        :type controllers: list
-        """
+    def start(self, controllers):
+        "Start up a new P4 switch"
         info("Starting P4 switch {}.\n".format(self.name))
         args = [self.sw_path]
-
         for port, intf in list(self.intfs.items()):
             if not intf.IP():
                 args.extend(["-i", str(port) + "@" + intf.name])
-
         if self.pcap_dump:
-            args.append("--pcap %s" % self.pcap_dump)
+            args.append("--pcap")
+            # args.append("--useFiles")
         if self.thrift_port:
             args.extend(["--thrift-port", str(self.thrift_port)])
         if self.nanomsg:
             args.extend(["--nanolog", self.nanomsg])
         args.extend(["--device-id", str(self.device_id)])
-        # TODO: Why here device_id += 1? Handle the device_id in the __init__.
-        P4Switch.device_id += 1
         args.append(self.json_path)
         if self.enable_debugger:
             args.append("--debugger")
@@ -534,14 +522,18 @@ class P4Switch(Switch):
 
         pid = None
         with tempfile.NamedTemporaryFile() as f:
-            # self.cmd(' '.join(args) + ' > /dev/null 2>&1 &')
+            # MARK: This way of running switch binary can not support running xterm on the switch
             self.cmd(
                 " ".join(args) + " >" + self.log_file + " 2>&1 & echo $! >> " + f.name
             )
             pid = int(f.read())
         debug("P4 switch {} PID is {}.\n".format(self.name, pid))
+        sleep(1)
         if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.name))
+            error(
+                "P4 switch {} did not start correctly."
+                "Check the switch log file.\n".format(self.name)
+            )
             exit(1)
         info("P4 switch {} has been started.\n".format(self.name))
 
@@ -551,89 +543,68 @@ class P4Switch(Switch):
         self.cmd("wait")
         self.deleteIntfs()
 
+    def attach(self, intf):
+        "Connect a data port"
+        assert 0
+
+    def detach(self, intf):
+        "Disconnect a data port"
+        assert 0
+
     def describe(self):
         info("**********\n")
         output(
-            "P4RuntimeSwitch name: {}, device_id: {}, dpid:{}, thrift_port: {}, grpc_port: {}\n".format(
-                self.name, self.device_id, self.dpid, self.thrift_port, self.grpc_port
+            "P4Switch name: {}, device_id: {}, dpid:{}, thrift_port: {}\n".format(
+                self.name, self.device_id, self.dpid, self.thrift_port
             )
         )
         info("**********\n")
 
 
 class P4RuntimeSwitch(P4Switch):
-    "BMv2 switch with gRPC support"
-    next_grpc_port = 50051
-    next_thrift_port = 9090
+    """BMv2 switch with gRPC support.
+
+
+    :param name: Name of the switch
+    :type name: str
+    :param json_path: Path to the P4 compiled JSON output
+    :type json_path: str
+    :param thrift_port: Port of the Thrift server
+    :type thrift_port: int
+    :param grpc_port: Port of the P4Rutime gRPC server
+    :type grpc_port: int
+    :param sw_path: Switch binary to execute. Must be available in system $PATH.
+    :type sw_path: str
+    :param log_file: The path of the logging file
+    :type log_file: str
+    :param pcap_dump: Whether to dump pcap files to disk
+    :type pcap_dump: bool
+    :param log_console: Whether to log into console
+    :type log_console: bool
+    :param device_id: Unique ID for the switch
+    :type device_id: int
+    :param enable_debugger: Whether to enable debugger
+    :type enable_debugger: bool
+    """
 
     def __init__(
         self,
-        name,
-        sw_path=None,
-        json_path=None,
-        grpc_port=None,
-        thrift_port=None,
-        pcap_dump=False,
-        log_console=False,
-        verbose=False,
-        device_id=None,
-        enable_debugger=False,
-        log_file=None,
+        name: str,
+        json_path: str,
+        thrift_port: int,
+        grpc_port: int,
+        sw_path: str = "simple_switch_grpc",
         **kwargs,
     ):
-        if device_id is not None:
-            self.device_id = device_id
-            P4Switch.device_id = max(P4Switch.device_id, device_id)
-        else:
-            self.device_id = P4Switch.device_id
-            P4Switch.device_id += 1
-
-        dpid = dpidToStr(self.device_id)
-        kwargs.update(dpid=dpid)
-        Switch.__init__(self, name, **kwargs)
-
-        assert sw_path
-        self.sw_path = sw_path
-        # make sure that the provided sw_path is valid
-        pathCheck(sw_path)
-
-        if json_path is not None:
-            # make sure that the provided JSON file exists
-            if not os.path.isfile(json_path):
-                error("Invalid JSON file: {}\n".format(json_path))
-                exit(1)
-            self.json_path = json_path
-        else:
-            self.json_path = None
-
-        if grpc_port is not None:
-            self.grpc_port = grpc_port
-        else:
-            self.grpc_port = P4RuntimeSwitch.next_grpc_port
-            P4RuntimeSwitch.next_grpc_port += 1
-
-        if thrift_port is not None:
-            self.thrift_port = thrift_port
-        else:
-            self.thrift_port = P4RuntimeSwitch.next_thrift_port
-            P4RuntimeSwitch.next_thrift_port += 1
-
-        if checkListeningOnPort(self.grpc_port):
-            error(
-                "%s cannot bind port %d because it is bound by another process\n"
-                % (self.name, self.grpc_port)
+        self.grpc_port = grpc_port
+        if checkListeningOnPort(grpc_port):
+            raise ConnectionRefusedError(
+                f"Switch {name} cannot bind gRPC port {grpc_port} because the port is already used."
             )
-            exit(1)
 
-        self.verbose = verbose
-        self.pcap_dump = pcap_dump
-        self.enable_debugger = enable_debugger
-        self.log_console = log_console
-        if log_file is not None:
-            self.log_file = log_file
-        else:
-            self.log_file = "/tmp/p4s.{}.log".format(self.name)
-        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
+        super(P4RuntimeSwitch, self).__init__(
+            name, json_path, thrift_port, sw_path=sw_path, **kwargs
+        )
 
     def check_switch_started(self, pid):
         for _ in range(P4_SWITCH_START_TIMEOUT * 2):
@@ -644,7 +615,7 @@ class P4RuntimeSwitch(P4Switch):
             sleep(0.5)
 
     def start(self, controllers=None):
-        info("Starting P4 switch {}.\n".format(self.name))
+        info("Starting P4RuntimeSwitch {}.\n".format(self.name))
         args = [self.sw_path]
         for port, intf in list(self.intfs.items()):
             if not intf.IP():
@@ -674,11 +645,11 @@ class P4RuntimeSwitch(P4Switch):
         with tempfile.NamedTemporaryFile() as f:
             self.cmd(cmd + " >" + self.log_file + " 2>&1 & echo $! >> " + f.name)
             pid = int(f.read())
-        debug("P4 switch {} PID is {}.\n".format(self.name, pid))
+        debug("P4RuntimeSwitch {} PID is {}.\n".format(self.name, pid))
         if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.name))
+            error("P4RuntimeSwitch {} did not start correctly.\n".format(self.name))
             exit(1)
-        info("P4 switch {} has been started.\n".format(self.name))
+        info("P4RuntimeSwitch {} has been started.\n".format(self.name))
 
     def describe(self):
         info("**********\n")

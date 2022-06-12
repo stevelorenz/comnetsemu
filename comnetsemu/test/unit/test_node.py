@@ -7,6 +7,7 @@ About: Test comnetsemu.node module
 """
 
 import functools
+import pathlib
 import unittest
 
 from comnetsemu.clean import cleanup
@@ -17,6 +18,8 @@ from mininet.node import OVSBridge
 from mininet.topo import Topo
 
 HOST_NUM = 3
+
+UNIT_TEST_DIR = pathlib.Path(__file__).parent
 
 
 class TestTopo(Topo):
@@ -58,5 +61,6 @@ class TestComNetsEmuNode(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    cleanup()
     setLogLevel("warning")
     unittest.main(verbosity=2)

@@ -3,7 +3,10 @@
 # vim:fenc=utf-8
 
 """
-An extension of `mininet.log` for colored logging
+
+__ https://github.com/mininet/mininet/blob/master/mininet/log.py
+
+This module is an extension of `mininet.log`__ for colored logging.
 
 Copied from https://github.com/nsg-ethz/p4-utils/blob/master/p4utils/mininetlib/log.py
 """

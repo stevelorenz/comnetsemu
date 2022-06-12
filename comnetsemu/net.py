@@ -1,5 +1,11 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
 """
-About: ComNetsEmu Network Module.
+__ https://github.com/mininet/mininet/blob/master/mininet/net.py
+
+This module is an extension of `mininet.net`__ with additional and customized functions.
 """
 
 import http.server
@@ -105,88 +111,14 @@ class Containernet(Mininet):
         return self.addSwitch(name, **kwargs)
 
 
-class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
-    """Basic implementation of a REST API for app containers.
-
-    Python's built-in http server only does basic security checks and this class
-    has basic and limited sanity checks on the requests. Designed only for
-    teaching.
-    """
-
-    _container_resource_path = "/containers"
-
-    def __init__(self, appcontainermanager, enable_log=True, *args, **kargs):
-        self.mgr = appcontainermanager
-        self.enable_log = enable_log
-        super(APPContainerManagerRequestHandler, self).__init__(*args, **kargs)
-
-    def _send_bad_request(self):
-        self.send_response(400)
-        self.end_headers()
-
-    def log_message(self, format, *args):
-        if not self.enable_log:
-            return
-        else:  # pragma no cover
-            super(APPContainerManagerRequestHandler, self).log_message(format, *args)
-
-    def do_GET(self):
-        if self.path == self._container_resource_path:
-            self.send_response(200)
-            self.end_headers()
-            ret = json.dumps(self.mgr.getAllContainers()).encode("utf-8")
-            self.wfile.write(ret)
-        else:
-            self._send_bad_request()
-
-    @staticmethod
-    def _post_sanity_check(post_dict):
-        # Check for essential keys.
-        for k in ["name", "dhost", "dimage", "dcmd", "docker_args"]:
-            if k not in post_dict:
-                return False
-        else:
-            return True
-
-    def do_POST(self):
-        """Create a new APP container."""
-        if self.path == self._container_resource_path:
-            content_length = int(self.headers.get("content-length", 0))
-            if content_length == 0:
-                self._send_bad_request()
-            else:
-                post_data = self.rfile.read(content_length).decode("utf-8")
-                container_para = json.loads(post_data)
-                if not self._post_sanity_check(container_para):
-                    self._send_bad_request()
-                else:
-                    self.mgr.addContainer(**container_para)
-                    self.send_response(200)
-                    self.end_headers()
-        else:
-            self._send_bad_request()
-
-    def _delete_sanity_check(self, container_name):
-        # Check if container exists.
-        c = self.mgr.getContainerInstance(container_name, None)
-        return True if c else False
-
-    def do_DELETE(self):
-        paths = os.path.split(self.path)
-        if len(paths) == 2 and paths[0] == self._container_resource_path:
-            container_name = paths[1]
-            if not self._delete_sanity_check(container_name):
-                self._send_bad_request()
-            else:
-                self.mgr.removeContainer(container_name)
-                self.send_response(200)
-                self.end_headers()
-        else:
-            self._send_bad_request()
-
-
 class APPContainerManager:
-    """Manager for application containers (sibling containers) deployed on Mininet hosts."""
+    """Manager for application containers (sibling containers) deployed on Mininet hosts.
+
+
+
+    :param net: The mininet object, used to manage hosts via Mininet's API.
+    :type net: mininet.net.Mininet
+    """
 
     reserved_docker_args = [
         "init",
@@ -220,10 +152,6 @@ class APPContainerManager:
     retry_delay_secs = 0.1
 
     def __init__(self, net: Mininet):
-        """Init the APPContainerManager.
-
-        :param net (Mininet): The mininet object, used to manage hosts via Mininet's API.
-        """
         self.net = net
         self.dclt = docker.from_env()
 
@@ -517,6 +445,97 @@ class APPContainerManager:
 
         self.dclt.close()
         shutil.rmtree(APPCONTAINERMANGER_MOUNTED_DIR)
+
+
+class APPContainerManagerRequestHandler(http.server.BaseHTTPRequestHandler):
+    """Basic implementation of a REST API for app containers.
+
+    Python's built-in http server only does basic security checks and this class
+    has basic and limited sanity checks on the requests. Designed only for
+    teaching.
+
+    :param appcontainermanager: The APPContainerManager instance.
+    :type appcontainermanager: APPContainerManager
+    :param enable_log: Enable requests handler logging to console.
+    :type enable_log: bool
+    """
+
+    _container_resource_path = "/containers"
+
+    def __init__(
+        self,
+        appcontainermanager: APPContainerManager,
+        enable_log: bool = True,
+        *args,
+        **kargs,
+    ):
+        self.mgr = appcontainermanager
+        self.enable_log = enable_log
+        super(APPContainerManagerRequestHandler, self).__init__(*args, **kargs)
+
+    def _send_bad_request(self):
+        self.send_response(400)
+        self.end_headers()
+
+    def log_message(self, format, *args):
+        if not self.enable_log:
+            return
+        else:  # pragma no cover
+            super(APPContainerManagerRequestHandler, self).log_message(format, *args)
+
+    def do_GET(self):
+        if self.path == self._container_resource_path:
+            self.send_response(200)
+            self.end_headers()
+            ret = json.dumps(self.mgr.getAllContainers()).encode("utf-8")
+            self.wfile.write(ret)
+        else:
+            self._send_bad_request()
+
+    @staticmethod
+    def _post_sanity_check(post_dict):
+        # Check for essential keys.
+        for k in ["name", "dhost", "dimage", "dcmd", "docker_args"]:
+            if k not in post_dict:
+                return False
+        else:
+            return True
+
+    def do_POST(self):
+        """Create a new APP container."""
+        if self.path == self._container_resource_path:
+            content_length = int(self.headers.get("content-length", 0))
+            if content_length == 0:
+                self._send_bad_request()
+            else:
+                post_data = self.rfile.read(content_length).decode("utf-8")
+                container_para = json.loads(post_data)
+                if not self._post_sanity_check(container_para):
+                    self._send_bad_request()
+                else:
+                    self.mgr.addContainer(**container_para)
+                    self.send_response(200)
+                    self.end_headers()
+        else:
+            self._send_bad_request()
+
+    def _delete_sanity_check(self, container_name):
+        # Check if container exists.
+        c = self.mgr.getContainerInstance(container_name, None)
+        return True if c else False
+
+    def do_DELETE(self):
+        paths = os.path.split(self.path)
+        if len(paths) == 2 and paths[0] == self._container_resource_path:
+            container_name = paths[1]
+            if not self._delete_sanity_check(container_name):
+                self._send_bad_request()
+            else:
+                self.mgr.removeContainer(container_name)
+                self.send_response(200)
+                self.end_headers()
+        else:
+            self._send_bad_request()
 
 
 class VNFManager(APPContainerManager):

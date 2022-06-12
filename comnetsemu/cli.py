@@ -1,13 +1,15 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 # flake8: noqa
+
 """
-About: ComNetsEmu simple command-line interface
 
 This module sub-class the Mininet's CLI class to add some ComNetsEmu's specific
 properly for DockerHost instances.
 commands, and also add fixes to some Mininet's default methods to make it work
 
-ISSUE: Current approach has too much Mininet codes included... Make it dependent
-       on the upstream. A better solution should be added.
+ISSUE: Current approach has too much Mininet codes included... Make it dependent on the upstream. A better solution should be added.
 """
 
 import errno
@@ -155,7 +157,8 @@ def spawnXtermDocker(dcontainer_name: str):
     """Spawn the xterm and attach to a Docker container with docker exec -it
     container. Bash is used as the interactive shell.
 
-    :param dcontainer_name (str): Name of a Docker container.
+    :param dcontainer_name: Name of a Docker container.
+    :type dcontainer_name: str
     """
     title = '"dockercontainer:%s"' % dcontainer_name
     params = {"title": title, "name": dcontainer_name, "shell": "bash"}

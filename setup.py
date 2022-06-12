@@ -41,6 +41,8 @@ setup(
     # MARK: MINIMAL requirements
     install_requires=[
         "docker>=4.1.0,<5.0.0",
+        "networkx>=2.4,<3.0",
+        "psutil>=5.5.0,<6.0.0",
         "pyroute2>=0.5.9,<0.6.0",
         "requests>=2.22.0,< 3.0.0",
         "ryu>=4.30,<5.0",

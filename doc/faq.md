@@ -1,7 +1,5 @@
 # FAQ
 
-## General Questions
-
 ### Why not the vanilla Mininet ?
 
 Default Mininet (the latest version) does not support running Docker containers
@@ -9,7 +7,7 @@ applications directly inside Mininet Host with sufficient network isolation.
 ComNetsEmu adds a new node type: DockerHost to deploy internal Docker
 application containers.
 
-### Why not Containernet ?
+### Why not [Containernet](https://containernet.github.io/) ?
 
 Containernet did a fork (hold all source codes of Mininet in its own Repo) of the Mininet.
 New features and fixes from upstream Mininet can not be **merged** into Containernet **directly**.

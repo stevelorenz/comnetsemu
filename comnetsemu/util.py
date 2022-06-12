@@ -1,8 +1,10 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
 """
-About: Utility/helper functions for ComNetsEmu.
+
+This module contains utility/helper functions for ComNetsEmu.
 """
 
 import re
@@ -25,9 +27,18 @@ def parsePing(pingOutput):
     return sent, received
 
 
-def checkListeningOnPort(port):
-    for c in psutil.net_connections(kind="inet"):
-        if c.status == "LISTEN" and c.laddr[1] == port:
+def checkListeningOnPort(port, kind="inet"):
+    # net_connections returns a list of system-wide socket connections
+    for c in psutil.net_connections(kind=kind):
+        # laddr: (ip, port)
+        if c.status == "LISTEN" and c.laddr.port == port:
+            return True
+    return False
+
+
+def checkListeningOnIPPort(ip, port, kind="inet"):
+    for c in psutil.net_connections(kind=kind):
+        if c.laddr.ip == ip and c.laddr.port == port and c.status == "LISTEN":
             return True
     return False
 
