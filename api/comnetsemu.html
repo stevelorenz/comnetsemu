@@ -13,6 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="comnetsemu.clean module" href="comnetsemu.clean.html" />
@@ -95,13 +96,90 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.clean.html">comnetsemu.clean module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.cli.html">comnetsemu.cli module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.exceptions.html">comnetsemu.exceptions module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.net.html">comnetsemu.net module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.node.html">comnetsemu.node module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.overrides.html">comnetsemu.overrides module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="comnetsemu.tool.html">comnetsemu.tool module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.clean.html">comnetsemu.clean module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.clean.html#comnetsemu.clean.cleanup"><code class="docutils literal notranslate"><span class="pre">cleanup()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.clean.html#comnetsemu.clean.cleanup_docker_containers"><code class="docutils literal notranslate"><span class="pre">cleanup_docker_containers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.clean.html#comnetsemu.clean.cleanup_netdevs"><code class="docutils literal notranslate"><span class="pre">cleanup_netdevs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.clean.html#comnetsemu.clean.sh"><code class="docutils literal notranslate"><span class="pre">sh()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.cli.html">comnetsemu.cli module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI"><code class="docutils literal notranslate"><span class="pre">CLI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.default"><code class="docutils literal notranslate"><span class="pre">CLI.default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.do_appcontainers"><code class="docutils literal notranslate"><span class="pre">CLI.do_appcontainers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.do_help"><code class="docutils literal notranslate"><span class="pre">CLI.do_help()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.do_xterm"><code class="docutils literal notranslate"><span class="pre">CLI.do_xterm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.helpStr"><code class="docutils literal notranslate"><span class="pre">CLI.helpStr</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.CLI.waitForNode"><code class="docutils literal notranslate"><span class="pre">CLI.waitForNode()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.cli.html#comnetsemu.cli.spawnXtermDocker"><code class="docutils literal notranslate"><span class="pre">spawnXtermDocker()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.exceptions.html">comnetsemu.exceptions module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.exceptions.html#comnetsemu.exceptions.InvalidDockerArgs"><code class="docutils literal notranslate"><span class="pre">InvalidDockerArgs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.net.html">comnetsemu.net module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager"><code class="docutils literal notranslate"><span class="pre">APPContainerManager</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.addContainer"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.addContainer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.docker_args_default"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.docker_args_default</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.docker_volumes_default"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.docker_volumes_default</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.getAllContainers"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.getAllContainers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.getContainerInstance"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.getContainerInstance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.getContainersDhost"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.getContainersDhost()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.monResourceStats"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.monResourceStats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.removeContainer"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.removeContainer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.reserved_docker_args"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.reserved_docker_args</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.retry_delay_secs"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.retry_delay_secs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.runRESTServerThread"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.runRESTServerThread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManager.stop"><code class="docutils literal notranslate"><span class="pre">APPContainerManager.stop()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManagerRequestHandler"><code class="docutils literal notranslate"><span class="pre">APPContainerManagerRequestHandler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManagerRequestHandler.do_DELETE"><code class="docutils literal notranslate"><span class="pre">APPContainerManagerRequestHandler.do_DELETE()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManagerRequestHandler.do_GET"><code class="docutils literal notranslate"><span class="pre">APPContainerManagerRequestHandler.do_GET()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManagerRequestHandler.do_POST"><code class="docutils literal notranslate"><span class="pre">APPContainerManagerRequestHandler.do_POST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.APPContainerManagerRequestHandler.log_message"><code class="docutils literal notranslate"><span class="pre">APPContainerManagerRequestHandler.log_message()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.Containernet"><code class="docutils literal notranslate"><span class="pre">Containernet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.Containernet.addDockerHost"><code class="docutils literal notranslate"><span class="pre">Containernet.addDockerHost()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.Containernet.addLinkNamedIfce"><code class="docutils literal notranslate"><span class="pre">Containernet.addLinkNamedIfce()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.Containernet.startTerms"><code class="docutils literal notranslate"><span class="pre">Containernet.startTerms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.net.html#comnetsemu.net.VNFManager"><code class="docutils literal notranslate"><span class="pre">VNFManager</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.node.html">comnetsemu.node module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer"><code class="docutils literal notranslate"><span class="pre">APPContainer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer.getCurrentStats"><code class="docutils literal notranslate"><span class="pre">APPContainer.getCurrentStats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer.getLogs"><code class="docutils literal notranslate"><span class="pre">APPContainer.getLogs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost"><code class="docutils literal notranslate"><span class="pre">DockerHost</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.cleanup"><code class="docutils literal notranslate"><span class="pre">DockerHost.cleanup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.cmd"><code class="docutils literal notranslate"><span class="pre">DockerHost.cmd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.docker_args_default"><code class="docutils literal notranslate"><span class="pre">DockerHost.docker_args_default</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.popen"><code class="docutils literal notranslate"><span class="pre">DockerHost.popen()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.sendCmd"><code class="docutils literal notranslate"><span class="pre">DockerHost.sendCmd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.setIP"><code class="docutils literal notranslate"><span class="pre">DockerHost.setIP()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.startShell"><code class="docutils literal notranslate"><span class="pre">DockerHost.startShell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.DockerHost.terminate"><code class="docutils literal notranslate"><span class="pre">DockerHost.terminate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.overrides.html">comnetsemu.overrides module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.overrides.html#comnetsemu.overrides.makeIntfPairFixed"><code class="docutils literal notranslate"><span class="pre">makeIntfPairFixed()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.overrides.html#comnetsemu.overrides.override"><code class="docutils literal notranslate"><span class="pre">override()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="comnetsemu.tool.html">comnetsemu.tool module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="comnetsemu.tool.html#comnetsemu.tool.parsePing"><code class="docutils literal notranslate"><span class="pre">parsePing()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="comnetsemu.util.html">comnetsemu.util module</a></li>
 </ul>
 </div>
@@ -122,7 +200,7 @@
       &copy;2022 The Deutsche Telekom Chair of Communication Networks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
