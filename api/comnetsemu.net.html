@@ -4,14 +4,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
     <title>comnetsemu.net module &#8212; ComNetsEmu v0.3.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -92,7 +90,7 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-comnetsemu.net">
+  <section id="module-comnetsemu.net">
 <span id="comnetsemu-net-module"></span><h1>comnetsemu.net module<a class="headerlink" href="#module-comnetsemu.net" title="Permalink to this heading">¶</a></h1>
 <p>About: ComNetsEmu Network Module.</p>
 <dl class="py class">
@@ -105,7 +103,7 @@
 <span class="sig-name descname"><span class="pre">addContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dcmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer" title="comnetsemu.node.APPContainer"><span class="pre">APPContainer</span></a></span></span><a class="headerlink" href="#comnetsemu.net.APPContainerManager.addContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create and run a new container inside a Mininet DockerHost.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the container.</p></li>
 <li><p><strong>dhost</strong> – Name of the host used for deployment.</p></li>
@@ -120,10 +118,10 @@ Some parameters are overriden for APPContainerManager’s functionalities.</p></
 </dl>
 <p>Check cls.docker_args_default.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Added APPContainer instance or None if the creation process failed.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer" title="comnetsemu.node.APPContainer">APPContainer</a></p>
 </dd>
 </dl>
@@ -144,7 +142,7 @@ Some parameters are overriden for APPContainerManager’s functionalities.</p></
 <span class="sig-name descname"><span class="pre">getAllContainers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#comnetsemu.net.APPContainerManager.getAllContainers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of names of all containers in current container queue.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -155,13 +153,13 @@ Some parameters are overriden for APPContainerManager’s functionalities.</p></
 <span class="sig-name descname"><span class="pre">getContainerInstance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer" title="comnetsemu.node.APPContainer"><span class="pre">APPContainer</span></a></span></span><a class="headerlink" href="#comnetsemu.net.APPContainerManager.getContainerInstance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the APPContainer instance with the given name.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – The name of the given container.</p></li>
 <li><p><strong>default</strong> – The default return value if not found.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="comnetsemu.node.html#comnetsemu.node.APPContainer" title="comnetsemu.node.APPContainer">APPContainer</a></p>
 </dd>
 </dl>
@@ -172,13 +170,13 @@ Some parameters are overriden for APPContainerManager’s functionalities.</p></
 <span class="sig-name descname"><span class="pre">getContainersDhost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dhost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#comnetsemu.net.APPContainerManager.getContainersDhost" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get containers deployed on the given DockerHost.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dhost</strong> (<em>str</em>) – Name of the DockerHost.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of APPContainer instances on given DockerHost.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -192,20 +190,20 @@ This function measure the CPU and memory usages sample_num times and
 sleep for sample_period between each time. All measurement results are
 returned as a list.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>container</strong> (<em>str</em>) – Name of the container</p></li>
 <li><p><strong>sample_num</strong> (<em>int</em>) – Number of samples.</p></li>
 <li><p><strong>sample_period</strong> (<em>float</em>) – Sleep period for each sample</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of resource usages. Each item is a tuple (cpu_usg, mem_usg)</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ValueError</strong> – container is not found</p>
 </dd>
 </dl>
@@ -216,7 +214,7 @@ returned as a list.</p>
 <span class="sig-name descname"><span class="pre">removeContainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.net.APPContainerManager.removeContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove the APP container with the given name.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the to be removed container.</p></li>
 <li><p><strong>wait</strong> (<em>bool</em>) – Wait until the container is fully removed if True.</p></li>
@@ -245,7 +243,7 @@ server should have no impact on the concurrency approach of main thread,
 the threading with a Lock is used instead of multi-processing or
 asyncio.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ip</strong> (<em>str</em>) – Listening IP address.</p></li>
 <li><p><strong>port</strong> (<em>int</em>) – Port number.</p></li>
@@ -314,7 +312,7 @@ every message.</p>
 <span class="sig-name descname"><span class="pre">addDockerHost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#comnetsemu.net.Containernet.addDockerHost" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper for addHost method that adds a Docker container as a host.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the host.</p>
 </dd>
 </dl>
@@ -343,7 +341,7 @@ every message.</p>
 <p>App container for Virtualized Network Functions</p>
 </dd></dl>
 
-</div>
+</section>
 
 
           </div>
@@ -353,10 +351,10 @@ every message.</p>
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2022 The Deutsche Telekom Chair of Communication Networks.
+      &copy;2023 The Deutsche Telekom Chair of Communication Networks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.0.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
