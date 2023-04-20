@@ -40,10 +40,8 @@ if __name__ == "__main__":
     info("\n*** Starting network\n")
     net.start()
 
-    srv1 = mgr.addContainer(
-        "srv1", "h1", "echo_server", "python /home/server.py", docker_args={}
-    )
-    srv2 = mgr.addContainer("srv2", "h2", "dev_test", "bash", docker_args={})
+    srv2 = mgr.addContainer("srv1", "h1", "dev_test", "bash", docker_args={})
+    srv1 = mgr.addContainer( "srv2", "h2", "echo_server", "python /home/server.py", docker_args={} )
 
     if not AUTOTEST_MODE:
         # Cannot spawn xterm for srv1 since BASH is not installed in the image:

@@ -24,6 +24,7 @@ RUN apt-get -qy update && \
 	net-tools \
 	stress-ng \
 	tcpdump \
+	netcat \
 	telnet && \
 	rm -rf /var/lib/apt/lists/*
 
