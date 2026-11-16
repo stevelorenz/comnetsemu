@@ -135,6 +135,8 @@ or want other installation options.
 **Warning**: Main developers of ComNetsEmu does not use Windows
 and does not have a Windows machine to test on.
 
+hei
+
 1.  If you are using Windows, we recommend using [Mobaxterm](https://mobaxterm.mobatek.net/)
 	as the console.
     This should solve problems opening `xterm` in the emulator.
