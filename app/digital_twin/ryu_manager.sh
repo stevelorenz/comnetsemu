@@ -1,0 +1,1 @@
+ryu-manager --ofp-tcp-listen-port 6653 --wsapi-port 8080 --observe-links ryu.app.simple_switch_13 ryu.app.rest_topology ryu.app.ofctl_rest
