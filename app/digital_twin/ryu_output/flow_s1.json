@@ -1,0 +1,125 @@
+{
+    "1": [
+        {
+            "priority": 65535,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 39660,
+            "duration_sec": 601,
+            "duration_nsec": 945000000,
+            "packet_count": 661,
+            "length": 96,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:CONTROLLER"
+            ],
+            "match": {
+                "dl_dst": "01:80:c2:00:00:0e",
+                "dl_type": 35020
+            },
+            "table_id": 0
+        },
+        {
+            "priority": 1,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 434,
+            "duration_sec": 544,
+            "duration_nsec": 664000000,
+            "packet_count": 5,
+            "length": 104,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:1"
+            ],
+            "match": {
+                "in_port": 2,
+                "dl_src": "5e:f7:17:fc:b8:79",
+                "dl_dst": "aa:ec:bf:8d:f4:ac"
+            },
+            "table_id": 0
+        },
+        {
+            "priority": 1,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 336,
+            "duration_sec": 544,
+            "duration_nsec": 660000000,
+            "packet_count": 4,
+            "length": 104,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:2"
+            ],
+            "match": {
+                "in_port": 1,
+                "dl_src": "aa:ec:bf:8d:f4:ac",
+                "dl_dst": "5e:f7:17:fc:b8:79"
+            },
+            "table_id": 0
+        },
+        {
+            "priority": 1,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 434,
+            "duration_sec": 544,
+            "duration_nsec": 629000000,
+            "packet_count": 5,
+            "length": 104,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:1"
+            ],
+            "match": {
+                "in_port": 2,
+                "dl_src": "de:72:37:7b:76:66",
+                "dl_dst": "aa:ec:bf:8d:f4:ac"
+            },
+            "table_id": 0
+        },
+        {
+            "priority": 1,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 336,
+            "duration_sec": 544,
+            "duration_nsec": 625000000,
+            "packet_count": 4,
+            "length": 104,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:2"
+            ],
+            "match": {
+                "in_port": 1,
+                "dl_src": "aa:ec:bf:8d:f4:ac",
+                "dl_dst": "de:72:37:7b:76:66"
+            },
+            "table_id": 0
+        },
+        {
+            "priority": 0,
+            "cookie": 0,
+            "idle_timeout": 0,
+            "hard_timeout": 0,
+            "byte_count": 4806,
+            "duration_sec": 601,
+            "duration_nsec": 946000000,
+            "packet_count": 65,
+            "length": 80,
+            "flags": 0,
+            "actions": [
+                "OUTPUT:CONTROLLER"
+            ],
+            "match": {},
+            "table_id": 0
+        }
+    ]
+}
