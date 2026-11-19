@@ -1,8 +1,26 @@
+from mininet.net import Mininet
 from mininet.node import RemoteController
+from nullswitch import NullSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
-from nullswitch import NullSwitch
+import json
 
+
+
+#teller antall rutere/hosts i nettverket 
+def findNumberOfHosts(fil="hosts.json"):
+    with open(fil, "r") as file:
+        data = json.load(file)
+    return len(data)
+
+
+
+#her lages hver host/ruter med copiverdier
+def createHost():
+
+
+
+    return
 
 
 
@@ -15,3 +33,12 @@ def newNet():
 
     info( '*** Adding controller\n' )
     net.addController( 'c0' )
+
+
+
+    info( '*** Adding hosts\n' )
+    for i in range(findNumberOfHosts()):
+        createHost()
+    
+    
+    return
