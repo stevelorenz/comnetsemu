@@ -1,20 +1,11 @@
-#!/usr/bin/python
-
-"""
-This example shows how to create an empty Mininet object
-(without a topology object) and add nodes to it manually.
-"""
-
 from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from nullswitch import NullSwitch
 
-def emptyNet():
-
-    "Create an empty network and add nodes to it."
-
+def createNet():
+    # Create an empty net and add some nodes and links to it
     net = Mininet( controller=RemoteController, switch=NullSwitch )
 
     info( '*** Adding controller\n' )
@@ -44,4 +35,4 @@ def emptyNet():
 
 if __name__ == '__main__':
     setLogLevel( 'info' )
-    emptyNet()
+    createNet()
