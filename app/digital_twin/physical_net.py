@@ -5,7 +5,7 @@ from mininet.log import setLogLevel, info
 
 def createNet():
     # Create an empty net and add some nodes and links to it
-    net = Mininet( controller=RemoteController, switch=OVSSwitch )
+    net = Mininet( controller=RemoteController, switch=OVSSwitch, autoSetMacs=True )
 
     info( '*** Adding controller\n' )
     net.addController( 'c0', ip='127.0.0.1', port=6653 )
