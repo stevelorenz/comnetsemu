@@ -29,11 +29,13 @@ def loadSwitches():
         switches = json.load(f)
         return switches
 
+def loadLinks(fil=LINK):
+    with open(fil, "r") as file:
+        return json.load(file)
+
 #henter switchen med riktig dpid, eller lager den hvis den ikke finnes ennå
 def getSwitch(net, dpid):
-    name = "s%d" % int(dpid, 16)          # "0000000000000003" -> "s3"
-    if name not in net:
-        net.addSwitch(name, dpid=dpid)
+    name = "ts%d" % int(dpid, 16)
     return net.get(name)
 
 
@@ -76,6 +78,24 @@ def newNet():
         createHost(net, hosts, i)
 
     info('*** Adding links')
+    seen_switch_links = set()
+    for link in loadLinks():
+        src = link["src"]
+        dst = link["dst"]
+
+        src_dpid = int(src["dpid"], 16)
+        dst_dpid = int(dst["dpid"], 16)
+        link_key = tuple(sorted((src_dpid, dst_dpid)))
+        if link_key in seen_switch_links:
+            continue
+        seen_switch_links.add(link_key)
+
+        net.addLink(
+            net.get("ts%d" % src_dpid),
+            net.get("ts%d" % dst_dpid),
+            port1=int(src["port_no"], 16),
+            port2=int(dst["port_no"], 16),
+        )
 
     info( '*** Starting network\n' )
     net.start()
