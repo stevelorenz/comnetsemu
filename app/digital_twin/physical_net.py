@@ -17,11 +17,14 @@ def createNet():
 
     info( '*** Adding switch\n' )
     s1 = net.addSwitch( 's1', protocols='OpenFlow13' )
+    s2 = net.addSwitch( 's2', protocols='OpenFlow13' )
+    s3 = net.addSwitch( 's3', protocols='OpenFlow13' )
 
     info( '*** Creating links\n' )
     net.addLink( h1, s1 )
-    net.addLink( h2, s1 )
-    net.addLink( h3, s1 )
+    net.addLink( s1, s2 )
+    net.addLink( s2, h2 )
+    net.addLink( s2, h3 )
 
     info( '*** Starting network\n')
     net.start()
