@@ -1,6 +1,5 @@
 from mininet.net import Mininet
-from mininet.node import RemoteController
-from nullswitch import NullSwitch
+from mininet.node import RemoteController, OVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 
@@ -59,10 +58,10 @@ def createHost(net, hosts, number):
 #her lager vi vårt nye nett
 #Siden vi vet at nettverket vi kommuniserer med har en kontroller, kan denne "hardkodes inn fra start."
 def newNet():
-    net = Mininet( controller=RemoteController, switch=NullSwitch )
+    net = Mininet( controller=RemoteController, switch=OVSSwitch, autoSetMacs=True)
 
     info( '*** Adding controller\n' )
-    net.addController( 'c0' )
+    net.addController( 'tc0', ip='127.0.0.1', port=6654 )
 
     info( '*** Adding hosts\n' )
     hosts = loadHosts()
