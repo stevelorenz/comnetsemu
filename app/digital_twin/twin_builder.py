@@ -7,7 +7,8 @@ from mininet.log import setLogLevel, info
 import json
 import sys
 
-HOSTFIL = "hosts.json"
+HOSTFIL = "../ryu_output/hosts.json"
+LINK = "../ryu_output/links.json"
 PREFIX = 8   # JSON-en har ingen nettmaske, Mininet bruker /8 som standard
 
 
@@ -51,13 +52,6 @@ def createHost(net, hosts, number):
 
 
 
-
-
-
-#her lager vi vårt nye nett
-#Siden vi vet at nettverket vi kommuniserer med har en kontroller, kan denne "hardkodes inn fra start."
-#her lager vi vårt nye nett
-#Siden vi vet at nettverket vi kommuniserer med har en kontroller, kan denne "hardkodes inn fra start."
 def newNet():
     net = Mininet( controller=RemoteController, switch=NullSwitch )
 
@@ -74,3 +68,7 @@ def newNet():
     CLI( net )
     net.stop()
     return
+
+
+def main():
+    return newNet()
