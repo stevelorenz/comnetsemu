@@ -17,7 +17,20 @@ def normalize():
     return
 
 def diff(phys, twin):
-  
-    return (phys == twin)
+    missmatches = []
+    return missmatches
+
+#ferdig! returnerer True hvis det ikke er noe galt
+def report(missmatches):
+    return (missmatches.len() == 0)
 
 
+def validate():
+    fetchTopology()
+    normalize()
+    missmatches = diff()
+    report(missmatches)
+
+
+def main():
+    return
