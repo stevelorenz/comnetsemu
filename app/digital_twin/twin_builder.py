@@ -6,8 +6,9 @@ from mininet.log import setLogLevel, info
 import json
 import sys
 
-HOSTFIL = "../ryu_output/hosts.json"
-LINK = "../ryu_output/links.json"
+HOSTFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/hosts.json"
+SWITCHFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/switches.json"
+LINK = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/links.json"
 PREFIX = 8   # JSON-en har ingen nettmaske, Mininet bruker /8 som standard
 
 
@@ -23,7 +24,10 @@ def loadHosts(fil=HOSTFIL):
 def findNumberOfHosts(fil=HOSTFIL):
     return len(loadHosts(fil))
 
-
+def loadSwitches():
+    with open(SWITCHFIL, "r") as f:
+        switches = json.load(f)
+        return switches
 
 #henter switchen med riktig dpid, eller lager den hvis den ikke finnes ennå
 def getSwitch(net, dpid):
@@ -57,10 +61,21 @@ def newNet():
     info( '*** Adding controller\n' )
     net.addController( 'tc0', ip='127.0.0.1', port=6654 )
 
+    info('*** Adding switches\n')
+    switch_by_dpid = {}
+    switches = loadSwitches()
+    for switch in switches:
+        dpid = int(switch['dpid'],16)
+        twin = net.addSwitch(f'ts{dpid}', dpid=switch['dpid'], protocols='OpenFlow13')
+        switch_by_dpid[dpid] = twin
+
+
     info( '*** Adding hosts\n' )
     hosts = loadHosts()
     for i in range(findNumberOfHosts()):
         createHost(net, hosts, i)
+
+    info('*** Adding links')
 
     info( '*** Starting network\n' )
     net.start()
@@ -71,3 +86,5 @@ def newNet():
 
 def main():
     return newNet()
+
+print(loadSwitches())
