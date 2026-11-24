@@ -3,8 +3,11 @@ from mininet.node import RemoteController, OVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 
+from ryu_client import fetchTopology
+
 import json
 import sys
+import requests
 
 HOSTFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/hosts.json"
 SWITCHFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/switches.json"
@@ -14,24 +17,10 @@ PREFIX = 8   # JSON-en har ingen nettmaske, Mininet bruker /8 som standard
 
 
 #leser inn json-fila
-def loadHosts(fil=HOSTFIL):
-    with open(fil, "r") as file:
-        return json.load(file)
-
-
 
 #teller antall rutere/hosts i nettverket 
-def findNumberOfHosts(fil=HOSTFIL):
-    return len(loadHosts(fil))
-
-def loadSwitches():
-    with open(SWITCHFIL, "r") as f:
-        switches = json.load(f)
-        return switches
-
-def loadLinks(fil=LINK):
-    with open(fil, "r") as file:
-        return json.load(file)
+def findNumberOfHosts(topology):
+    return len(topology['hosts'])
 
 #henter switchen med riktig dpid, eller lager den hvis den ikke finnes ennå
 def getSwitch(net, dpid):
@@ -57,6 +46,8 @@ def createHost(net, hosts, number):
 
 
 def newNet():
+    topology = fetchTopology()
+
     net = Mininet( controller=RemoteController, switch=OVSSwitch, autoSetMacs=True)
 
     info( '*** Adding controller\n' )
@@ -64,7 +55,7 @@ def newNet():
 
     info('*** Adding switches\n')
     switch_by_dpid = {}
-    switches = loadSwitches()
+    switches = topology['switches']
     for switch in switches:
         dpid = int(switch['dpid'],16)
         twin = net.addSwitch(f'ts{dpid}', dpid=switch['dpid'], protocols='OpenFlow13')
@@ -72,13 +63,13 @@ def newNet():
 
 
     info( '*** Adding hosts\n' )
-    hosts = loadHosts()
-    for i in range(findNumberOfHosts()):
+    hosts = topology['hosts']
+    for i in range(findNumberOfHosts(topology)):
         createHost(net, hosts, i)
 
     info('*** Adding links')
     seen_switch_links = set()
-    for link in loadLinks():
+    for link in topology['links']:
         src = link["src"]
         dst = link["dst"]
 
