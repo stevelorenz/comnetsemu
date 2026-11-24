@@ -2,16 +2,11 @@ from mininet.net import Mininet
 from mininet.node import RemoteController, OVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
+from validate import validate, normalize
+import time
 
 from ryu_client import fetchTopology
 
-import json
-import sys
-import requests
-
-HOSTFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/hosts.json"
-SWITCHFIL = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/switches.json"
-LINK = "/home/vagrant/comnetsemu/app/digital_twin/ryu_output/links.json"
 PREFIX = 8   # JSON-en har ingen nettmaske, Mininet bruker /8 som standard
 
 
@@ -45,8 +40,7 @@ def createHost(net, hosts, number):
 
 
 
-def newNet():
-    topology = fetchTopology()
+def newNet(topology):
 
     net = Mininet( controller=RemoteController, switch=OVSSwitch, autoSetMacs=True)
 
@@ -90,14 +84,28 @@ def newNet():
     info( '*** Starting network\n' )
     net.start()
     net.pingAll()
-    CLI( net )
-    net.stop()
-    return
+    return net
 
 
 def main():
-    return newNet()
-
+    topology = fetchTopology()
+    current = normalize(topology)
+    network = newNet(topology)
+    validate()
+    try:
+        while True:
+            time.sleep(5)
+            topology = fetchTopology()
+            new = normalize(topology)
+            if new != current:
+                info('*** Physical network changed!\n')
+                network.stop()
+                network = newNet(topology)
+                current = new
+                validate()
+    finally:
+        network.stop()
+        
 if __name__ == '__main__':
     setLogLevel('info')
     main()
