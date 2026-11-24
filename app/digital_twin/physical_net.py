@@ -2,6 +2,8 @@ from mininet.net import Mininet
 from mininet.node import RemoteController, OVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
+from change_scenario import startScenario
+
 
 def createNet():
     # Create an empty net and add some nodes and links to it
@@ -32,9 +34,26 @@ def createNet():
     info( '*** Running CLI\n' )
     CLI( net )
 
+    
+    
+    #scenario!!! 
+    stop = startScenario(net)    # endringene skjer i bakgrunnen
+    
+    CLI(net)
+    stop.set()                   # avbryt scenarioet hvis du går ut av CLI-en tidlig
+    net.stop()
+    
+
     info( '*** Stopping network' )
     net.stop()
+
+
+    
 
 if __name__ == '__main__':
     setLogLevel( 'info' )
     createNet()
+   
+
+
+    
