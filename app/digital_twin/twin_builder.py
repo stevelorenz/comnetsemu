@@ -33,7 +33,7 @@ def createHost(net, hosts, number):
     h = hosts[number]
     port = h["port"]
 
-    ip = h["ipv4"][0] if h["ipv4"][0] else None
+    ip = h["ipv4"][0] if h["ipv4"] else None
     name = "th" + str(number + 1)
     host = net.addHost(name, mac=h["mac"], **({"ip": f"{ip}/{PREFIX}"} if ip else {}))
 
