@@ -28,6 +28,7 @@ def createNet():
 
     info( '*** Starting network\n')
     net.start()
+    net.pingAll()
 
     info( '*** Running CLI\n' )
     CLI( net )
