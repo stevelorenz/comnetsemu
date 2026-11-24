@@ -5,12 +5,12 @@ from mininet.log import info
 
 def linkDown(net):
     info('\n*** [scenario] h1 <-> s1 ned\n')
-    net.configLinkStatus('h1', 's1', 'down')
+    net.configLinkStatus('s1', 's2', 'down')
 
 
 def linkUp(net):
     info('\n*** [scenario] h1 <-> s1 opp\n')
-    net.configLinkStatus('h1', 's1', 'up')
+    net.configLinkStatus('s1', 's2', 'up')
 
 
 def addHost(net):
@@ -22,20 +22,11 @@ def addHost(net):
     h4.configDefault()               # setter IP/MAC på h4-eth0
     h4.cmd('ping -c1 10.0.0.1')      # Ryu ser bare hosts som har sendt trafikk
 
-
-def startTraffic(net):
-    info('\n*** [scenario] starter trafikk h2 -> h3\n')
-    h2, h3 = net.get('h2', 'h3')
-    h3.cmd('iperf -s -u &')
-    h2.cmd('iperf -c 10.0.0.3 -u -b 1M -t 60 &')
-
-
 # (sekunder etter start, funksjon)
 SCENARIO = [
-    (30, linkDown),
-    (45, linkUp),
-    (60, addHost),
-    (75, startTraffic),
+    (10, linkDown),
+    (30, linkUp),
+    (50, addHost)
 ]
 
 
