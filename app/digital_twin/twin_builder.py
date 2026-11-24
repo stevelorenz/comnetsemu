@@ -44,14 +44,13 @@ def createHost(net, hosts, number):
     h = hosts[number]
     port = h["port"]
 
-    ip = h["ipv4"][0]
-    name = "h" + ip.split(".")[-1]        # 10.0.0.3 -> h3
-    host = net.addHost(name, ip="%s/%d" % (ip, PREFIX), mac=h["mac"])
+    ip = h["ipv4"][0] if h["ipv4"][0] else None
+    name = "th" + str(number + 1)
+    host = net.addHost(name, mac=h["mac"], **({"ip": f"{ip}/{PREFIX}"} if ip else {}))
 
     switch = getSwitch(net, port["dpid"])
     net.addLink(host, switch,
                 port2=int(port["port_no"], 16),   # hex-streng: "00000001" -> 1
-                intfName2=port["name"],           # "s1-eth1"
                 addr2=port["hw_addr"])            # MAC på switch-porten
     return host
 
@@ -85,7 +84,7 @@ def newNet():
 
         src_dpid = int(src["dpid"], 16)
         dst_dpid = int(dst["dpid"], 16)
-        link_key = tuple(sorted((src_dpid, dst_dpid)))
+        link_key = frozenset([(src_dpid, int(src["port_no"], 16)), (dst_dpid, int(dst["port_no"], 16))])
         if link_key in seen_switch_links:
             continue
         seen_switch_links.add(link_key)
@@ -99,6 +98,7 @@ def newNet():
 
     info( '*** Starting network\n' )
     net.start()
+    net.pingAll()
     CLI( net )
     net.stop()
     return
@@ -107,4 +107,6 @@ def newNet():
 def main():
     return newNet()
 
-print(loadSwitches())
+if __name__ == '__main__':
+    setLogLevel('info')
+    main()

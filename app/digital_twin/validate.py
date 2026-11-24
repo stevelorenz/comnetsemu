@@ -1,40 +1,7 @@
-import json
-from pathlib import Path
-from urllib.request import urlopen
+import time
+from ryu_client import fetchTopology
 
-BASE_DIR = Path(__file__).resolve().parent
-SWITCHFIL = BASE_DIR / "ryu_output" / "switches.json"
-HOSTFIL = BASE_DIR / "ryu_output" / "hosts.json"
-LINK = BASE_DIR / "ryu_output" / "links.json"
-
-
-def load_json(path):
-    with open(path, "r", encoding="utf-8") as file:
-        return json.load(file)
-
-def fetchTopology(base_url):
-    """Hent switches, links og hosts fra en Ryu REST API-tjeneste."""
-    base_url = base_url.rstrip("/")
-
-    def get(path):
-        with urlopen(base_url + path, timeout=5) as response:
-            return json.loads(response.read().decode("utf-8"))
-
-    return {
-        "switches": get("/v1.0/topology/switches"),
-        "links": get("/v1.0/topology/links"),
-        "hosts": get("/v1.0/topology/hosts"),
-    }
-
-def normalize(topology=None):
-    """Konverter Ryu-topologien til en stabil, sammenlignbar representasjon."""
-    if topology is None:
-        topology = {
-            "switches": load_json(SWITCHFIL) if SWITCHFIL.exists() else [],
-            "hosts": load_json(HOSTFIL),
-            "links": load_json(LINK),
-        }
-
+def normalize(topology):
     def normalize_dpid(dpid):
         if dpid is None:
             return None
@@ -106,18 +73,18 @@ def normalize(topology=None):
 
 def diff(phys, twin):
     """Sammenlign fysisk og digital topologi og returner avvik."""
-    missmatches = []
+    mismatches = []
 
     physical_switches = set(phys.get("switches", []))
     twin_switches = set(twin.get("switches", []))
     for dpid in sorted(physical_switches - twin_switches):
-        missmatches.append({
+        mismatches.append({
             "type": "missing_switch",
             "location": "twin",
             "dpid": dpid,
         })
     for dpid in sorted(twin_switches - physical_switches):
-        missmatches.append({
+        mismatches.append({
             "type": "extra_switch",
             "location": "twin",
             "dpid": dpid,
@@ -134,13 +101,13 @@ def diff(phys, twin):
     physical_hosts = {host_key(host): host for host in phys.get("hosts", [])}
     twin_hosts = {host_key(host): host for host in twin.get("hosts", [])}
     for key in sorted(set(physical_hosts) - set(twin_hosts)):
-        missmatches.append({
+        mismatches.append({
             "type": "missing_host",
             "location": "twin",
             "host": physical_hosts[key],
         })
     for key in sorted(set(twin_hosts) - set(physical_hosts)):
-        missmatches.append({
+        mismatches.append({
             "type": "extra_host",
             "location": "twin",
             "host": twin_hosts[key],
@@ -154,45 +121,49 @@ def diff(phys, twin):
             (dst["dpid"], dst["port"]),
         )))
 
-    physical_links = {link_key(link): link for link in phys.get("links", [])}
-    twin_links = {link_key(link): link for link in twin.get("links", [])}
-    for key in sorted(set(physical_links) - set(twin_links)):
-        missmatches.append({
-            "type": "missing_link",
-            "location": "twin",
-            "link": physical_links[key],
-        })
-    for key in sorted(set(twin_links) - set(physical_links)):
-        missmatches.append({
-            "type": "extra_link",
-            "location": "twin",
-            "link": twin_links[key],
-        })
+    phys_hosts = {h["mac"]: h for h in phys["hosts"]}
+    twin_hosts = {h["mac"]: h for h in twin["hosts"]}
+    for mac in sorted(phys_hosts.keys() - twin_hosts.keys()):
+        mismatches.append({"type": "missing_host", "host": phys_hosts[mac]})
+    for mac in sorted(twin_hosts.keys() - phys_hosts.keys()):
+        mismatches.append({"type": "extra_host", "host": twin_hosts[mac]})
+    for mac in sorted(phys_hosts.keys() & twin_hosts.keys()):
+        for field in ("ipv4", "dpid", "port"):
+            if phys_hosts[mac][field] != twin_hosts[mac][field]:
+                mismatches.append({"type": "host_" + field, "mac": mac,
+                                    "physical": phys_hosts[mac][field],
+                                    "twin": twin_hosts[mac][field]})
 
-    return missmatches
+    return mismatches
 
 #ferdig! returnerer True hvis det ikke er noe galt
-def report(missmatches):
-    if missmatches:
+def report(mismatches):
+    if mismatches:
         print("Topology mismatch:")
-        for mismatch in missmatches:
+        for mismatch in mismatches:
             print("- %s: %s" % (
                 mismatch["type"],
                 mismatch.get("dpid")
                 or mismatch.get("host")
                 or mismatch.get("link"),
             ))
-    return len(missmatches) == 0
+    if not mismatches:
+        print("GREAT SUCCESS!")
+    return len(mismatches) == 0
 
 
 def validate(
     physical_url="http://127.0.0.1:8080",
     twin_url="http://127.0.0.1:8081",
+    attempts=5,
+    delay=1.0,
 ):
-    physical = normalize(fetchTopology(physical_url))
-    twin = normalize(fetchTopology(twin_url))
-    missmatches = diff(physical, twin)
-    return report(missmatches)
+    for _ in range(attempts):
+        m = diff(normalize(fetchTopology(physical_url)), normalize(fetchTopology(twin_url)))
+        if not m:
+            break
+        time.sleep(delay)
+    return report(m)
 
 
 def main():
