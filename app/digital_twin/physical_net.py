@@ -32,20 +32,14 @@ def createNet():
     net.start()
     net.pingAll()
 
+    #scenario!!!
+    stop = startScenario(net)    # endringene skjer i bakgrunnen
+
     info( '*** Running CLI\n' )
     CLI( net )
-
-    
-    
-    #scenario!!! 
-    stop = startScenario(net)    # endringene skjer i bakgrunnen
-    
-    CLI(net)
     stop.set()                   # avbryt scenarioet hvis du går ut av CLI-en tidlig
-    net.stop()
-    
 
-    info( '*** Stopping network' )
+    info( '*** Stopping network\n' )
     net.stop()
 
 
