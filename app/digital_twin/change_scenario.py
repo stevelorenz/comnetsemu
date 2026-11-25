@@ -4,12 +4,12 @@ from mininet.log import info
 
 
 def linkDown(net):
-    info('\n*** [scenario] h1 <-> s1 ned\n')
+    info('\n*** [scenario] s1 <-> s1 ned\n')
     net.configLinkStatus('s1', 's2', 'down')
 
 
 def linkUp(net):
-    info('\n*** [scenario] h1 <-> s1 opp\n')
+    info('\n*** [scenario] s1 <-> s1 opp\n')
     net.configLinkStatus('s1', 's2', 'up')
 
 

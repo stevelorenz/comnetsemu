@@ -1,12 +1,13 @@
 # SWAGGY TWIN
 
-**Project by August Skorgen Rakvaag and Victor Beisland Hessevaagbakke done the Fall of 2026 at the University of Trento**
+**Project by August Skorgen Rakvaag and Victor Beisland Hessevaagbakke done the Fall of 2026 at the University of Trento in the course Softwarized and virtual mobile networks.**
 
 ### Table of Content
 - Project file-structure
-- Project set-up
 - Project task 
 - Our solution
+- Project set-up
+- How to use
 
 ## File-structure
   
@@ -24,6 +25,21 @@ digital_twin/
 ├── SWAGGYTWIN.md  
 └── .gitignore  
 ```
+
+
+## Project task
+
+Digital Twin for SDN networks
+- GOAL: **To buid a script that allows to generate the
+Digital Twin of an SDN network**
+- Exploit RYU Northbound RestAPI to retrieve the
+topology- and traffic-related information
+- The procedure should be completely automated
+- Runtime, changes to the Physical Twin are
+reproduced automatically to the Digital Twin
+
+
+## Our solution
 
 ## Project set-up
 
@@ -74,20 +90,6 @@ The setup is now complete. See [How to use](#how-to-use) to run the digital twin
  
 
 
-## Project task
-
-Digital Twin for SDN networks
-- GOAL: **To buid a script that allows to generate the
-Digital Twin of an SDN network**
-- Exploit RYU Northbound RestAPI to retrieve the
-topology- and traffic-related information
-- The procedure should be completely automated
-- Runtime, changes to the Physical Twin are
-reproduced automatically to the Digital Twin
-
-
-## Our solution
-
 ## How to use
 
 Everything is run **inside the VM** from `~/comnetsemu/app/digital_twin`.
@@ -133,15 +135,56 @@ and a new `mininet>` prompt appears. The scenario does the following (seconds af
 
 | Time | Change in the physical network |
 |---|---|
-| 30 s | Link `h1 – s1` goes down |
-| 45 s | Link `h1 – s1` comes back up |
-| 60 s | New host `h4` (`10.0.0.4`) is added to `s1` |
+| 10 s | Link `s1 – s2` goes down |
+| 30 s | Link `s1 – s2` comes back up |
+| 50 s | New host `h4` (`10.0.0.4`) is added to `s1` |
 
 
 Watch **Terminal 4**: when a change is detected it prints `*** Physical network changed!`,
 rebuilds the twin and prints `GREAT SUCCESS!` again if the twin matches.
 
 ### 5. Validate manually (optional)
+
+#### To make changes in the topology from the termial you can follow the following syntax:
+
+**Note**: Do note add existing hosts from initial setup or change_topology.py!
+
+change status betweeen two links
+```
+    mininet> link <node1> <node2> <up/down>
+
+eks:
+    mininet> link s1 s2 down
+    mininet> link s1 s2 up
+```
+
+Add new host
+```
+    mininet> py net.addHost('<host>', ip='<ip>/8')
+    mininet> py <switch>.attach(net.addLink(<host>, <switch>).intf2)
+    mininet> py <host>.configDefault()
+    mininet> <host> ping -c1 <ip-to-another-host>
+
+eks: 
+    mininet> py net.addHost('h5', ip='10.0.0.5/8')
+    mininet> py s2.attach(net.addLink(h5, s2).intf2)
+    mininet> py h5.configDefault()
+    mininet> h5 ping -c1 10.0.0.1
+```
+Add a new switch
+
+```
+ mininet> py net.addSwitch('<new-switch>', protocols='OpenFlow13')
+    mininet> py <exisiting-switch>.attach(net.addLink(<exisitng-switch>, <new-switch>).intf1)
+    mininet> py <new-switch>.start(net.controllers)
+
+eks:
+    mininet> py net.addSwitch('s4', protocols='OpenFlow13')
+    mininet> py s3.attach(net.addLink(s3, s4).intf1)
+    mininet> py s4.start(net.controllers)
+```
+
+#### To validate changes
 You can compare the two networks at any time from a new terminal:
 ```bash
 python3 validate.py
