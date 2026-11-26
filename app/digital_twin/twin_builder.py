@@ -6,6 +6,10 @@ from validate import validate, normalize
 import time
 
 from ryu_client import fetchTopology
+from traffic_mirror import read_flows, ingress_counters, RateMeter, TrafficMirror, print_rates
+
+PHYS = "http://127.0.0.1:8080"
+TWIN = "http://127.0.0.1:8081"
 
 PREFIX = 8   # JSON-en har ingen nettmaske, Mininet bruker /8 som standard
 
@@ -92,17 +96,25 @@ def main():
     current = normalize(topology)
     network = newNet(topology)
     validate()
+    mirror, phys_meter, twin_meter = TrafficMirror(network), RateMeter(), RateMeter()
     try:
         while True:
-            time.sleep(5)
+            time.sleep(2)                          # 5 s is too slow for traffic
             topology = fetchTopology()
             new = normalize(topology)
             if new != current:
                 info('*** Physical network changed!\n')
-                network.stop()
+                network.stop()                     # also kills the twin's iperfs
                 network = newNet(topology)
                 current = new
                 validate()
+                mirror, twin_meter = TrafficMirror(network), RateMeter()
+
+            phys_rates = phys_meter.update(ingress_counters(topology, read_flows(topology, PHYS)))
+            mirror.apply(phys_rates)
+            twin_topo = fetchTopology(TWIN)
+            twin_rates = twin_meter.update(ingress_counters(twin_topo, read_flows(twin_topo, TWIN)))
+            print_rates(phys_rates, twin_rates)
     finally:
         network.stop()
         
